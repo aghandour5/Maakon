@@ -73,6 +73,8 @@ export const createPostBodyTitleMax = 120;
 export const createPostBodyDescriptionMin = 10;
 export const createPostBodyDescriptionMax = 1000;
 
+export const createPostBodyExpiresInDaysMax = 90;
+
 export const CreatePostBody = zod.object({
   postType: zod.enum(["need", "offer"]),
   title: zod.string().min(createPostBodyTitleMin).max(createPostBodyTitleMax),
@@ -91,6 +93,12 @@ export const CreatePostBody = zod.object({
   providerType: zod.string().nullish(),
   contactMethod: zod.string().nullish(),
   contactInfo: zod.string().nullish(),
+  expiresInDays: zod
+    .number()
+    .min(1)
+    .max(createPostBodyExpiresInDaysMax)
+    .nullish()
+    .describe("How many days until this post expires (default 30)"),
 });
 
 /**

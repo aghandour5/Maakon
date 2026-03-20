@@ -8,9 +8,10 @@ import MarkerClusterGroup from "react-leaflet-cluster";
 import L from "leaflet";
 import { PostDetailsModal } from "@/components/map/PostDetailsModal";
 import { Button } from "@/components/ui/button";
-import { Filter, X, MapPin, ChevronRight, SearchX } from "lucide-react";
+import { Filter, X, MapPin, ChevronRight, SearchX, Plus, AlertTriangle } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ar, enUS } from "date-fns/locale";
+import { useLocation } from "wouter";
 
 // ─── Icons ──────────────────────────────────────────────────────────────────
 
@@ -65,8 +66,10 @@ export default function MapPage() {
   const isRtl = i18n.dir() === "rtl";
   const dateLocale = isRtl ? ar : enUS;
 
+  const [, setLocation] = useLocation();
   const [filters, setFilters] = useState<ListPostsParams>({ activeOnly: true });
   const [showFilters, setShowFilters] = useState(false);
+  const [showFab, setShowFab] = useState(false);
   const [selectedItem, setSelectedItem] = useState<SelectedItem | null>(null);
   const [selectedPostId, setSelectedPostId] = useState<number | null>(null);
   const [mapCenter, setMapCenter] = useState<[number, number] | null>(null);
@@ -289,6 +292,45 @@ export default function MapPage() {
           <div className="flex items-center gap-2"><div className="w-3.5 h-3.5 rounded-full bg-red-500 border border-white shadow-sm" /><span className="text-xs">{t('needs')}</span></div>
           <div className="flex items-center gap-2"><div className="w-3.5 h-3.5 rounded-full bg-green-500 border border-white shadow-sm" /><span className="text-xs">{t('offers')}</span></div>
           <div className="flex items-center gap-2"><div className="w-3.5 h-3.5 rounded-full bg-blue-500 border border-white shadow-sm" /><span className="text-xs">{t('ngos')}</span></div>
+        </div>
+
+        {/* Speed-dial FAB — bottom corner opposite the legend */}
+        <div className={`absolute bottom-6 ${isRtl ? 'left-6' : 'right-6'} z-[400] flex flex-col-reverse items-center gap-2`}>
+          {/* Main "+" toggle button */}
+          <button
+            onClick={() => setShowFab(prev => !prev)}
+            className={`w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 ${
+              showFab
+                ? 'bg-foreground text-background rotate-45'
+                : 'bg-primary text-primary-foreground'
+            }`}
+            aria-label={t('create_need')}
+          >
+            <Plus className="w-7 h-7" />
+          </button>
+
+          {/* Expanded options */}
+          {showFab && (
+            <>
+              {/* Offer */}
+              <button
+                onClick={() => setLocation('/offer/new')}
+                className="flex items-center gap-2 bg-success text-success-foreground px-4 py-2.5 rounded-2xl shadow-lg font-semibold text-sm hover:scale-105 active:scale-95 transition-all duration-150 whitespace-nowrap"
+              >
+                <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">+</span>
+                {t('create_offer')}
+              </button>
+
+              {/* Need */}
+              <button
+                onClick={() => setLocation('/need/new')}
+                className="flex items-center gap-2 bg-destructive text-destructive-foreground px-4 py-2.5 rounded-2xl shadow-lg font-semibold text-sm hover:scale-105 active:scale-95 transition-all duration-150 whitespace-nowrap"
+              >
+                <AlertTriangle className="w-4 h-4" />
+                {t('create_need')}
+              </button>
+            </>
+          )}
         </div>
 
         {/* Filter Toggle Button */}

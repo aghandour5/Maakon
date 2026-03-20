@@ -29,4 +29,10 @@ export interface CreatePostInput {
   providerType?: string | null;
   contactMethod?: string | null;
   contactInfo?: string | null;
+  /**
+   * How many days until this post expires (default 30)
+   * @minimum 1
+   * @maximum 90
+   */
+  expiresInDays?: number | null;
 }

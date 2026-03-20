@@ -311,6 +311,12 @@ components:
         contactInfo:
           type: string
           nullable: true
+        expiresInDays:
+          type: integer
+          minimum: 1
+          maximum: 90
+          nullable: true
+          description: How many days until this post expires (default 30)
       required:
         - postType
         - title

@@ -127,12 +127,15 @@ router.post("/posts", async (req, res) => {
     providerType,
     contactMethod,
     contactInfo,
+    expiresInDays,
   } = body.data;
 
   const { publicLat, publicLng } = getPublicCoordinates(postType, governorate);
 
+  // Compute expiry: use caller-supplied duration (capped 1–90 days) or default 30 days
+  const daysUntilExpiry = expiresInDays && expiresInDays > 0 ? Math.min(expiresInDays, 90) : 30;
   const expiresAt = new Date();
-  expiresAt.setDate(expiresAt.getDate() + 30);
+  expiresAt.setDate(expiresAt.getDate() + daysUntilExpiry);
 
   const [post] = await db
     .insert(postsTable)
@@ -152,7 +155,9 @@ router.post("/posts", async (req, res) => {
       providerType: providerType ?? null,
       contactMethod: contactMethod ?? null,
       contactInfo: contactInfo ?? null,
-      status: "pending",
+      // New posts are immediately active so they appear on the map.
+      // Pending status is reserved for admin-reviewed content only.
+      status: "active",
       expiresAt,
       lastConfirmedAt: new Date(),
     })

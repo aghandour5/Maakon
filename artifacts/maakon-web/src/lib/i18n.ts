@@ -103,6 +103,21 @@ const resources = {
       medium: "متوسط",
       low: "منخفض",
 
+      // Expiry presets
+      expiry_label: "صلاحية المنشور",
+      expiry_1d: "يوم",
+      expiry_3d: "٣ أيام",
+      expiry_1w: "أسبوع",
+      expiry_1m: "شهر",
+      expiry_default: "شهر",
+
+      // Submit error
+      submit_error: "فشل الإرسال. تحقق من الاتصال وحاول مرة أخرى.",
+
+      // Map FAB
+      create_need: "طلب مساعدة",
+      create_offer: "تقديم مساعدة",
+
       // Actions
       close: "إغلاق",
       cancel: "إلغاء",
@@ -123,6 +138,8 @@ const resources = {
 
       // Categories
       food: "غذاء",
+      transportation: "نقل",
+      psychological: "دعم نفسي",
       water: "مياه",
       shelter: "مأوى",
       medical: "طبي",
@@ -224,6 +241,21 @@ const resources = {
       medium: "Medium",
       low: "Low",
 
+      // Expiry presets
+      expiry_label: "Post expiry",
+      expiry_1d: "1 Day",
+      expiry_3d: "3 Days",
+      expiry_1w: "1 Week",
+      expiry_1m: "1 Month",
+      expiry_default: "1 Month",
+
+      // Submit error
+      submit_error: "Submission failed. Check your connection and try again.",
+
+      // Map FAB
+      create_need: "Post Need",
+      create_offer: "Post Offer",
+
       close: "Close",
       cancel: "Cancel",
 
@@ -241,6 +273,8 @@ const resources = {
       reason_other: "Other",
 
       food: "Food",
+      transportation: "Transportation",
+      psychological: "Psychological Support",
       water: "Water",
       shelter: "Shelter",
       medical: "Medical",
