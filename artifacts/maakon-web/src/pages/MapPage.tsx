@@ -46,7 +46,10 @@ export default function MapPage() {
     return () => clearTimeout(timer);
   }, []);
 
-  const updateStringFilter = (key: keyof ListPostsParams, value: string | undefined) => {
+  type StringFilterKey = 'postType' | 'category' | 'governorate' | 'district' | 'urgency';
+  type BoolFilterKey = 'activeOnly' | 'verifiedNgoOnly';
+
+  const updateStringFilter = (key: StringFilterKey, value: string | undefined) => {
     if (key === 'governorate') {
       setFilters(prev => ({ ...prev, [key]: value, district: undefined }));
     } else {
@@ -54,7 +57,7 @@ export default function MapPage() {
     }
   };
 
-  const updateBoolFilter = (key: keyof ListPostsParams, value: boolean) => {
+  const updateBoolFilter = (key: BoolFilterKey, value: boolean) => {
     setFilters(prev => ({ ...prev, [key]: value }));
   };
 
