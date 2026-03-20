@@ -1,4 +1,4 @@
-import { Link, useLocation } from "wouter";
+import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Globe, ArrowRight, ArrowLeft } from "lucide-react";
@@ -11,57 +11,61 @@ interface TopNavProps {
 
 export function TopNav({ title, showBack = false, transparent = false }: TopNavProps) {
   const { t, i18n } = useTranslation();
-  const [, setLocation] = useLocation();
   const isRtl = i18n.dir() === "rtl";
 
   const toggleLanguage = () => {
-    const newLang = i18n.language.startsWith('ar') ? 'en' : 'ar';
+    const newLang = i18n.language.startsWith("ar") ? "en" : "ar";
     i18n.changeLanguage(newLang);
   };
 
   return (
-    <header 
-      className={`fixed top-0 left-0 right-0 z-50 transition-colors duration-200 ${
-        transparent ? 'bg-transparent' : 'bg-background/80 backdrop-blur-md border-b border-border'
+    <header
+      className={`fixed top-0 inset-x-0 z-50 transition-colors duration-200 ${
+        transparent
+          ? "bg-transparent"
+          : "bg-background/90 backdrop-blur-md border-b border-border/60"
       }`}
     >
-      <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
+        {/* Left cluster: back + logo */}
+        <div className="flex items-center gap-2 min-w-0">
           {showBack && (
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <button
               onClick={() => window.history.back()}
-              className="hover-elevate rounded-full"
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-foreground hover:bg-secondary transition-colors shrink-0"
+              aria-label="Back"
             >
               {isRtl ? <ArrowRight className="h-5 w-5" /> : <ArrowLeft className="h-5 w-5" />}
-            </Button>
+            </button>
           )}
-          
-          <Link href="/" className="flex items-center gap-2 no-underline group hover-elevate px-2 py-1 rounded-md">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow-md">
-              <span className="text-primary-foreground font-bold text-lg leading-none pt-1">
-                {isRtl ? 'م' : 'M'}
+
+          <Link href="/" className="flex items-center gap-2.5 no-underline min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow-sm shrink-0">
+              <span className="text-primary-foreground font-bold text-lg leading-none pt-0.5">
+                {isRtl ? "م" : "M"}
               </span>
             </div>
-            {title ? (
-              <h1 className="font-bold text-lg text-foreground">{title}</h1>
-            ) : (
-              <h1 className="font-bold text-xl text-foreground tracking-tight group-hover:text-primary transition-colors">
-                {t('app_name')}
-              </h1>
-            )}
+            <span
+              className={`font-bold text-lg text-foreground truncate ${
+                title ? "" : "hover:text-primary transition-colors"
+              }`}
+            >
+              {title ?? t("app_name")}
+            </span>
           </Link>
         </div>
 
-        <Button 
-          variant="outline" 
-          size="sm" 
+        {/* Language toggle */}
+        <Button
+          variant="outline"
+          size="sm"
           onClick={toggleLanguage}
-          className="rounded-full px-4 border-border/60 hover:bg-secondary/80 hover-elevate transition-all"
+          className="rounded-full px-3 h-8 border-border/60 hover:bg-secondary shrink-0 gap-1.5 transition-colors"
         >
-          <Globe className={`h-4 w-4 ${isRtl ? 'ml-2' : 'mr-2'}`} />
-          {i18n.language.startsWith('ar') ? 'English' : 'عربي'}
+          <Globe className="h-3.5 w-3.5" />
+          <span className="text-xs font-medium">
+            {i18n.language.startsWith("ar") ? "English" : "عربي"}
+          </span>
         </Button>
       </div>
     </header>

@@ -77,7 +77,7 @@
   --elevate-2: rgba(0,0,0, .08);
 
   /* Calm, trustworthy crisis-tech palette */
-  --background: 210 20% 98%; /* Light gray-blue */
+  --background: 210 20% 98%;
   --foreground: 222 47% 11%;
   
   --card: 0 0% 100%;
@@ -88,7 +88,7 @@
   --popover-foreground: 222 47% 11%;
   --popover-border: 214 32% 91%;
 
-  --primary: 215 100% 35%; /* Deep trustworthy blue */
+  --primary: 215 100% 35%;
   --primary-foreground: 210 40% 98%;
   
   --secondary: 210 40% 96.1%;
@@ -100,13 +100,13 @@
   --accent: 210 40% 96.1%;
   --accent-foreground: 222.2 47.4% 11.2%;
 
-  --destructive: 348 83% 47%; /* Need - Red */
+  --destructive: 348 83% 47%;
   --destructive-foreground: 210 40% 98%;
 
-  --success: 142 71% 45%; /* Offer - Green */
+  --success: 142 71% 45%;
   --success-foreground: 210 40% 98%;
 
-  --info: 217 91% 60%; /* NGO - Blue */
+  --info: 217 91% 60%;
   --info-foreground: 210 40% 98%;
 
   --border: 214.3 31.8% 91.4%;
@@ -147,31 +147,30 @@
   }
 }
 
+/* ── hover-elevate — lightweight overlay, no z-index abuse ──────────────── */
 @layer utilities {
-  .hover-elevate:not(.no-default-hover-elevate)::after,
-  .active-elevate:not(.no-default-active-elevate)::after,
-  .hover-elevate-2:not(.no-default-hover-elevate)::after,
-  .active-elevate-2:not(.no-default-active-elevate)::after {
+  .hover-elevate {
+    position: relative;
+    isolation: isolate;
+  }
+  .hover-elevate::after {
     content: "";
     pointer-events: none;
     position: absolute;
-    inset: 0px;
+    inset: 0;
     border-radius: inherit;
-    z-index: 999;
+    background: transparent;
+    transition: background 150ms ease;
   }
-
-  .hover-elevate:hover:not(.no-default-hover-elevate)::after,
-  .active-elevate:active:not(.no-default-active-elevate)::after {
-    background-color: var(--elevate-1);
+  .hover-elevate:hover::after {
+    background: var(--elevate-1);
   }
-
-  .hover-elevate-2:hover:not(.no-default-hover-elevate)::after,
-  .active-elevate-2:active:not(.no-default-active-elevate)::after {
-    background-color: var(--elevate-2);
+  .hover-elevate:active::after {
+    background: var(--elevate-2);
   }
 }
 
-/* Custom Leaflet Styles */
+/* ── Custom Leaflet Styles ──────────────────────────────────────────────── */
 .leaflet-container {
   font-family: inherit;
 }
@@ -185,24 +184,24 @@
   width: 280px !important;
 }
 .leaflet-popup-tip-container {
-  display: none; /* Hide default tip for a cleaner card look */
+  display: none;
 }
 .custom-marker {
   display: flex;
   justify-content: center;
   align-items: center;
   border-radius: 50%;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
   border: 2px solid white;
-  transition: transform 0.2s;
+  transition: transform 0.15s ease;
 }
 .custom-marker:hover {
-  transform: scale(1.1);
+  transform: scale(1.12);
   z-index: 1000 !important;
 }
 .marker-selected {
-  box-shadow: 0 0 0 4px white, 0 0 0 6px currentColor, 0 4px 12px rgba(0,0,0,0.4) !important;
-  transform: scale(1.15);
+  box-shadow: 0 0 0 3px white, 0 0 0 5px currentColor, 0 4px 12px rgba(0,0,0,0.35) !important;
+  transform: scale(1.2);
   z-index: 999 !important;
 }
 .marker-need {
@@ -213,11 +212,11 @@
 }
 .marker-ngo {
   background-color: hsl(var(--info));
-  border-radius: 8px; /* Square with rounded corners for NGOs */
+  border-radius: 8px;
 }
 .marker-cluster {
-  background-color: rgba(255, 255, 255, 0.9);
-  border: 2px solid hsl(var(--primary));
+  background-color: rgba(255, 255, 255, 0.92);
+  border: 2.5px solid hsl(var(--primary));
   color: hsl(var(--primary));
   font-weight: 700;
   border-radius: 50%;
@@ -225,4 +224,5 @@
   justify-content: center;
   align-items: center;
   box-shadow: var(--shadow-md);
+  font-size: 0.85rem;
 }

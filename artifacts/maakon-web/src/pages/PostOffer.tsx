@@ -7,15 +7,47 @@ import type { CreatePostInput } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
-import { CheckCircle2, ChevronLeft, ChevronRight, AlertCircle, XCircle } from "lucide-react";
+import {
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  AlertCircle,
+  XCircle,
+  Check,
+} from "lucide-react";
 
-// Expiry preset options: label key → days
 const EXPIRY_PRESETS = [
-  { key: 'expiry_1d', days: 1 },
-  { key: 'expiry_3d', days: 3 },
-  { key: 'expiry_1w', days: 7 },
-  { key: 'expiry_1m', days: 30 },
+  { key: "expiry_1d", days: 1 },
+  { key: "expiry_3d", days: 3 },
+  { key: "expiry_1w", days: 7 },
+  { key: "expiry_1m", days: 30 },
 ] as const;
+
+const PROVIDER_TYPES = ["individual", "organization", "business"] as const;
+
+const fadeVariants = {
+  enter: { opacity: 0, y: 10 },
+  center: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -6 },
+};
+
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <label className="block text-sm font-semibold text-foreground mb-2">
+      {children}
+    </label>
+  );
+}
+
+function FieldError({ msg }: { msg?: string }) {
+  if (!msg) return null;
+  return (
+    <p className="text-destructive text-xs mt-1.5 flex items-center gap-1">
+      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+      {msg}
+    </p>
+  );
+}
 
 export default function PostOffer() {
   const { t, i18n } = useTranslation();
@@ -26,32 +58,36 @@ export default function PostOffer() {
   const createPost = useCreatePost();
 
   const [step, setStep] = useState(1);
+  const [dir, setDir] = useState(1);
   const [expiresInDays, setExpiresInDays] = useState<number>(30);
   const [formData, setFormData] = useState<Partial<CreatePostInput>>({
-    postType: 'offer',
-    providerType: 'individual',
+    postType: "offer",
+    providerType: "individual",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSuccess, setIsSuccess] = useState(false);
 
-  const validateStep = (currentStep: number) => {
-    const newErrors: Record<string, string> = {};
-    if (currentStep === 1) {
-      if (!formData.category) newErrors.category = t('required');
+  const patch = (data: Partial<CreatePostInput>) =>
+    setFormData((prev) => ({ ...prev, ...data }));
+
+  const validateStep = (s: number) => {
+    const e: Record<string, string> = {};
+    if (s === 1 && !formData.category) e.category = t("required");
+    if (s === 2) {
+      if (!formData.title || formData.title.length < 3) e.title = t("min_length", { min: 3 });
+      if (!formData.description || formData.description.length < 10)
+        e.description = t("min_length", { min: 10 });
     }
-    if (currentStep === 2) {
-      if (!formData.title || formData.title.length < 3) newErrors.title = t('min_length', { min: 3 });
-      if (!formData.description || formData.description.length < 10) newErrors.description = t('min_length', { min: 10 });
-    }
-    if (currentStep === 3) {
-      if (!formData.governorate) newErrors.governorate = t('required');
-    }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    if (s === 3 && !formData.governorate) e.governorate = t("required");
+    setErrors(e);
+    return Object.keys(e).length === 0;
   };
 
-  const handleNext = () => {
-    if (validateStep(step)) setStep(prev => prev + 1);
+  const go = (next: number) => {
+    if (validateStep(step)) {
+      setDir(next > step ? 1 : -1);
+      setStep(next);
+    }
   };
 
   const handleSubmit = () => {
@@ -60,7 +96,6 @@ export default function PostOffer() {
       { data: { ...(formData as CreatePostInput), expiresInDays } },
       {
         onSuccess: async () => {
-          // Invalidate the map's posts cache so the new post appears immediately
           await queryClient.invalidateQueries({ queryKey: getListPostsQueryKey() });
           setIsSuccess(true);
         },
@@ -68,310 +103,287 @@ export default function PostOffer() {
     );
   };
 
-  // ── Success screen ──────────────────────────────────────────────────────────
-
   if (isSuccess) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-center">
+      <div className="h-dvh bg-background flex flex-col items-center justify-center p-6 text-center">
         <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
+          initial={{ scale: 0.85, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 280, damping: 24 }}
           className="bg-card p-8 rounded-3xl shadow-xl max-w-sm w-full flex flex-col items-center border border-border"
         >
           <div className="w-20 h-20 bg-success/10 rounded-full flex items-center justify-center mb-6">
             <CheckCircle2 className="w-10 h-10 text-success" />
           </div>
-          <h2 className="text-2xl font-bold text-foreground mb-2">{t('success_title')}</h2>
-          <p className="text-muted-foreground mb-8">{t('success_desc')}</p>
+          <h2 className="text-2xl font-bold text-foreground mb-2">{t("success_title")}</h2>
+          <p className="text-muted-foreground text-sm mb-8">{t("success_desc")}</p>
           <Button
-            className="w-full h-12 text-lg hover-elevate bg-success hover:bg-success/90 text-success-foreground"
-            onClick={() => setLocation('/map')}
+            className="w-full h-12 text-base font-semibold bg-success hover:bg-success/90 text-success-foreground transition-colors"
+            onClick={() => setLocation("/map")}
           >
-            {t('view_map')}
+            {t("view_map")}
           </Button>
         </motion.div>
       </div>
     );
   }
 
-  // ── Slide animation ─────────────────────────────────────────────────────────
-
-  const slideVariants = {
-    enter: (dir: number) => ({
-      x: dir > 0 ? (isRtl ? -100 : 100) : (isRtl ? 100 : -100),
-      opacity: 0,
-    }),
-    center: { x: 0, opacity: 1 },
-    exit: (dir: number) => ({
-      x: dir < 0 ? (isRtl ? -100 : 100) : (isRtl ? 100 : -100),
-      opacity: 0,
-    }),
-  };
-
   return (
-    <div className="min-h-screen bg-success/5 flex flex-col">
-      <TopNav title={t('post_offer_title')} showBack />
+    <div className="h-dvh bg-success/5 flex flex-col overflow-hidden">
+      <TopNav title={t("post_offer_title")} showBack />
 
-      <main className="flex-1 mt-16 w-full max-w-lg mx-auto p-4 sm:p-6 flex flex-col">
-
-        {/* Progress Bar */}
-        <div className="mb-8 px-2">
-          <div className="flex justify-between items-center mb-2">
-            {[1, 2, 3].map(num => (
-              <div
-                key={num}
-                className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-colors duration-300 ${
-                  step >= num
-                    ? 'bg-success text-success-foreground shadow-md'
-                    : 'bg-secondary border-2 border-border text-muted-foreground'
-                }`}
-              >
-                {num}
+      <div className="flex-1 flex flex-col overflow-hidden pt-16">
+        {/* ── Stepper ─────────────────────────────────────────────────── */}
+        <div className="shrink-0 px-5 pt-4 pb-3">
+          <div className="flex items-center gap-0">
+            {[1, 2, 3].map((num, i) => (
+              <div key={num} className={`flex items-center ${i < 2 ? "flex-1" : ""}`}>
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shrink-0 transition-all duration-300 ${
+                    step > num
+                      ? "bg-success text-success-foreground"
+                      : step === num
+                      ? "bg-success text-success-foreground ring-4 ring-success/20"
+                      : "bg-background border-2 border-border text-muted-foreground"
+                  }`}
+                >
+                  {step > num ? <Check className="w-4 h-4" /> : num}
+                </div>
+                {i < 2 && (
+                  <div className="flex-1 h-0.5 mx-1 rounded-full overflow-hidden bg-border">
+                    <div
+                      className="h-full bg-success transition-all duration-500"
+                      style={{ width: step > num + 1 ? "100%" : step > num ? "50%" : "0%" }}
+                    />
+                  </div>
+                )}
               </div>
             ))}
           </div>
-          <div className="relative h-2 bg-secondary rounded-full overflow-hidden">
-            <div
-              className="absolute top-0 bottom-0 bg-success transition-all duration-500 ease-out"
-              style={{
-                width: `${((step - 1) / 2) * 100}%`,
-                left: isRtl ? 'auto' : 0,
-                right: isRtl ? 0 : 'auto',
-              }}
-            />
-          </div>
         </div>
 
-        <div className="flex-1 relative">
-          <AnimatePresence custom={1} mode="wait">
+        {/* ── Scrollable step content ──────────────────────────────────── */}
+        <div className="flex-1 overflow-y-auto px-4 pb-2">
+          <AnimatePresence mode="wait" custom={dir}>
+            <motion.div
+              key={step}
+              custom={dir}
+              variants={fadeVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ duration: 0.18, ease: "easeOut" }}
+              className="bg-card rounded-2xl shadow-sm border border-success/20 p-5 flex flex-col gap-5 mb-2"
+            >
+              {/* ── Step 1 ─────────────────────────────────────────────── */}
+              {step === 1 && (
+                <>
+                  <h2 className="text-xl font-bold text-foreground">{t("step_1_offer")}</h2>
 
-            {/* ── Step 1: Category & Provider type ─────────────────────────── */}
-            {step === 1 && (
-              <motion.div
-                key="step1"
-                custom={1}
-                variants={slideVariants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className="bg-card rounded-3xl p-6 shadow-sm border border-success/20 flex flex-col gap-6 absolute inset-0"
-              >
-                <h2 className="text-2xl font-bold text-foreground">{t('step_1_offer')}</h2>
-
-                <div>
-                  <label className="block text-sm font-semibold text-foreground mb-3">{t('category')}</label>
-                  <div className="grid grid-cols-2 gap-3">
-                    {metadata?.categories.map(cat => (
-                      <button
-                        key={cat}
-                        onClick={() => setFormData({ ...formData, category: cat })}
-                        className={`p-4 rounded-xl text-center font-medium transition-all duration-200 border-2 hover-elevate ${
-                          formData.category === cat
-                            ? 'border-success bg-success/10 text-success shadow-sm'
-                            : 'border-border bg-background hover:border-success/40'
-                        }`}
-                      >
-                        {t(cat)}
-                      </button>
-                    ))}
-                  </div>
-                  {errors.category && (
-                    <p className="text-destructive text-sm mt-2 flex items-center gap-1">
-                      <AlertCircle className="w-4 h-4" />{errors.category}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-foreground mb-3">{t('provider_type')}</label>
-                  <div className="flex gap-2">
-                    {(['individual', 'organization', 'business'] as const).map(pt => (
-                      <button
-                        key={pt}
-                        onClick={() => setFormData({ ...formData, providerType: pt })}
-                        className={`flex-1 py-3 px-2 rounded-lg text-sm font-medium transition-all border-2 ${
-                          formData.providerType === pt
-                            ? 'border-success bg-success/10 text-success'
-                            : 'border-border bg-background text-muted-foreground hover:border-success/40'
-                        }`}
-                      >
-                        {t(pt)}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </motion.div>
-            )}
-
-            {/* ── Step 2: Title & Description ───────────────────────────────── */}
-            {step === 2 && (
-              <motion.div
-                key="step2"
-                custom={1}
-                variants={slideVariants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className="bg-card rounded-3xl p-6 shadow-sm border border-success/20 flex flex-col gap-6 absolute inset-0"
-              >
-                <h2 className="text-2xl font-bold text-foreground">{t('step_2_desc')}</h2>
-
-                <div>
-                  <label className="block text-sm font-semibold text-foreground mb-2">{t('title_label')}</label>
-                  <input
-                    type="text"
-                    className="w-full p-4 rounded-xl bg-background border-2 border-border focus:border-success focus:ring-4 focus:ring-success/10 transition-all outline-none"
-                    placeholder={t('title_placeholder_offer')}
-                    value={formData.title || ''}
-                    onChange={e => setFormData({ ...formData, title: e.target.value })}
-                  />
-                  {errors.title && <p className="text-destructive text-sm mt-1">{errors.title}</p>}
-                </div>
-
-                <div className="flex-1 flex flex-col">
-                  <label className="block text-sm font-semibold text-foreground mb-2">{t('desc_label')}</label>
-                  <textarea
-                    className="w-full flex-1 min-h-[150px] p-4 rounded-xl bg-background border-2 border-border focus:border-success focus:ring-4 focus:ring-success/10 transition-all outline-none resize-none"
-                    placeholder={t('desc_placeholder_offer')}
-                    value={formData.description || ''}
-                    onChange={e => setFormData({ ...formData, description: e.target.value })}
-                  />
-                  {errors.description && <p className="text-destructive text-sm mt-1">{errors.description}</p>}
-                </div>
-              </motion.div>
-            )}
-
-            {/* ── Step 3: Location, Expiry & Contact ───────────────────────── */}
-            {step === 3 && (
-              <motion.div
-                key="step3"
-                custom={1}
-                variants={slideVariants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className="bg-card rounded-3xl p-6 shadow-sm border border-success/20 flex flex-col gap-5 absolute inset-0 overflow-y-auto"
-              >
-                <h2 className="text-2xl font-bold text-foreground">{t('step_3_loc')}</h2>
-
-                {/* Governorate */}
-                <div>
-                  <label className="block text-sm font-semibold text-foreground mb-2">{t('governorate')}</label>
-                  <select
-                    className="w-full p-4 rounded-xl bg-background border-2 border-border focus:border-success outline-none"
-                    value={formData.governorate || ''}
-                    onChange={e => setFormData({ ...formData, governorate: e.target.value, district: '' })}
-                  >
-                    <option value="" disabled>{t('select_placeholder')}</option>
-                    {metadata?.governorates.map(g => <option key={g} value={g}>{g}</option>)}
-                  </select>
-                  {errors.governorate && <p className="text-destructive text-sm mt-1">{errors.governorate}</p>}
-                </div>
-
-                {/* District (conditional) */}
-                {formData.governorate && metadata?.districts[formData.governorate] && (
                   <div>
-                    <label className="block text-sm font-semibold text-foreground mb-2">{t('district')}</label>
-                    <select
-                      className="w-full p-4 rounded-xl bg-background border-2 border-border focus:border-success outline-none"
-                      value={formData.district || ''}
-                      onChange={e => setFormData({ ...formData, district: e.target.value })}
-                    >
-                      <option value="" disabled>{t('select_placeholder')}</option>
-                      {metadata.districts[formData.governorate].map(d => (
-                        <option key={d} value={d}>{d}</option>
+                    <FieldLabel>{t("category")}</FieldLabel>
+                    <div className="grid grid-cols-2 gap-2.5">
+                      {metadata?.categories.map((cat) => (
+                        <button
+                          key={cat}
+                          type="button"
+                          onClick={() => patch({ category: cat })}
+                          className={`py-3 px-3 rounded-xl text-sm font-medium transition-all duration-150 border-2 active:scale-95 ${
+                            formData.category === cat
+                              ? "border-success bg-success/8 text-success shadow-sm"
+                              : "border-border bg-background text-foreground hover:border-success/40 hover:bg-secondary/60"
+                          }`}
+                        >
+                          {t(cat)}
+                        </button>
                       ))}
-                    </select>
+                    </div>
+                    <FieldError msg={errors.category} />
                   </div>
-                )}
 
-                {/* Expiry presets */}
-                <div>
-                  <label className="block text-sm font-semibold text-foreground mb-2">{t('expiry_label')}</label>
-                  <div className="flex gap-2">
-                    {EXPIRY_PRESETS.map(({ key, days }) => (
-                      <button
-                        key={key}
-                        onClick={() => setExpiresInDays(days)}
-                        className={`flex-1 py-2.5 rounded-xl text-sm font-medium border-2 transition-all ${
-                          expiresInDays === days
-                            ? 'border-success bg-success/10 text-success'
-                            : 'border-border bg-background text-muted-foreground hover:border-success/40'
-                        }`}
-                      >
-                        {t(key)}
-                      </button>
-                    ))}
+                  <div>
+                    <FieldLabel>{t("provider_type")}</FieldLabel>
+                    <div className="grid grid-cols-3 gap-2">
+                      {PROVIDER_TYPES.map((pt) => (
+                        <button
+                          key={pt}
+                          type="button"
+                          onClick={() => patch({ providerType: pt })}
+                          className={`py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 border-2 active:scale-95 ${
+                            formData.providerType === pt
+                              ? "border-success bg-success/10 text-success"
+                              : "border-border bg-background text-muted-foreground hover:border-success/30"
+                          }`}
+                        >
+                          {t(pt)}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                </>
+              )}
 
-                {/* Contact */}
-                <div className="grid grid-cols-2 gap-4">
+              {/* ── Step 2 ─────────────────────────────────────────────── */}
+              {step === 2 && (
+                <>
+                  <h2 className="text-xl font-bold text-foreground">{t("step_2_desc")}</h2>
+
                   <div>
-                    <label className="block text-sm font-semibold text-foreground mb-2">{t('contact_method')}</label>
-                    <select
-                      className="w-full p-3 rounded-xl bg-background border-2 border-border focus:border-success outline-none"
-                      value={formData.contactMethod || ''}
-                      onChange={e => setFormData({ ...formData, contactMethod: e.target.value })}
-                    >
-                      <option value="" disabled>{t('select_placeholder')}</option>
-                      {metadata?.contactMethods.map(c => <option key={c} value={c}>{c}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-foreground mb-2">{t('contact_info')}</label>
+                    <FieldLabel>{t("title_label")}</FieldLabel>
                     <input
                       type="text"
-                      className="w-full p-3 rounded-xl bg-background border-2 border-border focus:border-success outline-none"
-                      placeholder={t('phone_placeholder')}
-                      dir="ltr"
-                      value={formData.contactInfo || ''}
-                      onChange={e => setFormData({ ...formData, contactInfo: e.target.value })}
+                      className="w-full px-4 py-3 rounded-xl bg-background border-2 border-border focus:border-success focus:ring-4 focus:ring-success/10 transition-all outline-none text-sm"
+                      placeholder={t("title_placeholder_offer")}
+                      value={formData.title ?? ""}
+                      onChange={(e) => patch({ title: e.target.value })}
                     />
+                    <FieldError msg={errors.title} />
                   </div>
-                </div>
-              </motion.div>
-            )}
+
+                  <div>
+                    <FieldLabel>{t("desc_label")}</FieldLabel>
+                    <textarea
+                      rows={5}
+                      className="w-full px-4 py-3 rounded-xl bg-background border-2 border-border focus:border-success focus:ring-4 focus:ring-success/10 transition-all outline-none resize-none text-sm"
+                      placeholder={t("desc_placeholder_offer")}
+                      value={formData.description ?? ""}
+                      onChange={(e) => patch({ description: e.target.value })}
+                    />
+                    <FieldError msg={errors.description} />
+                  </div>
+                </>
+              )}
+
+              {/* ── Step 3 ─────────────────────────────────────────────── */}
+              {step === 3 && (
+                <>
+                  <h2 className="text-xl font-bold text-foreground">{t("step_3_loc")}</h2>
+
+                  {/* Location */}
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div>
+                      <FieldLabel>{t("governorate")}</FieldLabel>
+                      <select
+                        className="w-full px-3 py-3 rounded-xl bg-background border-2 border-border focus:border-success outline-none text-sm"
+                        value={formData.governorate ?? ""}
+                        onChange={(e) => patch({ governorate: e.target.value, district: "" })}
+                      >
+                        <option value="" disabled>{t("select_placeholder")}</option>
+                        {metadata?.governorates.map((g) => (
+                          <option key={g} value={g}>{g}</option>
+                        ))}
+                      </select>
+                      <FieldError msg={errors.governorate} />
+                    </div>
+
+                    {formData.governorate && metadata?.districts[formData.governorate]?.length ? (
+                      <div>
+                        <FieldLabel>{t("district")}</FieldLabel>
+                        <select
+                          className="w-full px-3 py-3 rounded-xl bg-background border-2 border-border focus:border-success outline-none text-sm"
+                          value={formData.district ?? ""}
+                          onChange={(e) => patch({ district: e.target.value })}
+                        >
+                          <option value="" disabled>{t("select_placeholder")}</option>
+                          {metadata.districts[formData.governorate].map((d) => (
+                            <option key={d} value={d}>{d}</option>
+                          ))}
+                        </select>
+                      </div>
+                    ) : null}
+                  </div>
+
+                  {/* Expiry */}
+                  <div>
+                    <FieldLabel>{t("expiry_label")}</FieldLabel>
+                    <div className="grid grid-cols-4 gap-2">
+                      {EXPIRY_PRESETS.map(({ key, days }) => (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => setExpiresInDays(days)}
+                          className={`py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 border-2 active:scale-95 ${
+                            expiresInDays === days
+                              ? "border-success bg-success/10 text-success"
+                              : "border-border bg-background text-muted-foreground hover:border-success/30"
+                          }`}
+                        >
+                          {t(key)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Contact */}
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div>
+                      <FieldLabel>{t("contact_method")}</FieldLabel>
+                      <select
+                        className="w-full px-3 py-3 rounded-xl bg-background border-2 border-border focus:border-success outline-none text-sm"
+                        value={formData.contactMethod ?? ""}
+                        onChange={(e) => patch({ contactMethod: e.target.value })}
+                      >
+                        <option value="" disabled>{t("select_placeholder")}</option>
+                        {metadata?.contactMethods.map((c) => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <FieldLabel>{t("contact_info")}</FieldLabel>
+                      <input
+                        type="text"
+                        className="w-full px-3 py-3 rounded-xl bg-background border-2 border-border focus:border-success outline-none text-sm"
+                        placeholder={t("phone_placeholder")}
+                        dir="ltr"
+                        value={formData.contactInfo ?? ""}
+                        onChange={(e) => patch({ contactInfo: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+            </motion.div>
           </AnimatePresence>
         </div>
 
-        {/* Error state */}
-        {createPost.isError && step === 3 && (
-          <div className="flex items-center gap-2 text-destructive text-sm bg-destructive/10 border border-destructive/20 rounded-xl px-4 py-3 mt-4">
-            <XCircle className="w-4 h-4 shrink-0" />
-            {t('submit_error')}
-          </div>
-        )}
-
-        {/* Navigation */}
-        <div className="mt-6 flex gap-4 pt-4 border-t border-border/50">
-          {step > 1 && (
-            <Button
-              variant="outline"
-              className="h-14 w-14 rounded-2xl border-2 border-border shrink-0 hover-elevate"
-              onClick={() => setStep(prev => prev - 1)}
-            >
-              {isRtl ? <ChevronRight className="w-6 h-6" /> : <ChevronLeft className="w-6 h-6" />}
-            </Button>
+        {/* ── Bottom nav ──────────────────────────────────────────────────── */}
+        <div className="shrink-0 px-4 pt-3 pb-4 border-t border-border/40 bg-success/5 flex flex-col gap-2">
+          {createPost.isError && step === 3 && (
+            <div className="flex items-center gap-2 text-destructive text-xs bg-destructive/8 border border-destructive/20 rounded-xl px-3 py-2">
+              <XCircle className="w-4 h-4 shrink-0" />
+              {t("submit_error")}
+            </div>
           )}
-
-          <Button
-            className="h-14 flex-1 rounded-2xl text-lg font-bold bg-success hover:bg-success/90 text-success-foreground shadow-lg hover-elevate shadow-success/20 transition-all"
-            onClick={step === 3 ? handleSubmit : handleNext}
-            disabled={createPost.isPending}
-          >
-            {createPost.isPending ? (
-              <span className="flex items-center gap-2">
-                <span className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                {t('submit')}
-              </span>
-            ) : step === 3 ? t('submit') : t('next')}
-          </Button>
+          <div className="flex gap-3">
+            {step > 1 && (
+              <Button
+                variant="outline"
+                className="h-12 w-12 rounded-2xl border-2 shrink-0"
+                onClick={() => go(step - 1)}
+              >
+                {isRtl ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
+              </Button>
+            )}
+            <Button
+              className="h-12 flex-1 rounded-2xl text-base font-bold bg-success hover:bg-success/90 text-success-foreground transition-colors"
+              onClick={step === 3 ? handleSubmit : () => go(step + 1)}
+              disabled={createPost.isPending}
+            >
+              {createPost.isPending ? (
+                <span className="flex items-center gap-2">
+                  <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                  {t("submit")}
+                </span>
+              ) : step === 3 ? (
+                t("submit")
+              ) : (
+                t("next")
+              )}
+            </Button>
+          </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 }
