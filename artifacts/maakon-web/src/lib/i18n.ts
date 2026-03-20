@@ -5,7 +5,7 @@ import LanguageDetector from "i18next-browser-languagedetector";
 const resources = {
   ar: {
     translation: {
-      app_name: "مأكون",
+      app_name: "معكن",
       home_subtitle: "تطبيق الاستجابة للأزمات في لبنان",
       i_need_help: "أحتاج مساعدة",
       i_want_to_help: "أريد المساعدة",
