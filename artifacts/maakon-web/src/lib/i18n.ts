@@ -34,13 +34,31 @@ const resources = {
       loading: "جاري التحميل...",
       results_count: "{{count}} نتيجة",
       
+      // Empty / error states
+      no_results: "لا توجد نتائج",
+      no_results_hint: "جرّب تغيير الفلاتر أو توسيع نطاق البحث",
+      no_description: "لا يوجد وصف",
+
       // Card details
       view_details: "عرض التفاصيل",
       last_updated: "آخر تحديث",
       verified: "موثق",
+      verified_ngo: "منظمة موثقة",
       report_post: "الإبلاغ عن المنشور",
       contact_info: "معلومات التواصل",
       contact_method: "وسيلة التواصل",
+      website: "الموقع الإلكتروني",
+      open_website: "فتح الموقع",
+      
+      // Post status
+      status: "الحالة",
+      status_active: "نشط",
+      status_pending: "قيد المراجعة",
+      status_expired: "منتهي",
+      expires: "تنتهي",
+
+      // Provider type
+      provider_type: "نوع المزود",
       
       // Form: Post Need
       post_need_title: "طلب مساعدة",
@@ -64,7 +82,6 @@ const resources = {
       // Form: Post Offer
       post_offer_title: "تقديم مساعدة",
       step_1_offer: "ماذا تقدم؟",
-      provider_type: "نوع المزود",
       individual: "فرد",
       organization: "مؤسسة",
       business: "شركة",
@@ -92,13 +109,30 @@ const resources = {
 
       // Report flow
       report_reason: "سبب البلاغ",
+      report_details_label: "تفاصيل إضافية (اختياري)",
+      report_details_placeholder: "أي معلومات إضافية...",
       submit_report: "إرسال البلاغ",
       report_thanks: "شكراً على البلاغ. سنراجعه في أقرب وقت.",
+      report_error: "فشل إرسال البلاغ. حاول مرة أخرى.",
       reason_fake: "معلومات كاذبة",
       reason_scam: "احتيال",
       reason_unsafe: "محتوى غير آمن",
       reason_outdated: "منتهي الصلاحية",
-      reason_spam: "محتوى مزعج"
+      reason_spam: "محتوى مزعج",
+      reason_other: "أخرى",
+
+      // Categories
+      food: "غذاء",
+      water: "مياه",
+      shelter: "مأوى",
+      medical: "طبي",
+      clothing: "ملابس",
+      education: "تعليم",
+      psychosocial: "دعم نفسي",
+      legal: "قانوني",
+      financial: "مالي",
+      logistics: "لوجستي",
+      other: "أخرى",
     }
   },
   en: {
@@ -129,13 +163,28 @@ const resources = {
       all_districts: "All Districts",
       loading: "Loading...",
       results_count: "{{count}} results",
+
+      no_results: "No results",
+      no_results_hint: "Try adjusting your filters or broadening your search",
+      no_description: "No description provided",
       
       view_details: "View Details",
       last_updated: "Last updated",
       verified: "Verified",
+      verified_ngo: "Verified NGO",
       report_post: "Report this post",
       contact_info: "Contact Info",
       contact_method: "Contact Method",
+      website: "Website",
+      open_website: "Open Website",
+
+      status: "Status",
+      status_active: "Active",
+      status_pending: "Pending Review",
+      status_expired: "Expired",
+      expires: "Expires",
+
+      provider_type: "Provider Type",
       
       post_need_title: "Post a Need",
       step_1_need: "What do you need?",
@@ -157,7 +206,6 @@ const resources = {
 
       post_offer_title: "Post an Offer",
       step_1_offer: "What are you offering?",
-      provider_type: "Provider Type",
       individual: "Individual",
       organization: "Organization",
       business: "Business",
@@ -180,13 +228,29 @@ const resources = {
       cancel: "Cancel",
 
       report_reason: "Reason for report",
+      report_details_label: "Additional details (optional)",
+      report_details_placeholder: "Any extra information...",
       submit_report: "Submit Report",
       report_thanks: "Thanks for your report. We will review it shortly.",
+      report_error: "Failed to submit report. Please try again.",
       reason_fake: "Fake information",
       reason_scam: "Scam",
       reason_unsafe: "Unsafe content",
-      reason_outdated: "Outdated",
-      reason_spam: "Spam"
+      reason_outdated: "Outdated / expired",
+      reason_spam: "Spam",
+      reason_other: "Other",
+
+      food: "Food",
+      water: "Water",
+      shelter: "Shelter",
+      medical: "Medical",
+      clothing: "Clothing",
+      education: "Education",
+      psychosocial: "Psychosocial",
+      legal: "Legal",
+      financial: "Financial",
+      logistics: "Logistics",
+      other: "Other",
     }
   }
 };
@@ -211,7 +275,6 @@ i18n
     }
   });
 
-// Setup document direction based on initial language
 document.documentElement.dir = i18n.dir();
 document.documentElement.lang = i18n.language;
 
