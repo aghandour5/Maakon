@@ -61,7 +61,7 @@ export default function Home() {
           <img
             src="/logo.png"
             alt="Maakon"
-            className="h-12 w-auto object-contain rounded-xl"
+            className="h-9 w-auto object-contain rounded-lg"
           />
           <button
             onClick={toggleLanguage}
@@ -83,9 +83,9 @@ export default function Home() {
         {/* Logo hero */}
         <motion.div variants={fadeUp} className="flex flex-col items-center">
           <img
-            src="/logo-transparent.png"
+            src="/logo.png"
             alt="Maakon معكن"
-            className="w-72 max-w-[80vw] object-contain drop-shadow-2xl"
+            className="w-64 max-w-[75vw] object-contain rounded-2xl shadow-2xl"
           />
         </motion.div>
 

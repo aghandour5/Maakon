@@ -33,7 +33,7 @@ export function TopNav({ title, showBack = false }: TopNavProps) {
             <img
               src="/logo.png"
               alt="Maakon"
-              className="h-11 w-auto object-contain rounded-lg"
+              className="h-9 w-auto object-contain rounded-lg"
             />
             {title && (
               <span className="font-bold text-sm text-foreground truncate ms-2 border-s border-black/10 ps-2">
