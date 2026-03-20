@@ -1,0 +1,203 @@
+Proceed to Phase 2.
+
+You already have the map-first MVP direction for Maakon.
+Now implement the backend/data wiring for the map so the homepage starts using real structured data instead of only static mock data.
+
+## Phase 2 goal
+Connect the interactive Lebanon homepage map to a real backend contract and database schema.
+
+## Scope for this phase
+Focus only on:
+1. OpenAPI contract
+2. database schema
+3. seed data
+4. backend routes
+5. frontend API integration for homepage map data
+6. filtering from real backend data
+
+Do not build auth, chat, payments, notifications, or admin UI yet.
+
+---
+
+## Requirements
+
+### 1) OpenAPI contract
+Update the API spec with these endpoints:
+
+- GET /posts
+  - supports filters:
+    - type
+    - category
+    - governorate
+    - district
+    - urgency
+    - status
+    - activeOnly
+- POST /posts
+- GET /posts/:id
+- GET /ngos
+- POST /reports
+- GET /metadata
+
+If it helps the homepage, you may also add:
+- GET /map-data
+
+If you add /map-data, it should return:
+- active public posts
+- verified NGOs
+- filter metadata needed for homepage rendering
+
+After updating the spec, run codegen.
+
+---
+
+### 2) Database schema
+Add Drizzle ORM tables for:
+
+#### users
+- id
+- name
+- email
+- role
+- createdAt
+
+#### posts
+- id
+- postType
+- title
+- category
+- description
+- urgency
+- governorate
+- district
+- publicLat
+- publicLng
+- privateLat
+- privateLng
+- exactAddressPrivate
+- providerType
+- verifiedBadgeType
+- contactMethod
+- contactInfo
+- status
+- createdAt
+- updatedAt
+- expiresAt
+- lastConfirmedAt
+- reportCount
+- userId
+
+#### ngos
+- id
+- name
+- description
+- governorate
+- district
+- lat
+- lng
+- phone
+- website
+- verifiedAt
+- createdAt
+
+#### reports
+- id
+- postId
+- reason
+- details
+- reportedAt
+- resolvedAt
+- status
+
+#### admin_actions
+- id
+- adminId
+- targetType
+- targetId
+- action
+- note
+- createdAt
+
+Use practical enums where useful:
+- postType: need | offer
+- urgency: low | medium | high | critical
+- status: active | expired | hidden | resolved
+- role: user | admin | moderator
+
+---
+
+### 3) Privacy enforcement
+This is mandatory:
+
+- Need posts must never expose exact private coordinates or exact address via public API responses
+- Public map responses must only use publicLat/publicLng
+- For need posts, publicLat/publicLng must represent fuzzed/approximate district-level coordinates only
+- NGOs may expose public exact coordinates
+- If needed, create server-side response mappers so unsafe fields are never returned
+
+---
+
+### 4) Active map filtering rules
+Public map-facing responses must return only:
+- status = active
+- expiresAt > now
+
+Expired or inactive posts must be hidden by default.
+
+---
+
+### 5) Seed data
+Seed the database with realistic sample data:
+- at least 10 posts across different regions of Lebanon
+- mix of need and offer posts
+- at least 5 NGOs
+- use approximate public coordinates for need posts
+- vary urgency, category, governorate, and district
+
+Make the data good enough so the map immediately feels alive.
+
+---
+
+### 6) Backend routes
+Implement routes for:
+- listing posts with filters
+- post detail
+- NGO listing
+- report submission
+- metadata/filter options
+- optional /map-data endpoint if useful
+
+Use clean route/controller structure.
+
+---
+
+### 7) Frontend integration
+Replace static homepage map data with API-driven data.
+
+The map homepage should:
+- fetch real map data from backend
+- still render the same three marker types
+- apply filters from backend-backed metadata
+- keep clustering
+- keep popup summary cards
+- keep mobile-first layout
+
+Do not redesign the UI unnecessarily.
+Preserve the map-first homepage.
+
+---
+
+## Output required
+Give me:
+1. exact files changed
+2. code for each changed file
+3. any migrations/schema push steps
+4. seed script details
+5. how to run the app in Replit now
+6. what remains for Phase 3
+
+## Important
+- Do not overengineer
+- Keep code modular and readable
+- Prioritize safety, simplicity, and maintainability
+- Finish Phase 2 only and stop
