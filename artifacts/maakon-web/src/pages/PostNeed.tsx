@@ -157,13 +157,13 @@ export default function PostNeed() {
                 <div>
                   <label className="block text-sm font-semibold text-foreground mb-3">{t('urgency')}</label>
                   <div className="flex gap-2">
-                    {['critical', 'high', 'medium', 'low'].map(urg => (
+                    {(['critical', 'high', 'medium', 'low'] as const).map(urg => (
                       <button
                         key={urg}
-                        onClick={() => setFormData({...formData, urgency: urg as any})}
+                        onClick={() => setFormData({...formData, urgency: urg})}
                         className={`flex-1 py-3 px-2 rounded-lg text-sm font-medium transition-all border-2 ${
-                          formData.urgency === urg 
-                            ? urg === 'critical' ? 'border-destructive bg-destructive/10 text-destructive' : 'border-primary bg-primary/10 text-primary' 
+                          formData.urgency === urg
+                            ? urg === 'critical' ? 'border-destructive bg-destructive/10 text-destructive' : 'border-primary bg-primary/10 text-primary'
                             : 'border-border bg-background text-muted-foreground'
                         }`}
                       >

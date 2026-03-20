@@ -1,12 +1,13 @@
-import React from "react";
+import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useTranslation } from "react-i18next";
-import { AlertTriangle, MapPin, Phone, ShieldCheck, Clock, Flag } from "lucide-react";
+import { AlertTriangle, MapPin, Phone, ShieldCheck, Clock, Flag, CheckCircle2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ar, enUS } from "date-fns/locale";
-import type { PostPublic, Ngo } from "@workspace/api-client-react";
+import type { PostPublic, Ngo, CreateReportInputReason } from "@workspace/api-client-react";
+import { useCreateReport, CreateReportInputReason as ReasonEnum } from "@workspace/api-client-react";
 
 interface PostDetailsModalProps {
   item: PostPublic | Ngo | null;
@@ -15,10 +16,18 @@ interface PostDetailsModalProps {
   type: 'post' | 'ngo';
 }
 
+const REPORT_REASONS = Object.values(ReasonEnum) as CreateReportInputReason[];
+
 export function PostDetailsModal({ item, isOpen, onClose, type }: PostDetailsModalProps) {
   const { t, i18n } = useTranslation();
   const isRtl = i18n.dir() === "rtl";
   const dateLocale = isRtl ? ar : enUS;
+
+  const [showReport, setShowReport] = useState(false);
+  const [selectedReason, setSelectedReason] = useState<CreateReportInputReason>(ReasonEnum.spam);
+  const [reportDone, setReportDone] = useState(false);
+
+  const createReport = useCreateReport();
 
   if (!item) return null;
 
@@ -35,13 +44,28 @@ export function PostDetailsModal({ item, isOpen, onClose, type }: PostDetailsMod
   const contactMethod = post ? post.contactMethod : 'phone';
   const timestamp = post ? new Date(post.updatedAt) : ngo ? new Date(ngo.createdAt) : new Date();
 
+  const handleClose = () => {
+    setShowReport(false);
+    setReportDone(false);
+    setSelectedReason(ReasonEnum.spam);
+    onClose();
+  };
+
+  const handleReport = () => {
+    if (!post) return;
+    createReport.mutate(
+      { data: { postId: post.id, reason: selectedReason } },
+      { onSuccess: () => setReportDone(true) }
+    );
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent className="sm:max-w-md w-[95vw] rounded-2xl p-0 overflow-hidden bg-card border-border shadow-2xl">
-        
+
         {/* Header Color Bar */}
         <div className={`h-16 w-full ${
-          isNgo ? 'bg-info' : 
+          isNgo ? 'bg-info' :
           post?.postType === 'need' ? 'bg-destructive' : 'bg-success'
         } flex items-center px-6 relative`}>
           <div className="absolute -bottom-6 right-6">
@@ -54,7 +78,7 @@ export function PostDetailsModal({ item, isOpen, onClose, type }: PostDetailsMod
         </div>
 
         <div className="p-6 pt-8 flex flex-col gap-5">
-          <div>
+          <DialogHeader>
             <div className="flex flex-wrap gap-2 mb-3">
               {isNgo && (
                 <Badge variant="secondary" className="bg-info/10 text-info hover:bg-info/20">
@@ -74,18 +98,18 @@ export function PostDetailsModal({ item, isOpen, onClose, type }: PostDetailsMod
                 </>
               )}
             </div>
-            
+
             <DialogTitle className="text-2xl font-bold text-foreground leading-tight mb-2">
               {title}
             </DialogTitle>
-            
+
             <div className="flex items-center text-sm text-muted-foreground gap-1.5">
               <Clock className="w-4 h-4" />
               <span>
                 {formatDistanceToNow(timestamp, { addSuffix: true, locale: dateLocale })}
               </span>
             </div>
-          </div>
+          </DialogHeader>
 
           <DialogDescription className="text-base text-foreground/90 whitespace-pre-wrap leading-relaxed">
             {description || "لا يوجد وصف / No description provided"}
@@ -99,7 +123,7 @@ export function PostDetailsModal({ item, isOpen, onClose, type }: PostDetailsMod
                 {district && <p className="text-sm text-muted-foreground">{t('district')}: {district}</p>}
               </div>
             </div>
-            
+
             {contactInfo && (
               <div className="flex items-start gap-3 pt-3 border-t border-border/50">
                 <Phone className="w-5 h-5 text-muted-foreground mt-0.5 shrink-0" />
@@ -112,15 +136,78 @@ export function PostDetailsModal({ item, isOpen, onClose, type }: PostDetailsMod
             )}
           </div>
 
-          <div className="flex gap-3 mt-4">
-            <Button variant="outline" className="flex-1 text-muted-foreground">
-              <Flag className={`w-4 h-4 ${isRtl ? 'ml-2' : 'mr-2'}`} />
-              {t('report_post')}
+          {/* Report panel — only for posts */}
+          {isPost && !showReport && !reportDone && (
+            <div className="flex gap-3 mt-2">
+              <Button
+                variant="outline"
+                className="flex-1 text-muted-foreground hover:text-destructive hover:border-destructive/40"
+                onClick={() => setShowReport(true)}
+              >
+                <Flag className={`w-4 h-4 ${isRtl ? 'ml-2' : 'mr-2'}`} />
+                {t('report_post')}
+              </Button>
+              <Button
+                className="flex-1 bg-primary hover:bg-primary/90 hover-elevate shadow-md"
+                onClick={handleClose}
+              >
+                {t('close')}
+              </Button>
+            </div>
+          )}
+
+          {isPost && showReport && !reportDone && (
+            <div className="flex flex-col gap-3 mt-2 bg-destructive/5 border border-destructive/20 rounded-xl p-4">
+              <p className="text-sm font-semibold text-foreground">{t('report_reason')}</p>
+              <div className="flex flex-wrap gap-2">
+                {REPORT_REASONS.map(r => (
+                  <button
+                    key={r}
+                    onClick={() => setSelectedReason(r)}
+                    className={`py-1.5 px-3 rounded-lg text-xs font-medium border transition-colors ${
+                      selectedReason === r
+                        ? 'bg-destructive text-destructive-foreground border-destructive'
+                        : 'bg-background border-border text-foreground hover:border-destructive/40'
+                    }`}
+                  >
+                    {t(`reason_${r}`, { defaultValue: r })}
+                  </button>
+                ))}
+              </div>
+              <div className="flex gap-2 mt-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => setShowReport(false)}
+                >
+                  {t('cancel')}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  className="flex-1"
+                  onClick={handleReport}
+                  disabled={createReport.isPending}
+                >
+                  {createReport.isPending ? '...' : t('submit_report')}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {reportDone && (
+            <div className="flex items-center gap-3 bg-success/10 border border-success/30 rounded-xl p-4 mt-2">
+              <CheckCircle2 className="w-5 h-5 text-success shrink-0" />
+              <p className="text-sm text-foreground">{t('report_thanks')}</p>
+            </div>
+          )}
+
+          {isNgo && (
+            <Button className="w-full bg-primary hover:bg-primary/90 mt-2" onClick={handleClose}>
+              {t('close')}
             </Button>
-            <Button className="flex-1 bg-primary hover:bg-primary/90 hover-elevate shadow-md">
-              {t('view_details')}
-            </Button>
-          </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

@@ -74,7 +74,21 @@ const resources = {
       critical: "حرج جداً",
       high: "عالي",
       medium: "متوسط",
-      low: "منخفض"
+      low: "منخفض",
+
+      // Actions
+      close: "إغلاق",
+      cancel: "إلغاء",
+
+      // Report flow
+      report_reason: "سبب البلاغ",
+      submit_report: "إرسال البلاغ",
+      report_thanks: "شكراً على البلاغ. سنراجعه في أقرب وقت.",
+      reason_fake: "معلومات كاذبة",
+      reason_scam: "احتيال",
+      reason_unsafe: "محتوى غير آمن",
+      reason_outdated: "منتهي الصلاحية",
+      reason_spam: "محتوى مزعج"
     }
   },
   en: {
@@ -140,19 +154,40 @@ const resources = {
       critical: "Critical",
       high: "High",
       medium: "Medium",
-      low: "Low"
+      low: "Low",
+
+      close: "Close",
+      cancel: "Cancel",
+
+      report_reason: "Reason for report",
+      submit_report: "Submit Report",
+      report_thanks: "Thanks for your report. We will review it shortly.",
+      reason_fake: "Fake information",
+      reason_scam: "Scam",
+      reason_unsafe: "Unsafe content",
+      reason_outdated: "Outdated",
+      reason_spam: "Spam"
     }
   }
 };
+
+const LANG_KEY = 'maakon-lang';
+const storedLang = localStorage.getItem(LANG_KEY);
 
 i18n
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
     resources,
-    fallbackLng: "ar", // Default to Arabic
+    lng: storedLang ?? 'ar',
+    fallbackLng: 'ar',
+    detection: {
+      order: ['localStorage'],
+      caches: ['localStorage'],
+      lookupLocalStorage: LANG_KEY,
+    },
     interpolation: {
-      escapeValue: false 
+      escapeValue: false
     }
   });
 
@@ -163,6 +198,7 @@ document.documentElement.lang = i18n.language;
 i18n.on('languageChanged', (lng) => {
   document.documentElement.dir = i18n.dir(lng);
   document.documentElement.lang = lng;
+  localStorage.setItem(LANG_KEY, lng);
 });
 
 export default i18n;
