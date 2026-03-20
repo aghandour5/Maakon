@@ -59,10 +59,9 @@ export default function Home() {
         <div className="h-14 flex items-center justify-between">
           {/* Logo — transparent version on dark background */}
           <img
-            src="/logo-transparent.png"
+            src="/logo.png"
             alt="Maakon"
-            className="h-9 w-auto object-contain"
-            style={{ filter: "brightness(1.05)" }}
+            className="h-12 w-auto object-contain rounded-xl"
           />
           <button
             onClick={toggleLanguage}
