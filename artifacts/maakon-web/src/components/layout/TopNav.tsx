@@ -16,7 +16,7 @@ export function TopNav({ title, showBack = false }: TopNavProps) {
   };
 
   return (
-    <header className="fixed top-0 inset-x-0 z-50 bg-white/80 backdrop-blur-xl border-b border-black/5 shadow-sm">
+    <header className="fixed top-0 inset-x-0 z-50 bg-white/85 backdrop-blur-xl border-b border-black/5 shadow-sm">
       <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between gap-3">
         {/* Left: back + logo */}
         <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -26,23 +26,18 @@ export function TopNav({ title, showBack = false }: TopNavProps) {
               className="w-8 h-8 rounded-xl flex items-center justify-center text-foreground/70 hover:text-foreground hover:bg-black/5 transition-all shrink-0"
               aria-label="Back"
             >
-              {isRtl ? <ArrowRight className="h-4.5 w-4.5" /> : <ArrowLeft className="h-4.5 w-4.5" />}
+              {isRtl ? <ArrowRight className="h-4 w-4" /> : <ArrowLeft className="h-4 w-4" />}
             </button>
           )}
-          <Link href="/" className="flex items-center gap-2 no-underline min-w-0">
-            <div
-              className="w-7 h-7 rounded-lg flex items-center justify-center shadow-sm shrink-0"
-              style={{ background: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)" }}
-            >
-              <span className="text-white font-black text-base leading-none pt-0.5">
-                {isRtl ? "م" : "M"}
-              </span>
-            </div>
-            {title ? (
-              <span className="font-bold text-base text-foreground truncate">{title}</span>
-            ) : (
-              <span className="font-bold text-base text-foreground truncate hover:text-primary transition-colors">
-                {t("app_name")}
+          <Link href="/" className="flex items-center min-w-0 no-underline">
+            <img
+              src="/logo.png"
+              alt="Maakon"
+              className="h-8 w-auto object-contain"
+            />
+            {title && (
+              <span className="font-bold text-sm text-foreground truncate ms-2 border-s border-black/10 ps-2">
+                {title}
               </span>
             )}
           </Link>

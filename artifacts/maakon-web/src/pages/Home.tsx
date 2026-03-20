@@ -5,10 +5,10 @@ import { motion } from "framer-motion";
 
 const stagger = {
   hidden: {},
-  show: { transition: { staggerChildren: 0.09 } },
+  show: { transition: { staggerChildren: 0.1 } },
 };
 const fadeUp = {
-  hidden: { opacity: 0, y: 22 },
+  hidden: { opacity: 0, y: 20 },
   show: { opacity: 1, y: 0 },
 };
 
@@ -41,12 +41,12 @@ export default function Home() {
         style={{
           bottom: "5%", left: "-15%", width: "45%", paddingTop: "45%",
           borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(220,38,38,0.12) 0%, transparent 70%)",
+          background: "radial-gradient(circle, rgba(160,30,30,0.15) 0%, transparent 70%)",
         }}
       />
-      {/* Subtle grid pattern */}
+      {/* Grid pattern */}
       <div
-        className="absolute inset-0 pointer-events-none opacity-[0.035]"
+        className="absolute inset-0 pointer-events-none opacity-[0.03]"
         style={{
           backgroundImage: `linear-gradient(rgba(255,255,255,0.8) 1px, transparent 1px),
                             linear-gradient(90deg, rgba(255,255,255,0.8) 1px, transparent 1px)`,
@@ -54,20 +54,16 @@ export default function Home() {
         }}
       />
 
-      {/* ── Nav ─────────────────────────────────────────────────────────────── */}
-      <header className="relative z-10 shrink-0 px-5 pt-safe-top">
-        <div className="h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center shadow-lg"
-              style={{ background: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)" }}
-            >
-              <span className="text-white font-black text-xl leading-none pt-0.5">
-                {isRtl ? "م" : "M"}
-              </span>
-            </div>
-            <span className="text-white font-bold text-xl tracking-tight">{t("app_name")}</span>
-          </div>
+      {/* ── Top nav ─────────────────────────────────────────────────────────── */}
+      <header className="relative z-10 shrink-0 px-5">
+        <div className="h-14 flex items-center justify-between">
+          {/* Logo — transparent version on dark background */}
+          <img
+            src="/logo-transparent.png"
+            alt="Maakon"
+            className="h-9 w-auto object-contain"
+            style={{ filter: "brightness(1.05)" }}
+          />
           <button
             onClick={toggleLanguage}
             className="flex items-center gap-1.5 px-3.5 h-8 rounded-full text-white/80 hover:text-white text-xs font-medium border border-white/15 hover:border-white/30 hover:bg-white/8 transition-all duration-150"
@@ -85,12 +81,13 @@ export default function Home() {
         animate="show"
         className="relative z-10 flex-1 flex flex-col items-center justify-center px-5 pb-6 gap-5 overflow-y-auto"
       >
-        {/* Brand */}
-        <motion.div variants={fadeUp} className="text-center mb-1">
-          <div className="text-5xl font-black text-white tracking-tight mb-2 leading-tight">
-            {t("app_name")}
-          </div>
-          <p className="text-base text-blue-200/70 font-medium">{t("home_subtitle")}</p>
+        {/* Logo hero */}
+        <motion.div variants={fadeUp} className="flex flex-col items-center">
+          <img
+            src="/logo-transparent.png"
+            alt="Maakon معكن"
+            className="w-72 max-w-[80vw] object-contain drop-shadow-2xl"
+          />
         </motion.div>
 
         {/* I Need Help */}
@@ -103,12 +100,9 @@ export default function Home() {
                 boxShadow: "0 8px 32px rgba(220, 38, 38, 0.45), 0 2px 8px rgba(0,0,0,0.3)",
               }}
             >
-              {/* Shine */}
               <div
                 className="absolute inset-0 opacity-20"
-                style={{
-                  background: "linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 50%)",
-                }}
+                style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 50%)" }}
               />
               <div
                 className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
@@ -117,9 +111,7 @@ export default function Home() {
                 <AlertTriangle className="w-7 h-7 text-white drop-shadow" />
               </div>
               <div className={`flex-1 min-w-0 relative ${isRtl ? "text-right" : "text-left"}`}>
-                <div className="text-2xl font-black text-white leading-tight">
-                  {t("i_need_help")}
-                </div>
+                <div className="text-2xl font-black text-white leading-tight">{t("i_need_help")}</div>
                 <div className="text-white/75 text-sm mt-0.5">
                   {isRtl ? "طلب طعام، مأوى، دواء..." : "Request food, shelter, meds..."}
                 </div>
@@ -143,9 +135,7 @@ export default function Home() {
             >
               <div
                 className="absolute inset-0 opacity-20"
-                style={{
-                  background: "linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 50%)",
-                }}
+                style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 50%)" }}
               />
               <div
                 className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
@@ -154,9 +144,7 @@ export default function Home() {
                 <HeartHandshake className="w-7 h-7 text-white drop-shadow" />
               </div>
               <div className={`flex-1 min-w-0 relative ${isRtl ? "text-right" : "text-left"}`}>
-                <div className="text-2xl font-black text-white leading-tight">
-                  {t("i_want_to_help")}
-                </div>
+                <div className="text-2xl font-black text-white leading-tight">{t("i_want_to_help")}</div>
                 <div className="text-white/75 text-sm mt-0.5">
                   {isRtl ? "تقديم موارد أو خدمات مجانية" : "Offer resources or free services"}
                 </div>
@@ -192,7 +180,6 @@ export default function Home() {
         </motion.div>
       </motion.main>
 
-      {/* Bottom safe area filler */}
       <div className="relative z-10 shrink-0 h-2" />
     </div>
   );
