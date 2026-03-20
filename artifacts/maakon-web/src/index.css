@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap');
 @import url('https://unpkg.com/leaflet@1.9.4/dist/leaflet.css');
 @import "tailwindcss";
 @import "tw-animate-css";
@@ -70,58 +70,59 @@
 :root {
   --button-outline: rgba(0,0,0, .10);
   --badge-outline: rgba(0,0,0, .05);
+  --opaque-button-border-intensity: -8;
+  --elevate-1: rgba(0,0,0, .04);
+  --elevate-2: rgba(0,0,0, .09);
 
-  --opaque-button-border-intensity: -8; 
+  --background: 216 28% 97%;
+  --foreground: 222 47% 10%;
 
-  --elevate-1: rgba(0,0,0, .03);
-  --elevate-2: rgba(0,0,0, .08);
-
-  /* Calm, trustworthy crisis-tech palette */
-  --background: 210 20% 98%;
-  --foreground: 222 47% 11%;
-  
   --card: 0 0% 100%;
-  --card-foreground: 222 47% 11%;
-  --card-border: 214 32% 91%;
+  --card-foreground: 222 47% 10%;
+  --card-border: 214 32% 90%;
 
   --popover: 0 0% 100%;
-  --popover-foreground: 222 47% 11%;
-  --popover-border: 214 32% 91%;
+  --popover-foreground: 222 47% 10%;
+  --popover-border: 214 32% 90%;
 
-  --primary: 215 100% 35%;
-  --primary-foreground: 210 40% 98%;
-  
-  --secondary: 210 40% 96.1%;
-  --secondary-foreground: 222.2 47.4% 11.2%;
+  /* Vivid trust-blue */
+  --primary: 218 100% 42%;
+  --primary-foreground: 0 0% 100%;
 
-  --muted: 210 40% 96.1%;
-  --muted-foreground: 215.4 16.3% 46.9%;
+  --secondary: 216 30% 94%;
+  --secondary-foreground: 222 47% 14%;
 
-  --accent: 210 40% 96.1%;
-  --accent-foreground: 222.2 47.4% 11.2%;
+  --muted: 216 28% 93%;
+  --muted-foreground: 215 18% 52%;
 
-  --destructive: 348 83% 47%;
-  --destructive-foreground: 210 40% 98%;
+  --accent: 216 30% 94%;
+  --accent-foreground: 222 47% 14%;
 
-  --success: 142 71% 45%;
-  --success-foreground: 210 40% 98%;
+  /* Vivid crisis-red */
+  --destructive: 4 88% 50%;
+  --destructive-foreground: 0 0% 100%;
+
+  /* Rich emerald */
+  --success: 152 70% 40%;
+  --success-foreground: 0 0% 100%;
 
   --info: 217 91% 60%;
-  --info-foreground: 210 40% 98%;
+  --info-foreground: 0 0% 100%;
 
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --ring: 215 100% 35%;
+  --border: 214 28% 89%;
+  --input: 214 28% 89%;
+  --ring: 218 100% 42%;
 
   --app-font-sans: 'Inter', sans-serif;
   --app-font-arabic: 'Cairo', sans-serif;
-  
-  --radius: 0.75rem; 
 
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --radius: 0.875rem;
+
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.04);
+  --shadow: 0 2px 8px -1px rgb(0 0 0 / 0.10), 0 1px 3px -1px rgb(0 0 0 / 0.06);
+  --shadow-md: 0 6px 16px -3px rgb(0 0 0 / 0.12), 0 3px 6px -3px rgb(0 0 0 / 0.07);
+  --shadow-lg: 0 16px 32px -6px rgb(0 0 0 / 0.14), 0 6px 12px -4px rgb(0 0 0 / 0.08);
+  --shadow-xl: 0 24px 48px -8px rgb(0 0 0 / 0.18), 0 12px 20px -6px rgb(0 0 0 / 0.10);
 
   --sidebar-background: 0 0% 98%;
   --sidebar-foreground: 240 5.3% 26.1%;
@@ -134,20 +135,40 @@
 }
 
 @layer base {
-  * {
-    @apply border-border;
-  }
+  * { @apply border-border; }
+  body { @apply font-sans antialiased bg-background text-foreground; }
+  html[dir="rtl"] body { @apply font-arabic; }
+}
 
-  body {
-    @apply font-sans antialiased bg-background text-foreground;
+/* ── Glass utilities ──────────────────────────────────────────────────────── */
+@layer utilities {
+  .glass {
+    background: rgba(255, 255, 255, 0.10);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.18);
   }
-
-  html[dir="rtl"] body {
-    @apply font-arabic;
+  .glass-dark {
+    background: rgba(10, 20, 50, 0.55);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+  }
+  .glass-white {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.60);
+  }
+  .text-gradient-blue {
+    background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 }
 
-/* ── hover-elevate — lightweight overlay, no z-index abuse ──────────────── */
+/* ── hover-elevate ────────────────────────────────────────────────────────── */
 @layer utilities {
   .hover-elevate {
     position: relative;
@@ -162,67 +183,51 @@
     background: transparent;
     transition: background 150ms ease;
   }
-  .hover-elevate:hover::after {
-    background: var(--elevate-1);
-  }
-  .hover-elevate:active::after {
-    background: var(--elevate-2);
-  }
+  .hover-elevate:hover::after { background: var(--elevate-1); }
+  .hover-elevate:active::after { background: var(--elevate-2); }
 }
 
 /* ── Custom Leaflet Styles ──────────────────────────────────────────────── */
-.leaflet-container {
-  font-family: inherit;
-}
+.leaflet-container { font-family: inherit; }
 .leaflet-popup-content-wrapper {
   padding: 0;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-lg);
+  border-radius: 16px;
+  box-shadow: var(--shadow-xl);
+  border: 1px solid rgba(255,255,255,0.6);
 }
-.leaflet-popup-content {
-  margin: 0;
-  width: 280px !important;
-}
-.leaflet-popup-tip-container {
-  display: none;
-}
+.leaflet-popup-content { margin: 0; width: 290px !important; }
+.leaflet-popup-tip-container { display: none; }
+
 .custom-marker {
   display: flex;
   justify-content: center;
   align-items: center;
   border-radius: 50%;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
-  border: 2px solid white;
-  transition: transform 0.15s ease;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.25), 0 0 0 2.5px white;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 .custom-marker:hover {
-  transform: scale(1.12);
+  transform: scale(1.15) translateY(-2px);
   z-index: 1000 !important;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.30), 0 0 0 3px white;
 }
 .marker-selected {
-  box-shadow: 0 0 0 3px white, 0 0 0 5px currentColor, 0 4px 12px rgba(0,0,0,0.35) !important;
-  transform: scale(1.2);
+  transform: scale(1.25) translateY(-3px);
   z-index: 999 !important;
+  box-shadow: 0 0 0 3px white, 0 0 0 5.5px currentColor, 0 8px 20px rgba(0,0,0,0.35) !important;
 }
-.marker-need {
-  background-color: hsl(var(--destructive));
-}
-.marker-offer {
-  background-color: hsl(var(--success));
-}
-.marker-ngo {
-  background-color: hsl(var(--info));
-  border-radius: 8px;
-}
+.marker-need { background-color: hsl(4 88% 50%); }
+.marker-offer { background-color: hsl(152 70% 40%); }
+.marker-ngo { background-color: hsl(218 100% 42%); border-radius: 10px; }
 .marker-cluster {
-  background-color: rgba(255, 255, 255, 0.92);
-  border: 2.5px solid hsl(var(--primary));
-  color: hsl(var(--primary));
-  font-weight: 700;
+  background: rgba(255,255,255,0.95);
+  border: 2.5px solid hsl(218 100% 42%);
+  color: hsl(218 100% 42%);
+  font-weight: 800;
+  font-size: 0.8rem;
   border-radius: 50%;
   display: flex;
   justify-content: center;
   align-items: center;
-  box-shadow: var(--shadow-md);
-  font-size: 0.85rem;
+  box-shadow: 0 4px 12px rgba(0,70,200,0.25);
 }

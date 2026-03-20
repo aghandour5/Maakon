@@ -7,7 +7,6 @@ import { MapContainer, TileLayer, Marker, Popup, ZoomControl, useMap } from "rea
 import MarkerClusterGroup from "react-leaflet-cluster";
 import L from "leaflet";
 import { PostDetailsModal } from "@/components/map/PostDetailsModal";
-import { Button } from "@/components/ui/button";
 import { Filter, X, MapPin, ChevronRight, SearchX, Plus, AlertTriangle } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ar, enUS } from "date-fns/locale";
@@ -287,44 +286,68 @@ export default function MapPage() {
         )}
 
         {/* Map Legend */}
-        <div className={`absolute bottom-6 ${isRtl ? 'right-6' : 'left-6'} bg-card/95 backdrop-blur border border-border p-3 rounded-xl shadow-lg z-[400] flex flex-col gap-2 text-sm`}>
-          <div className="font-semibold text-foreground mb-1 text-xs uppercase tracking-wide">{t('map_legend')}</div>
-          <div className="flex items-center gap-2"><div className="w-3.5 h-3.5 rounded-full bg-red-500 border border-white shadow-sm" /><span className="text-xs">{t('needs')}</span></div>
-          <div className="flex items-center gap-2"><div className="w-3.5 h-3.5 rounded-full bg-green-500 border border-white shadow-sm" /><span className="text-xs">{t('offers')}</span></div>
-          <div className="flex items-center gap-2"><div className="w-3.5 h-3.5 rounded-full bg-blue-500 border border-white shadow-sm" /><span className="text-xs">{t('ngos')}</span></div>
+        <div
+          className={`absolute bottom-6 ${isRtl ? 'right-6' : 'left-6'} z-[400] px-3.5 py-3 rounded-2xl flex flex-col gap-2`}
+          style={{
+            background: 'rgba(255,255,255,0.92)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.08)',
+            border: '1px solid rgba(255,255,255,0.7)',
+          }}
+        >
+          <div className="font-black text-gray-600 text-[10px] uppercase tracking-widest mb-0.5">{t('map_legend')}</div>
+          {[
+            { color: '#ef4444', label: t('needs') },
+            { color: '#10b981', label: t('offers') },
+            { color: '#3b82f6', label: t('ngos') },
+          ].map(({ color, label }) => (
+            <div key={label} className="flex items-center gap-2.5">
+              <div className="w-3 h-3 rounded-full shadow-sm shrink-0" style={{ backgroundColor: color, boxShadow: `0 1px 4px ${color}88` }} />
+              <span className="text-xs font-semibold text-gray-600">{label}</span>
+            </div>
+          ))}
         </div>
 
         {/* Speed-dial FAB — bottom corner opposite the legend */}
-        <div className={`absolute bottom-6 ${isRtl ? 'left-6' : 'right-6'} z-[400] flex flex-col-reverse items-center gap-2`}>
+        <div className={`absolute bottom-6 ${isRtl ? 'left-6' : 'right-6'} z-[400] flex flex-col-reverse items-end gap-2.5`}>
           {/* Main "+" toggle button */}
           <button
             onClick={() => setShowFab(prev => !prev)}
-            className={`w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 ${
-              showFab
-                ? 'bg-foreground text-background rotate-45'
-                : 'bg-primary text-primary-foreground'
-            }`}
+            className="w-14 h-14 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95"
+            style={{
+              background: showFab
+                ? '#1e293b'
+                : 'linear-gradient(135deg, #1d4ed8, #3b82f6)',
+              boxShadow: '0 8px 24px rgba(29,78,216,0.45), 0 2px 8px rgba(0,0,0,0.2)',
+              transform: showFab ? 'rotate(45deg)' : 'rotate(0deg)',
+            }}
             aria-label={t('create_need')}
           >
-            <Plus className="w-7 h-7" />
+            <Plus className="w-7 h-7 text-white" />
           </button>
 
           {/* Expanded options */}
           {showFab && (
             <>
-              {/* Offer */}
               <button
                 onClick={() => setLocation('/offer/new')}
-                className="flex items-center gap-2 bg-success text-success-foreground px-4 py-2.5 rounded-2xl shadow-lg font-semibold text-sm hover:scale-105 active:scale-95 transition-all duration-150 whitespace-nowrap"
+                className="flex items-center gap-2.5 px-4 py-3 rounded-2xl font-bold text-sm text-white active:scale-95 transition-all duration-150 whitespace-nowrap"
+                style={{
+                  background: 'linear-gradient(135deg, #059669, #10b981)',
+                  boxShadow: '0 6px 16px rgba(5,150,105,0.45)',
+                }}
               >
-                <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">+</span>
+                <span className="text-base leading-none">🤝</span>
                 {t('create_offer')}
               </button>
-
-              {/* Need */}
               <button
                 onClick={() => setLocation('/need/new')}
-                className="flex items-center gap-2 bg-destructive text-destructive-foreground px-4 py-2.5 rounded-2xl shadow-lg font-semibold text-sm hover:scale-105 active:scale-95 transition-all duration-150 whitespace-nowrap"
+                className="flex items-center gap-2.5 px-4 py-3 rounded-2xl font-bold text-sm text-white active:scale-95 transition-all duration-150 whitespace-nowrap"
+                style={{
+                  background: 'linear-gradient(135deg, #dc2626, #ef4444)',
+                  boxShadow: '0 6px 16px rgba(220,38,38,0.45)',
+                }}
               >
                 <AlertTriangle className="w-4 h-4" />
                 {t('create_need')}
@@ -334,19 +357,29 @@ export default function MapPage() {
         </div>
 
         {/* Filter Toggle Button */}
-        <Button
+        <button
           onClick={() => setShowFilters(!showFilters)}
-          className={`absolute top-4 ${isRtl ? 'left-4' : 'right-4'} z-[400] rounded-full shadow-lg bg-card text-foreground border border-border hover:bg-secondary gap-2`}
-          size="sm"
+          className={`absolute top-4 ${isRtl ? 'left-4' : 'right-4'} z-[400] flex items-center gap-2 px-4 h-10 rounded-full font-semibold text-sm transition-all active:scale-95`}
+          style={{
+            background: showFilters
+              ? 'linear-gradient(135deg, #1d4ed8, #3b82f6)'
+              : 'rgba(255,255,255,0.92)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.16), 0 1px 4px rgba(0,0,0,0.08)',
+            border: showFilters ? '1px solid rgba(255,255,255,0.3)' : '1px solid rgba(255,255,255,0.8)',
+            color: showFilters ? 'white' : '#1e293b',
+          }}
         >
           <Filter className="w-4 h-4" />
           {t('filters')}
           {activeFilterCount > 0 && (
-            <span className="bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+            <span className="text-xs rounded-full w-5 h-5 flex items-center justify-center font-black"
+              style={{ background: showFilters ? 'rgba(255,255,255,0.25)' : '#3b82f6', color: 'white' }}>
               {activeFilterCount}
             </span>
           )}
-        </Button>
+        </button>
 
         {/* Filter & Results Bottom Sheet / Side Panel */}
         {showFilters && (
@@ -371,14 +404,12 @@ export default function MapPage() {
                     {t('clear_filters')}
                   </button>
                 )}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="w-8 h-8"
+                <button
+                  className="w-8 h-8 rounded-xl flex items-center justify-center text-foreground/60 hover:text-foreground hover:bg-black/5 transition-all"
                   onClick={() => setShowFilters(false)}
                 >
                   <X className="w-4 h-4" />
-                </Button>
+                </button>
               </div>
             </div>
 
