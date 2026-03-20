@@ -7,6 +7,7 @@ import Home from "@/pages/Home";
 import MapPage from "@/pages/MapPage";
 import PostNeed from "@/pages/PostNeed";
 import PostOffer from "@/pages/PostOffer";
+import AdminPage from "@/pages/AdminPage";
 
 // Initialize i18n
 import "@/lib/i18n";
@@ -27,6 +28,7 @@ function Router() {
       <Route path="/map" component={MapPage} />
       <Route path="/need/new" component={PostNeed} />
       <Route path="/offer/new" component={PostOffer} />
+      <Route path="/admin" component={AdminPage} />
       <Route component={NotFound} />
     </Switch>
   );

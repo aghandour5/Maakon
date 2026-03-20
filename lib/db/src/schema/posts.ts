@@ -4,7 +4,7 @@ import { z } from "zod/v4";
 import { usersTable } from "./users";
 
 export const postTypeEnum = pgEnum("post_type", ["need", "offer"]);
-export const postStatusEnum = pgEnum("post_status", ["pending", "active", "expired", "removed"]);
+export const postStatusEnum = pgEnum("post_status", ["pending", "active", "hidden", "resolved", "expired", "removed"]);
 export const urgencyEnum = pgEnum("urgency", ["critical", "high", "medium", "low"]);
 
 export const postsTable = pgTable("posts", {

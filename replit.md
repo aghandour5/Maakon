@@ -26,14 +26,16 @@ Mobile-first, Arabic-first crisis-response web app for Lebanon.
 
 ### Routes
 - `/` — Ultra-fast homepage: "I Need Help" + "I Want to Help" + "View Map" buttons
-- `/map` — Full-screen Lebanon map with clustered markers (needs/offers/NGOs), filters, legend
-- `/need/new` — 3-step mobile form to post a need
-- `/offer/new` — 3-step mobile form to post an offer
+- `/map` — Full-screen Lebanon map with clustered markers (needs/offers/NGOs), filters, legend, speed-dial FAB
+- `/need/new` — 3-step mobile form to post a need (with expiry presets + success screen)
+- `/offer/new` — 3-step mobile form to post an offer (with expiry presets + success screen)
+- `/admin` — Dev-only moderation panel: stats, post/report/NGO management
 
 ### Safety rules
 - Need posts: ONLY fuzzed district-level coordinates (`publicLat`/`publicLng`) are stored and returned
 - `privateLat`, `privateLng`, `exactAddressPrivate` are NEVER returned by any public API endpoint
 - Only `active`, non-expired posts are returned on the public map endpoint
+- Admin endpoint exposes `exactAddressPrivate` for moderation context, but NEVER exposes `privateLat`/`privateLng`
 
 ## Structure
 
@@ -59,9 +61,9 @@ artifacts-monorepo/
 
 Tables:
 - `users` — id, name, email, role (user/admin/moderator), createdAt
-- `posts` — full post schema with public/private coordinate split, expiry, status, reportCount
-- `ngos` — verified NGO listings with exact coordinates (allowed)
-- `reports` — post reports (reason: fake/scam/unsafe/outdated/spam/other)
+- `posts` — full post schema with public/private coordinate split, expiry, status (`pending|active|hidden|resolved|expired|removed`), reportCount
+- `ngos` — verified NGO listings with exact coordinates (allowed); `status` column + `verifiedAt` timestamp
+- `reports` — post reports (reason: fake/scam/unsafe/outdated/spam/other); status: `pending|reviewed|dismissed|actioned`
 - `admin_actions` — audit log of admin moderation actions
 
 Post safety:
@@ -79,6 +81,24 @@ All at `/api`:
 - `GET /api/ngos` — verified NGO list (governorate filter)
 - `POST /api/reports` — report a post
 - `GET /api/metadata` — filter options (categories, governorates, districts, urgencyLevels, etc.)
+
+Admin/moderation (dev-only, no auth):
+- `GET /api/admin/stats` — counts for posts/reports/NGOs by status
+- `GET /api/admin/posts` — all posts with `exactAddressPrivate` (never coords)
+- `PATCH /api/admin/posts/:id/status` — set post status (active/hidden/resolved/expired/removed)
+- `GET /api/admin/reports` — all reports with joined post info
+- `PATCH /api/admin/reports/:id/status` — set report status
+- `GET /api/admin/ngos` — all NGOs
+- `POST /api/admin/ngos` — create NGO
+- `PATCH /api/admin/ngos/:id` — update NGO fields
+- `PATCH /api/admin/ngos/:id/verify` — mark verified
+- `DELETE /api/admin/ngos/:id/verify` — unverify
+- `POST /api/admin/cleanup` — expire stale posts past their expiresAt date
+
+## Scripts
+
+- `pnpm --filter @workspace/scripts run migrate` — idempotent DB migration (adds new enum values/columns)
+- `pnpm --filter @workspace/scripts run seed` — seed with 19 posts (mixed statuses), 8 NGOs, 5 reports
 
 ## TypeScript & Composite Projects
 

@@ -13,6 +13,7 @@ export const ngosTable = pgTable("ngos", {
   phone: text("phone"),
   website: text("website"),
   verifiedAt: timestamp("verified_at", { withTimezone: true }),
+  status: text("status").default("active").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
