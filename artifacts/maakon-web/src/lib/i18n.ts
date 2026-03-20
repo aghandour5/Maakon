@@ -30,6 +30,9 @@ const resources = {
       urgency: "مستوى الأهمية",
       all_categories: "جميع الفئات",
       all_governorates: "جميع المحافظات",
+      all_districts: "جميع الأقضية",
+      loading: "جاري التحميل...",
+      results_count: "{{count}} نتيجة",
       
       // Card details
       view_details: "عرض التفاصيل",
@@ -52,7 +55,12 @@ const resources = {
       submit: "إرسال",
       next: "التالي",
       prev: "السابق",
-      
+      select_placeholder: "اختر...",
+      title_placeholder_need: "مثال: نحتاج حليب أطفال",
+      desc_placeholder_need: "صف ما تحتاجه بالتفصيل، والكميات...",
+      address_placeholder: "الشارع، المبنى، الطابق...",
+      phone_placeholder: "+961...",
+
       // Form: Post Offer
       post_offer_title: "تقديم مساعدة",
       step_1_offer: "ماذا تقدم؟",
@@ -60,6 +68,8 @@ const resources = {
       individual: "فرد",
       organization: "مؤسسة",
       business: "شركة",
+      title_placeholder_offer: "مثال: تقديم خدمة نقل مجانية",
+      desc_placeholder_offer: "صف عرضك بالتفصيل...",
       
       // Success
       success_title: "تم النشر بنجاح",
@@ -116,6 +126,9 @@ const resources = {
       urgency: "Urgency",
       all_categories: "All Categories",
       all_governorates: "All Governorates",
+      all_districts: "All Districts",
+      loading: "Loading...",
+      results_count: "{{count}} results",
       
       view_details: "View Details",
       last_updated: "Last updated",
@@ -136,13 +149,20 @@ const resources = {
       submit: "Submit",
       next: "Next",
       prev: "Previous",
-      
+      select_placeholder: "Select...",
+      title_placeholder_need: "e.g. Need baby formula",
+      desc_placeholder_need: "Describe what you need, quantities, etc...",
+      address_placeholder: "Street, building, floor...",
+      phone_placeholder: "+961...",
+
       post_offer_title: "Post an Offer",
       step_1_offer: "What are you offering?",
       provider_type: "Provider Type",
       individual: "Individual",
       organization: "Organization",
       business: "Business",
+      title_placeholder_offer: "e.g. Offering free transportation",
+      desc_placeholder_offer: "Describe your offer in detail...",
       
       success_title: "Posted Successfully",
       success_desc: "Your post has been saved and will appear on the map soon.",
