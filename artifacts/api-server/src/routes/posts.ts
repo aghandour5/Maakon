@@ -152,7 +152,7 @@ router.post("/posts", async (req, res) => {
       providerType: providerType ?? null,
       contactMethod: contactMethod ?? null,
       contactInfo: contactInfo ?? null,
-      status: "active",
+      status: "pending",
       expiresAt,
       lastConfirmedAt: new Date(),
     })

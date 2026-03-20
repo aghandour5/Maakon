@@ -28,6 +28,8 @@ const resources = {
       category: "الفئة",
       governorate: "المحافظة",
       urgency: "مستوى الأهمية",
+      all_categories: "جميع الفئات",
+      all_governorates: "جميع المحافظات",
       
       // Card details
       view_details: "عرض التفاصيل",
@@ -98,6 +100,8 @@ const resources = {
       category: "Category",
       governorate: "Governorate",
       urgency: "Urgency",
+      all_categories: "All Categories",
+      all_governorates: "All Governorates",
       
       view_details: "View Details",
       last_updated: "Last updated",
