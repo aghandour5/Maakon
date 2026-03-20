@@ -1,0 +1,346 @@
+import { db } from "@workspace/db";
+import { postsTable, ngosTable, usersTable } from "@workspace/db/schema";
+
+const GOVERNORATE_CENTERS: Record<string, { lat: number; lng: number }> = {
+  "Beirut": { lat: 33.8938, lng: 35.5018 },
+  "Mount Lebanon": { lat: 33.8100, lng: 35.6000 },
+  "North Lebanon": { lat: 34.4333, lng: 35.8333 },
+  "South Lebanon": { lat: 33.2717, lng: 35.2033 },
+  "Nabatieh": { lat: 33.3772, lng: 35.4840 },
+  "Bekaa": { lat: 33.8500, lng: 35.9017 },
+  "Akkar": { lat: 34.5581, lng: 36.0808 },
+  "Baalbek-Hermel": { lat: 34.0049, lng: 36.2098 },
+};
+
+function fuzz(val: number) {
+  return Math.round((val + (Math.random() - 0.5) * 0.1) * 10000) / 10000;
+}
+
+function expiresIn(days: number) {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return d;
+}
+
+async function seed() {
+  console.log("Seeding database...");
+
+  // Clear existing data
+  await db.delete(postsTable);
+  await db.delete(ngosTable);
+  await db.delete(usersTable);
+
+  // Seed NGOs
+  const now = new Date();
+  const ngos = await db.insert(ngosTable).values([
+    {
+      name: "UNHCR Lebanon",
+      description: "UN Refugee Agency — emergency shelter, registration, and protection",
+      governorate: "Beirut",
+      district: "Beirut City",
+      lat: 33.8869,
+      lng: 35.5131,
+      phone: "+961 1 850 178",
+      website: "https://www.unhcr.org/lb",
+      verifiedAt: now,
+    },
+    {
+      name: "Lebanese Red Cross",
+      description: "Emergency medical, ambulance, blood bank, and first aid services",
+      governorate: "Beirut",
+      district: "Beirut City",
+      lat: 33.8795,
+      lng: 35.4978,
+      phone: "140",
+      website: "https://www.redcross.org.lb",
+      verifiedAt: now,
+    },
+    {
+      name: "World Food Programme Lebanon",
+      description: "Food assistance, vouchers, and emergency food distributions",
+      governorate: "Bekaa",
+      district: "Zahle",
+      lat: 33.8498,
+      lng: 35.9002,
+      phone: "+961 8 900 950",
+      website: "https://www.wfp.org/countries/lebanon",
+      verifiedAt: now,
+    },
+    {
+      name: "ACTED Lebanon",
+      description: "Emergency shelter, food security, and livelihoods support",
+      governorate: "North Lebanon",
+      district: "Tripoli",
+      lat: 34.4367,
+      lng: 35.8497,
+      phone: "+961 6 200 123",
+      website: "https://www.acted.org/en/countries/lebanon",
+      verifiedAt: now,
+    },
+    {
+      name: "Caritas Lebanon",
+      description: "Social services, health care, and emergency assistance",
+      governorate: "Mount Lebanon",
+      district: "Metn",
+      lat: 33.8950,
+      lng: 35.5850,
+      phone: "+961 1 221 025",
+      website: "https://www.caritasliban.org.lb",
+      verifiedAt: now,
+    },
+    {
+      name: "Islamic Relief Lebanon",
+      description: "Emergency food, shelter, water and sanitation support",
+      governorate: "South Lebanon",
+      district: "Sidon",
+      lat: 33.5586,
+      lng: 35.3696,
+      phone: "+961 7 750 100",
+      website: "https://islamic-relief.org",
+      verifiedAt: now,
+    },
+  ]).returning();
+
+  console.log(`Seeded ${ngos.length} NGOs`);
+
+  // Seed need posts
+  const needPosts = [
+    {
+      postType: "need" as const,
+      title: "Family needs food and water — 4 people",
+      category: "food",
+      description: "Displaced family of 4 including 2 young children. We have no access to clean water or food. We have been in this location for 3 days.",
+      urgency: "critical" as const,
+      governorate: "Beirut",
+      district: "Beirut City",
+      publicLat: fuzz(GOVERNORATE_CENTERS["Beirut"].lat),
+      publicLng: fuzz(GOVERNORATE_CENTERS["Beirut"].lng),
+      contactMethod: "whatsapp",
+      contactInfo: "+961 70 000 001",
+      status: "active" as const,
+      expiresAt: expiresIn(30),
+      lastConfirmedAt: now,
+    },
+    {
+      postType: "need" as const,
+      title: "Urgent: Elderly woman needs medical care",
+      category: "medical",
+      description: "My mother (72 years old) needs blood pressure medication and cannot move. We are in Tripoli and have no car.",
+      urgency: "critical" as const,
+      governorate: "North Lebanon",
+      district: "Tripoli",
+      publicLat: fuzz(GOVERNORATE_CENTERS["North Lebanon"].lat),
+      publicLng: fuzz(GOVERNORATE_CENTERS["North Lebanon"].lng),
+      contactMethod: "phone",
+      contactInfo: "+961 71 000 002",
+      status: "active" as const,
+      expiresAt: expiresIn(7),
+      lastConfirmedAt: now,
+    },
+    {
+      postType: "need" as const,
+      title: "Need shelter for family of 6",
+      category: "shelter",
+      description: "Our home was destroyed. Family of 6 — parents and 4 children aged 3-14. Looking for temporary shelter in the Bekaa area.",
+      urgency: "high" as const,
+      governorate: "Bekaa",
+      district: "Zahle",
+      publicLat: fuzz(GOVERNORATE_CENTERS["Bekaa"].lat),
+      publicLng: fuzz(GOVERNORATE_CENTERS["Bekaa"].lng),
+      contactMethod: "whatsapp",
+      contactInfo: "+961 76 000 003",
+      status: "active" as const,
+      expiresAt: expiresIn(14),
+      lastConfirmedAt: now,
+    },
+    {
+      postType: "need" as const,
+      title: "Children need winter clothing — sizes 4-10",
+      category: "clothing",
+      description: "5 children displaced from our village. We left with nothing. Need warm clothes for winter, sizes 4 to 10 years.",
+      urgency: "high" as const,
+      governorate: "South Lebanon",
+      district: "Tyre",
+      publicLat: fuzz(GOVERNORATE_CENTERS["South Lebanon"].lat),
+      publicLng: fuzz(GOVERNORATE_CENTERS["South Lebanon"].lng),
+      contactMethod: "signal",
+      contactInfo: "+961 78 000 004",
+      status: "active" as const,
+      expiresAt: expiresIn(21),
+      lastConfirmedAt: now,
+    },
+    {
+      postType: "need" as const,
+      title: "Need transportation to reach medical center",
+      category: "transportation",
+      description: "Pregnant woman in Akkar, 8 months pregnant, needs transportation to the nearest maternity hospital.",
+      urgency: "critical" as const,
+      governorate: "Akkar",
+      district: "Halba",
+      publicLat: fuzz(GOVERNORATE_CENTERS["Akkar"].lat),
+      publicLng: fuzz(GOVERNORATE_CENTERS["Akkar"].lng),
+      contactMethod: "phone",
+      contactInfo: "+961 79 000 005",
+      status: "active" as const,
+      expiresAt: expiresIn(3),
+      lastConfirmedAt: now,
+    },
+    {
+      postType: "need" as const,
+      title: "Psychological support needed for trauma",
+      category: "psychological",
+      description: "Family witnessed violence and displacement. Children are in shock. Looking for a counselor or psychologist who can help.",
+      urgency: "medium" as const,
+      governorate: "Nabatieh",
+      district: "Nabatieh",
+      publicLat: fuzz(GOVERNORATE_CENTERS["Nabatieh"].lat),
+      publicLng: fuzz(GOVERNORATE_CENTERS["Nabatieh"].lng),
+      contactMethod: "email",
+      contactInfo: "help@example.com",
+      status: "active" as const,
+      expiresAt: expiresIn(30),
+      lastConfirmedAt: now,
+    },
+    {
+      postType: "need" as const,
+      title: "Legal help — lost all documents in the disaster",
+      category: "legal",
+      description: "We lost all our identification documents. Need legal assistance to get emergency IDs for a family of 5.",
+      urgency: "high" as const,
+      governorate: "Mount Lebanon",
+      district: "Baabda",
+      publicLat: fuzz(GOVERNORATE_CENTERS["Mount Lebanon"].lat),
+      publicLng: fuzz(GOVERNORATE_CENTERS["Mount Lebanon"].lng),
+      contactMethod: "whatsapp",
+      contactInfo: "+961 70 000 006",
+      status: "active" as const,
+      expiresAt: expiresIn(30),
+      lastConfirmedAt: now,
+    },
+  ];
+
+  // Seed offer posts
+  const offerPosts = [
+    {
+      postType: "offer" as const,
+      title: "Can provide cooked meals for up to 20 people daily",
+      category: "food",
+      description: "Restaurant owner offering free cooked meals every day from 12pm to 4pm for displaced families in Beirut.",
+      governorate: "Beirut",
+      district: "Beirut City",
+      publicLat: fuzz(GOVERNORATE_CENTERS["Beirut"].lat),
+      publicLng: fuzz(GOVERNORATE_CENTERS["Beirut"].lng),
+      providerType: "business",
+      contactMethod: "phone",
+      contactInfo: "+961 1 000 100",
+      status: "active" as const,
+      expiresAt: expiresIn(14),
+      lastConfirmedAt: now,
+    },
+    {
+      postType: "offer" as const,
+      title: "Offering spare bedroom for single mother with children",
+      category: "shelter",
+      description: "I have a spare bedroom available for a single mother with up to 2 children. Can accommodate for 1-2 months.",
+      governorate: "Mount Lebanon",
+      district: "Metn",
+      publicLat: fuzz(GOVERNORATE_CENTERS["Mount Lebanon"].lat),
+      publicLng: fuzz(GOVERNORATE_CENTERS["Mount Lebanon"].lng),
+      providerType: "individual",
+      contactMethod: "whatsapp",
+      contactInfo: "+961 70 000 200",
+      status: "active" as const,
+      expiresAt: expiresIn(30),
+      lastConfirmedAt: now,
+    },
+    {
+      postType: "offer" as const,
+      title: "Free medical consultations — GP in Tripoli",
+      category: "medical",
+      description: "I am a general practitioner offering free consultations every Saturday morning for displaced families.",
+      governorate: "North Lebanon",
+      district: "Tripoli",
+      publicLat: GOVERNORATE_CENTERS["North Lebanon"].lat,
+      publicLng: GOVERNORATE_CENTERS["North Lebanon"].lng,
+      providerType: "individual",
+      contactMethod: "phone",
+      contactInfo: "+961 6 000 300",
+      status: "active" as const,
+      expiresAt: expiresIn(60),
+      lastConfirmedAt: now,
+    },
+    {
+      postType: "offer" as const,
+      title: "Truck available for moving — free for displaced",
+      category: "transportation",
+      description: "I have a pickup truck and am available on weekends to help displaced families move their belongings. Covering the Bekaa area.",
+      governorate: "Bekaa",
+      district: "Zahle",
+      publicLat: GOVERNORATE_CENTERS["Bekaa"].lat,
+      publicLng: GOVERNORATE_CENTERS["Bekaa"].lng,
+      providerType: "individual",
+      contactMethod: "signal",
+      contactInfo: "+961 76 000 400",
+      status: "active" as const,
+      expiresAt: expiresIn(30),
+      lastConfirmedAt: now,
+    },
+    {
+      postType: "offer" as const,
+      title: "School supplies for displaced children",
+      category: "education",
+      description: "Collected backpacks, notebooks, pens and basic school supplies. Available for pickup in Sidon.",
+      governorate: "South Lebanon",
+      district: "Sidon",
+      publicLat: GOVERNORATE_CENTERS["South Lebanon"].lat,
+      publicLng: GOVERNORATE_CENTERS["South Lebanon"].lng,
+      providerType: "organization",
+      contactMethod: "whatsapp",
+      contactInfo: "+961 7 000 500",
+      status: "active" as const,
+      expiresAt: expiresIn(21),
+      lastConfirmedAt: now,
+    },
+    {
+      postType: "offer" as const,
+      title: "Winter clothing donation — adults and children",
+      category: "clothing",
+      description: "Collected a large amount of clean winter clothes for all ages. Available in Akkar. Can arrange delivery within the region.",
+      governorate: "Akkar",
+      district: "Akkar",
+      publicLat: GOVERNORATE_CENTERS["Akkar"].lat,
+      publicLng: GOVERNORATE_CENTERS["Akkar"].lng,
+      providerType: "organization",
+      contactMethod: "phone",
+      contactInfo: "+961 6 000 600",
+      status: "active" as const,
+      expiresAt: expiresIn(30),
+      lastConfirmedAt: now,
+    },
+    {
+      postType: "offer" as const,
+      title: "Trauma counseling — certified psychologist",
+      category: "psychological",
+      description: "Offering free online and in-person counseling sessions for trauma and displacement. Sessions in Arabic and French.",
+      governorate: "Beirut",
+      district: "Beirut City",
+      publicLat: fuzz(GOVERNORATE_CENTERS["Beirut"].lat),
+      publicLng: fuzz(GOVERNORATE_CENTERS["Beirut"].lng),
+      providerType: "individual",
+      contactMethod: "email",
+      contactInfo: "psy@example.com",
+      status: "active" as const,
+      expiresAt: expiresIn(45),
+      lastConfirmedAt: now,
+    },
+  ];
+
+  const seededPosts = await db.insert(postsTable).values([...needPosts, ...offerPosts]).returning();
+  console.log(`Seeded ${seededPosts.length} posts`);
+  console.log("Seed complete.");
+}
+
+seed().catch((err) => {
+  console.error("Seed failed:", err);
+  process.exit(1);
+});

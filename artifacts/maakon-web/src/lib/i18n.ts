@@ -1,0 +1,164 @@
+import i18n from "i18next";
+import { initReactI18next } from "react-i18next";
+import LanguageDetector from "i18next-browser-languagedetector";
+
+const resources = {
+  ar: {
+    translation: {
+      app_name: "مأكون",
+      home_subtitle: "تطبيق الاستجابة للأزمات في لبنان",
+      i_need_help: "أحتاج مساعدة",
+      i_want_to_help: "أريد المساعدة",
+      view_map: "عرض الخريطة",
+      
+      // Navigation
+      back: "رجوع",
+      
+      // Map & Filters
+      filters: "تصفية",
+      map_legend: "مفتاح الخريطة",
+      needs: "احتياجات",
+      offers: "عروض",
+      ngos: "منظمات غير حكومية",
+      active_only: "النشطة فقط",
+      verified_ngo_only: "منظمات موثقة فقط",
+      apply_filters: "تطبيق",
+      clear_filters: "مسح الكل",
+      post_type: "نوع المنشور",
+      category: "الفئة",
+      governorate: "المحافظة",
+      urgency: "مستوى الأهمية",
+      
+      // Card details
+      view_details: "عرض التفاصيل",
+      last_updated: "آخر تحديث",
+      verified: "موثق",
+      report_post: "الإبلاغ عن المنشور",
+      contact_info: "معلومات التواصل",
+      contact_method: "وسيلة التواصل",
+      
+      // Form: Post Need
+      post_need_title: "طلب مساعدة",
+      step_1_need: "ماذا تحتاج؟",
+      step_2_desc: "وصف الحالة",
+      step_3_loc: "الموقع والتواصل",
+      title_label: "عنوان موجز",
+      desc_label: "تفاصيل",
+      district: "القضاء",
+      exact_address: "العنوان الدقيق (اختياري)",
+      exact_address_private: "خاص — لن يتم عرضه للعامة لحمايتك",
+      submit: "إرسال",
+      next: "التالي",
+      prev: "السابق",
+      
+      // Form: Post Offer
+      post_offer_title: "تقديم مساعدة",
+      step_1_offer: "ماذا تقدم؟",
+      provider_type: "نوع المزود",
+      individual: "فرد",
+      organization: "مؤسسة",
+      business: "شركة",
+      
+      // Success
+      success_title: "تم النشر بنجاح",
+      success_desc: "تم حفظ طلبك وسيظهر على الخريطة قريباً.",
+      return_home: "العودة للرئيسية",
+      
+      // Validation
+      required: "هذا الحقل مطلوب",
+      min_length: "يجب أن يكون {{min}} أحرف على الأقل",
+
+      // Urgencies
+      critical: "حرج جداً",
+      high: "عالي",
+      medium: "متوسط",
+      low: "منخفض"
+    }
+  },
+  en: {
+    translation: {
+      app_name: "Maakon",
+      home_subtitle: "Lebanon Crisis Response App",
+      i_need_help: "I Need Help",
+      i_want_to_help: "I Want to Help",
+      view_map: "View Map",
+      
+      back: "Back",
+      
+      filters: "Filters",
+      map_legend: "Legend",
+      needs: "Needs",
+      offers: "Offers",
+      ngos: "Verified NGOs",
+      active_only: "Active Only",
+      verified_ngo_only: "Verified NGOs Only",
+      apply_filters: "Apply",
+      clear_filters: "Clear All",
+      post_type: "Post Type",
+      category: "Category",
+      governorate: "Governorate",
+      urgency: "Urgency",
+      
+      view_details: "View Details",
+      last_updated: "Last updated",
+      verified: "Verified",
+      report_post: "Report this post",
+      contact_info: "Contact Info",
+      contact_method: "Contact Method",
+      
+      post_need_title: "Post a Need",
+      step_1_need: "What do you need?",
+      step_2_desc: "Describe your situation",
+      step_3_loc: "Location & Contact",
+      title_label: "Short Title",
+      desc_label: "Details",
+      district: "District",
+      exact_address: "Exact Address (Optional)",
+      exact_address_private: "Private — never shown publicly for your safety",
+      submit: "Submit",
+      next: "Next",
+      prev: "Previous",
+      
+      post_offer_title: "Post an Offer",
+      step_1_offer: "What are you offering?",
+      provider_type: "Provider Type",
+      individual: "Individual",
+      organization: "Organization",
+      business: "Business",
+      
+      success_title: "Posted Successfully",
+      success_desc: "Your post has been saved and will appear on the map soon.",
+      return_home: "Return to Home",
+      
+      required: "This field is required",
+      min_length: "Must be at least {{min}} characters",
+
+      critical: "Critical",
+      high: "High",
+      medium: "Medium",
+      low: "Low"
+    }
+  }
+};
+
+i18n
+  .use(LanguageDetector)
+  .use(initReactI18next)
+  .init({
+    resources,
+    fallbackLng: "ar", // Default to Arabic
+    interpolation: {
+      escapeValue: false 
+    }
+  });
+
+// Setup document direction based on initial language
+document.documentElement.dir = i18n.dir();
+document.documentElement.lang = i18n.language;
+
+i18n.on('languageChanged', (lng) => {
+  document.documentElement.dir = i18n.dir(lng);
+  document.documentElement.lang = lng;
+});
+
+export default i18n;

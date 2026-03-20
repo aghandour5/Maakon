@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Maakon"
+version = "1.0.0"
+id = "artifacts/maakon-web"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 18959
+
+[services.development]
+run = "pnpm --filter @workspace/maakon-web run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/maakon-web", "run", "build" ]
+publicDir = "artifacts/maakon-web/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "18959"
+BASE_PATH = "/"

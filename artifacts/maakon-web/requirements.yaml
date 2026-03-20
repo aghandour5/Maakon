@@ -1,0 +1,23 @@
+packages:
+  "react-leaflet": "React components for Leaflet maps"
+  "leaflet": "Core mapping library"
+  "@types/leaflet": "Types for leaflet"
+  "react-leaflet-cluster": "Marker clustering for react-leaflet"
+  "i18next": "Internationalization core"
+  "react-i18next": "React binding for i18next"
+  "i18next-browser-languagedetector": "Detect user language"
+  "framer-motion": "Smooth step transitions for forms and bottom sheets"
+  "date-fns": "Date formatting for post timestamps"
+  "@hookform/resolvers": "Zod validation for react-hook-form"
+  "clsx": "Utility for constructing className strings conditionally"
+  "tailwind-merge": "Utility function to efficiently merge Tailwind CSS classes"
+
+images:
+  - path: "artifacts/maakon-web/public/images/pattern-bg.png"
+    description: "Subtle, minimal, low-contrast topographic map pattern in very light gray/blue, suitable for a calm and trustworthy background"
+    aspect_ratio: "16:9"
+
+notes:
+  - using generated hooks from @workspace/api-client-react
+  - wouter is used for routing
+  - CartoDB Light base map tiles are used for a clean look

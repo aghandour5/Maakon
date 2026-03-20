@@ -3,20 +3,27 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Maakon crisis-response API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: posts
+    description: Need and offer posts
+  - name: ngos
+    description: Verified NGO listings
+  - name: reports
+    description: Post reporting
+  - name: metadata
+    description: Filter options and reference data
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +31,161 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /posts:
+    get:
+      operationId: listPosts
+      tags: [posts]
+      summary: List active posts (public map data)
+      parameters:
+        - name: postType
+          in: query
+          schema:
+            type: string
+            enum: [need, offer]
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: governorate
+          in: query
+          schema:
+            type: string
+        - name: district
+          in: query
+          schema:
+            type: string
+        - name: urgency
+          in: query
+          schema:
+            type: string
+            enum: [critical, high, medium, low]
+        - name: activeOnly
+          in: query
+          schema:
+            type: boolean
+            default: true
+        - name: verifiedNgoOnly
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        "200":
+          description: List of posts (no private location data)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PostPublic"
+    post:
+      operationId: createPost
+      tags: [posts]
+      summary: Create a need or offer post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePostInput"
+      responses:
+        "201":
+          description: Post created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PostPublic"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /posts/{id}:
+    get:
+      operationId: getPost
+      tags: [posts]
+      summary: Get public post detail
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Post detail (no private location data)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PostPublic"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /ngos:
+    get:
+      operationId: listNgos
+      tags: [ngos]
+      summary: List verified NGOs
+      parameters:
+        - name: governorate
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of verified NGOs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Ngo"
+
+  /reports:
+    post:
+      operationId: createReport
+      tags: [reports]
+      summary: Report a post as suspicious or unsafe
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateReportInput"
+      responses:
+        "201":
+          description: Report submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportPublic"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /metadata:
+    get:
+      operationId: getMetadata
+      tags: [metadata]
+      summary: Get filter options (categories, governorates, districts)
+      responses:
+        "200":
+          description: Reference data for filter dropdowns
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Metadata"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +196,250 @@ components:
       required:
         - status
 
+    PostPublic:
+      type: object
+      description: A post with no private location data exposed
+      properties:
+        id:
+          type: integer
+        postType:
+          type: string
+          enum: [need, offer]
+        title:
+          type: string
+        category:
+          type: string
+        description:
+          type: string
+        urgency:
+          type: string
+          enum: [critical, high, medium, low]
+          nullable: true
+        governorate:
+          type: string
+        district:
+          type: string
+          nullable: true
+        publicLat:
+          type: number
+          format: double
+          nullable: true
+          description: Fuzzed district-level latitude (never exact for need posts)
+        publicLng:
+          type: number
+          format: double
+          nullable: true
+          description: Fuzzed district-level longitude (never exact for need posts)
+        providerType:
+          type: string
+          nullable: true
+        verifiedBadgeType:
+          type: string
+          nullable: true
+        contactMethod:
+          type: string
+          nullable: true
+        contactInfo:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [pending, active, expired, removed]
+        reportCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+        lastConfirmedAt:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+        - id
+        - postType
+        - title
+        - category
+        - description
+        - governorate
+        - status
+        - reportCount
+        - createdAt
+        - updatedAt
+
+    CreatePostInput:
+      type: object
+      properties:
+        postType:
+          type: string
+          enum: [need, offer]
+        title:
+          type: string
+          minLength: 3
+          maxLength: 120
+        category:
+          type: string
+        description:
+          type: string
+          minLength: 10
+          maxLength: 1000
+        urgency:
+          type: string
+          enum: [critical, high, medium, low]
+          nullable: true
+        governorate:
+          type: string
+        district:
+          type: string
+          nullable: true
+        exactAddressPrivate:
+          type: string
+          nullable: true
+          description: Private address — stored only, NEVER returned publicly
+        providerType:
+          type: string
+          nullable: true
+        contactMethod:
+          type: string
+          nullable: true
+        contactInfo:
+          type: string
+          nullable: true
+      required:
+        - postType
+        - title
+        - category
+        - description
+        - governorate
+
+    Ngo:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        governorate:
+          type: string
+        district:
+          type: string
+          nullable: true
+        lat:
+          type: number
+          format: double
+          nullable: true
+        lng:
+          type: number
+          format: double
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        website:
+          type: string
+          nullable: true
+        verifiedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - governorate
+        - createdAt
+
+    CreateReportInput:
+      type: object
+      properties:
+        postId:
+          type: integer
+        reason:
+          type: string
+          enum: [fake, scam, unsafe, outdated, spam, other]
+        details:
+          type: string
+          nullable: true
+      required:
+        - postId
+        - reason
+
+    ReportPublic:
+      type: object
+      properties:
+        id:
+          type: integer
+        postId:
+          type: integer
+        reason:
+          type: string
+        reportedAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+      required:
+        - id
+        - postId
+        - reason
+        - reportedAt
+        - status
+
+    Metadata:
+      type: object
+      properties:
+        categories:
+          type: array
+          items:
+            type: string
+        governorates:
+          type: array
+          items:
+            type: string
+        districts:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+        urgencyLevels:
+          type: array
+          items:
+            type: string
+        providerTypes:
+          type: array
+          items:
+            type: string
+        contactMethods:
+          type: array
+          items:
+            type: string
+      required:
+        - categories
+        - governorates
+        - districts
+        - urgencyLevels
+        - providerTypes
+        - contactMethods
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        details:
+          type: string
+          nullable: true
+      required:
+        - error
