@@ -80,13 +80,11 @@ export default function Home() {
         animate="show"
         className="relative z-10 flex-1 flex flex-col items-center justify-center px-5 pb-6 gap-5 overflow-y-auto"
       >
-        {/* Logo hero */}
-        <motion.div variants={fadeUp} className="flex flex-col items-center">
-          <img
-            src="/logo.png"
-            alt="Maakon معكن"
-            className="w-64 max-w-[75vw] object-contain rounded-2xl shadow-2xl"
-          />
+        {/* Tagline */}
+        <motion.div variants={fadeUp} className="text-center px-2">
+          <p className="text-3xl font-black text-white leading-snug tracking-tight">
+            {t("home_tagline")}
+          </p>
         </motion.div>
 
         {/* I Need Help */}

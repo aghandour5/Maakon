@@ -7,6 +7,7 @@ const resources = {
     translation: {
       app_name: "معكن",
       home_subtitle: "تطبيق الاستجابة للأزمات في لبنان",
+      home_tagline: "ابحث عن مساعدة. قدّم مساعدة. ادعم لبنان.",
       i_need_help: "أحتاج مساعدة",
       i_want_to_help: "أريد المساعدة",
       view_map: "عرض الخريطة",
@@ -156,6 +157,7 @@ const resources = {
     translation: {
       app_name: "Maakon",
       home_subtitle: "Lebanon Crisis Response App",
+      home_tagline: "Find help. Offer help. Support Lebanon.",
       i_need_help: "I Need Help",
       i_want_to_help: "I Want to Help",
       view_map: "View Map",
