@@ -193,7 +193,7 @@ export default function PostNeed() {
                     <input 
                       type="text"
                       className="w-full p-4 rounded-xl bg-background border-2 border-border focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none"
-                      placeholder="e.g. Need baby formula / نحتاج حليب أطفال"
+                      placeholder={t('title_placeholder_need')}
                       value={formData.title || ''}
                       onChange={e => setFormData({...formData, title: e.target.value})}
                     />
@@ -204,7 +204,7 @@ export default function PostNeed() {
                     <label className="block text-sm font-semibold text-foreground mb-2">{t('desc_label')}</label>
                     <textarea 
                       className="w-full flex-1 min-h-[150px] p-4 rounded-xl bg-background border-2 border-border focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none resize-none"
-                      placeholder="Describe exactly what you need, quantities, etc..."
+                      placeholder={t('desc_placeholder_need')}
                       value={formData.description || ''}
                       onChange={e => setFormData({...formData, description: e.target.value})}
                     />
@@ -233,7 +233,7 @@ export default function PostNeed() {
                     value={formData.governorate || ''}
                     onChange={e => setFormData({...formData, governorate: e.target.value, district: ''})}
                   >
-                    <option value="" disabled>Select / اختر</option>
+                    <option value="" disabled>{t('select_placeholder')}</option>
                     {metadata?.governorates.map(g => <option key={g} value={g}>{g}</option>)}
                   </select>
                   {errors.governorate && <p className="text-destructive text-sm mt-1">{errors.governorate}</p>}
@@ -247,7 +247,7 @@ export default function PostNeed() {
                       value={formData.district || ''}
                       onChange={e => setFormData({...formData, district: e.target.value})}
                     >
-                      <option value="" disabled>Select / اختر</option>
+                      <option value="" disabled>{t('select_placeholder')}</option>
                       {metadata.districts[formData.governorate].map(d => <option key={d} value={d}>{d}</option>)}
                     </select>
                   </div>
@@ -262,7 +262,7 @@ export default function PostNeed() {
                       <input 
                         type="text"
                         className="w-full p-3 rounded-lg bg-background border border-info/30 focus:border-info outline-none text-sm"
-                        placeholder="Street, building, floor..."
+                        placeholder={t('address_placeholder')}
                         value={formData.exactAddressPrivate || ''}
                         onChange={e => setFormData({...formData, exactAddressPrivate: e.target.value})}
                       />
@@ -278,7 +278,7 @@ export default function PostNeed() {
                         value={formData.contactMethod || ''}
                         onChange={e => setFormData({...formData, contactMethod: e.target.value})}
                       >
-                        <option value="" disabled>-</option>
+                        <option value="" disabled>{t('select_placeholder')}</option>
                         {metadata?.contactMethods.map(c => <option key={c} value={c}>{c}</option>)}
                       </select>
                   </div>
@@ -287,7 +287,7 @@ export default function PostNeed() {
                      <input 
                         type="text"
                         className="w-full p-3 rounded-xl bg-background border-2 border-border focus:border-primary outline-none"
-                        placeholder="+961..."
+                        placeholder={t('phone_placeholder')}
                         dir="ltr"
                         value={formData.contactInfo || ''}
                         onChange={e => setFormData({...formData, contactInfo: e.target.value})}

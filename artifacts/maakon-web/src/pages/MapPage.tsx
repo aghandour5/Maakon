@@ -46,12 +46,16 @@ export default function MapPage() {
     return () => clearTimeout(timer);
   }, []);
 
-  const updateFilter = (key: keyof ListPostsParams, value: string | boolean | undefined) => {
+  const updateStringFilter = (key: keyof ListPostsParams, value: string | undefined) => {
     if (key === 'governorate') {
       setFilters(prev => ({ ...prev, [key]: value, district: undefined }));
     } else {
       setFilters(prev => ({ ...prev, [key]: value }));
     }
+  };
+
+  const updateBoolFilter = (key: keyof ListPostsParams, value: boolean) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
   };
 
   const clearFilters = () => setFilters({ activeOnly: true });
@@ -238,7 +242,7 @@ export default function MapPage() {
                     {(['need', 'offer'] as const).map(pt => (
                       <button
                         key={pt}
-                        onClick={() => updateFilter('postType', filters.postType === pt ? undefined : pt)}
+                        onClick={() => updateStringFilter('postType', filters.postType === pt ? undefined : pt)}
                         className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium border transition-colors ${
                           filters.postType === pt
                             ? pt === 'need' ? 'bg-red-500 text-white border-red-500' : 'bg-green-500 text-white border-green-500'
@@ -256,7 +260,7 @@ export default function MapPage() {
                   <label className="text-sm font-medium text-foreground block mb-2">{t('category')}</label>
                   <select
                     value={filters.category ?? ''}
-                    onChange={e => updateFilter('category', e.target.value || undefined)}
+                    onChange={e => updateStringFilter('category', e.target.value || undefined)}
                     className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                   >
                     <option value="">{t('all_categories')}</option>
@@ -269,7 +273,7 @@ export default function MapPage() {
                   <label className="text-sm font-medium text-foreground block mb-2">{t('governorate')}</label>
                   <select
                     value={filters.governorate ?? ''}
-                    onChange={e => updateFilter('governorate', e.target.value || undefined)}
+                    onChange={e => updateStringFilter('governorate', e.target.value || undefined)}
                     className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                   >
                     <option value="">{t('all_governorates')}</option>
@@ -283,7 +287,7 @@ export default function MapPage() {
                     <label className="text-sm font-medium text-foreground block mb-2">{t('district')}</label>
                     <select
                       value={filters.district ?? ''}
-                      onChange={e => updateFilter('district', e.target.value || undefined)}
+                      onChange={e => updateStringFilter('district', e.target.value || undefined)}
                       className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                     >
                       <option value="">{t('all_districts')}</option>
@@ -300,7 +304,7 @@ export default function MapPage() {
                       {(['critical', 'high', 'medium', 'low'] as const).map(u => (
                         <button
                           key={u}
-                          onClick={() => updateFilter('urgency', filters.urgency === u ? undefined : u)}
+                          onClick={() => updateStringFilter('urgency', filters.urgency === u ? undefined : u)}
                           className={`py-1.5 px-3 rounded-lg text-xs font-medium border transition-colors ${
                             filters.urgency === u
                               ? 'bg-primary text-primary-foreground border-primary'
@@ -316,8 +320,8 @@ export default function MapPage() {
 
                 {/* Toggles */}
                 <div className="flex flex-col gap-3 pt-2 border-t border-border">
-                  {toggleSwitch('', !!filters.activeOnly, () => updateFilter('activeOnly', !filters.activeOnly), t('active_only'))}
-                  {toggleSwitch('', !!filters.verifiedNgoOnly, () => updateFilter('verifiedNgoOnly', !filters.verifiedNgoOnly), t('verified_ngo_only'))}
+                  {toggleSwitch('', !!filters.activeOnly, () => updateBoolFilter('activeOnly', !filters.activeOnly), t('active_only'))}
+                  {toggleSwitch('', !!filters.verifiedNgoOnly, () => updateBoolFilter('verifiedNgoOnly', !filters.verifiedNgoOnly), t('verified_ngo_only'))}
                 </div>
               </div>
 

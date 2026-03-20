@@ -184,7 +184,7 @@ export default function PostOffer() {
                     <input 
                       type="text"
                       className="w-full p-4 rounded-xl bg-background border-2 border-border focus:border-success focus:ring-4 focus:ring-success/10 transition-all outline-none"
-                      placeholder="e.g. Offering free transportation / تقديم خدمة نقل مجانية"
+                      placeholder={t('title_placeholder_offer')}
                       value={formData.title || ''}
                       onChange={e => setFormData({...formData, title: e.target.value})}
                     />
@@ -195,7 +195,7 @@ export default function PostOffer() {
                     <label className="block text-sm font-semibold text-foreground mb-2">{t('desc_label')}</label>
                     <textarea 
                       className="w-full flex-1 min-h-[150px] p-4 rounded-xl bg-background border-2 border-border focus:border-success focus:ring-4 focus:ring-success/10 transition-all outline-none resize-none"
-                      placeholder="Describe your offer in detail..."
+                      placeholder={t('desc_placeholder_offer')}
                       value={formData.description || ''}
                       onChange={e => setFormData({...formData, description: e.target.value})}
                     />
@@ -224,7 +224,7 @@ export default function PostOffer() {
                     value={formData.governorate || ''}
                     onChange={e => setFormData({...formData, governorate: e.target.value, district: ''})}
                   >
-                    <option value="" disabled>Select / اختر</option>
+                    <option value="" disabled>{t('select_placeholder')}</option>
                     {metadata?.governorates.map(g => <option key={g} value={g}>{g}</option>)}
                   </select>
                   {errors.governorate && <p className="text-destructive text-sm mt-1">{errors.governorate}</p>}
@@ -238,7 +238,7 @@ export default function PostOffer() {
                       value={formData.district || ''}
                       onChange={e => setFormData({...formData, district: e.target.value})}
                     >
-                      <option value="" disabled>Select / اختر</option>
+                      <option value="" disabled>{t('select_placeholder')}</option>
                       {metadata.districts[formData.governorate].map(d => <option key={d} value={d}>{d}</option>)}
                     </select>
                   </div>
@@ -252,7 +252,7 @@ export default function PostOffer() {
                         value={formData.contactMethod || ''}
                         onChange={e => setFormData({...formData, contactMethod: e.target.value})}
                       >
-                        <option value="" disabled>-</option>
+                        <option value="" disabled>{t('select_placeholder')}</option>
                         {metadata?.contactMethods.map(c => <option key={c} value={c}>{c}</option>)}
                       </select>
                   </div>
@@ -261,7 +261,7 @@ export default function PostOffer() {
                      <input 
                         type="text"
                         className="w-full p-3 rounded-xl bg-background border-2 border-border focus:border-success outline-none"
-                        placeholder="+961..."
+                        placeholder={t('phone_placeholder')}
                         dir="ltr"
                         value={formData.contactInfo || ''}
                         onChange={e => setFormData({...formData, contactInfo: e.target.value})}
