@@ -25,8 +25,10 @@ import type {
   ListPostsParams,
   Metadata,
   Ngo,
+  PostPrivate,
   PostPublic,
   ReportPublic,
+  UpdatePostInput,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -294,6 +296,81 @@ export const useCreatePost = <
 };
 
 /**
+ * @summary List posts created by the authenticated user
+ */
+export const getListMyPostsUrl = () => {
+  return `/api/posts/me`;
+};
+
+export const listMyPosts = async (
+  options?: RequestInit,
+): Promise<PostPrivate[]> => {
+  return customFetch<PostPrivate[]>(getListMyPostsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListMyPostsQueryKey = () => {
+  return [`/api/posts/me`] as const;
+};
+
+export const getListMyPostsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listMyPosts>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listMyPosts>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListMyPostsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listMyPosts>>> = ({
+    signal,
+  }) => listMyPosts({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listMyPosts>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListMyPostsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listMyPosts>>
+>;
+export type ListMyPostsQueryError = ErrorType<void>;
+
+/**
+ * @summary List posts created by the authenticated user
+ */
+
+export function useListMyPosts<
+  TData = Awaited<ReturnType<typeof listMyPosts>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listMyPosts>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListMyPostsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
  * @summary Get public post detail
  */
 export const getGetPostUrl = (id: number) => {
@@ -369,6 +446,177 @@ export function useGetPost<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Update a post owned by the authenticated user
+ */
+export const getUpdatePostUrl = (id: number) => {
+  return `/api/posts/${id}`;
+};
+
+export const updatePost = async (
+  id: number,
+  updatePostInput: UpdatePostInput,
+  options?: RequestInit,
+): Promise<PostPrivate> => {
+  return customFetch<PostPrivate>(getUpdatePostUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updatePostInput),
+  });
+};
+
+export const getUpdatePostMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updatePost>>,
+    TError,
+    { id: number; data: BodyType<UpdatePostInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updatePost>>,
+  TError,
+  { id: number; data: BodyType<UpdatePostInput> },
+  TContext
+> => {
+  const mutationKey = ["updatePost"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updatePost>>,
+    { id: number; data: BodyType<UpdatePostInput> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updatePost(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdatePostMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updatePost>>
+>;
+export type UpdatePostMutationBody = BodyType<UpdatePostInput>;
+export type UpdatePostMutationError = ErrorType<void>;
+
+/**
+ * @summary Update a post owned by the authenticated user
+ */
+export const useUpdatePost = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updatePost>>,
+    TError,
+    { id: number; data: BodyType<UpdatePostInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updatePost>>,
+  TError,
+  { id: number; data: BodyType<UpdatePostInput> },
+  TContext
+> => {
+  return useMutation(getUpdatePostMutationOptions(options));
+};
+
+/**
+ * @summary Delete a post owned by the authenticated user
+ */
+export const getDeletePostUrl = (id: number) => {
+  return `/api/posts/${id}`;
+};
+
+export const deletePost = async (
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeletePostUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeletePostMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deletePost>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deletePost>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deletePost"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deletePost>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deletePost(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeletePostMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deletePost>>
+>;
+
+export type DeletePostMutationError = ErrorType<void>;
+
+/**
+ * @summary Delete a post owned by the authenticated user
+ */
+export const useDeletePost = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deletePost>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deletePost>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeletePostMutationOptions(options));
+};
 
 /**
  * @summary List verified NGOs

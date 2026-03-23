@@ -18,6 +18,8 @@ tags:
     description: Post reporting
   - name: metadata
     description: Filter options and reference data
+  - name: feedback
+    description: System feedback and bug reports
 paths:
   /healthz:
     get:
@@ -103,6 +105,23 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /posts/me:
+    get:
+      operationId: listMyPosts
+      tags: [posts]
+      summary: List posts created by the authenticated user
+      responses:
+        "200":
+          description: List of the current user's posts (including private location data)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PostPrivate"
+        "401":
+          description: Unauthorized
+
   /posts/{id}:
     get:
       operationId: getPost
@@ -127,6 +146,50 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updatePost
+      tags: [posts]
+      summary: Update a post owned by the authenticated user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePostInput"
+      responses:
+        "200":
+          description: Post updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PostPrivate"
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+    delete:
+      operationId: deletePost
+      tags: [posts]
+      summary: Delete a post owned by the authenticated user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Post deleted successfully
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
 
   /ngos:
     get:
@@ -186,6 +249,30 @@ paths:
               schema:
                 $ref: "#/components/schemas/Metadata"
 
+  /feedback:
+    post:
+      operationId: submitFeedback
+      tags: [feedback]
+      summary: Submit user feedback or bug report
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitFeedbackInput"
+      responses:
+        "200":
+          description: Feedback submitted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+        "400":
+          description: Validation error
+
 components:
   schemas:
     HealthStatus:
@@ -202,6 +289,12 @@ components:
       properties:
         id:
           type: integer
+        userId:
+          type: integer
+        ngoId:
+          type: integer
+          nullable: true
+          description: "ID of the NGO if the provider is an NGO"
         postType:
           type: string
           enum: [need, offer]
@@ -263,6 +356,7 @@ components:
           nullable: true
       required:
         - id
+        - userId
         - postType
         - title
         - category
@@ -272,6 +366,25 @@ components:
         - reportCount
         - createdAt
         - updatedAt
+
+    PostPrivate:
+      type: object
+      description: A post that includes exact private coordinates and address, returned only to its owner
+      allOf:
+        - $ref: "#/components/schemas/PostPublic"
+        - type: object
+          properties:
+            privateLat:
+              type: number
+              format: double
+              nullable: true
+            privateLng:
+              type: number
+              format: double
+              nullable: true
+            exactAddressPrivate:
+              type: string
+              nullable: true
 
     CreatePostInput:
       type: object
@@ -311,6 +424,16 @@ components:
         contactInfo:
           type: string
           nullable: true
+        providedLat:
+          type: number
+          format: double
+          nullable: true
+          description: Exact user-provided latitude from the map
+        providedLng:
+          type: number
+          format: double
+          nullable: true
+          description: Exact user-provided longitude from the map
         expiresInDays:
           type: integer
           minimum: 1
@@ -322,7 +445,23 @@ components:
         - title
         - category
         - description
+        - description
         - governorate
+
+    UpdatePostInput:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 3
+          maxLength: 120
+        description:
+          type: string
+          minLength: 10
+          maxLength: 1000
+        status:
+          type: string
+          enum: [active, hidden, resolved]
 
     Ngo:
       type: object
@@ -449,3 +588,21 @@ components:
           nullable: true
       required:
         - error
+
+    SubmitFeedbackInput:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [general, bug, feature, complaint, other]
+        name:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+        message:
+          type: string
+      required:
+        - type
+        - message

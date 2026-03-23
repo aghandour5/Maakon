@@ -43,6 +43,9 @@ export const PostPublicStatus = {
  */
 export interface PostPublic {
   id: number;
+  userId: number;
+  /** ID of the NGO if the provider is an NGO */
+  ngoId?: number | null;
   postType: PostPublicPostType;
   title: string;
   category: string;
@@ -65,6 +68,15 @@ export interface PostPublic {
   expiresAt?: string | null;
   lastConfirmedAt?: string | null;
 }
+
+/**
+ * A post that includes exact private coordinates and address, returned only to its owner
+ */
+export type PostPrivate = PostPublic & {
+  privateLat?: number | null;
+  privateLng?: number | null;
+  exactAddressPrivate?: string | null;
+};
 
 export type CreatePostInputPostType =
   (typeof CreatePostInputPostType)[keyof typeof CreatePostInputPostType];
@@ -106,12 +118,39 @@ export interface CreatePostInput {
   providerType?: string | null;
   contactMethod?: string | null;
   contactInfo?: string | null;
+  /** Exact user-provided latitude from the map */
+  providedLat?: number | null;
+  /** Exact user-provided longitude from the map */
+  providedLng?: number | null;
   /**
    * How many days until this post expires (default 30)
    * @minimum 1
    * @maximum 90
    */
   expiresInDays?: number | null;
+}
+
+export type UpdatePostInputStatus =
+  (typeof UpdatePostInputStatus)[keyof typeof UpdatePostInputStatus];
+
+export const UpdatePostInputStatus = {
+  active: "active",
+  hidden: "hidden",
+  resolved: "resolved",
+} as const;
+
+export interface UpdatePostInput {
+  /**
+   * @minLength 3
+   * @maxLength 120
+   */
+  title?: string;
+  /**
+   * @minLength 10
+   * @maxLength 1000
+   */
+  description?: string;
+  status?: UpdatePostInputStatus;
 }
 
 export interface Ngo {

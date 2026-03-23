@@ -1,4 +1,5 @@
 import { Router, type IRouter } from "express";
+import { requireAuth } from "../middlewares/auth";
 import { db } from "@workspace/db";
 import { reportsTable, postsTable } from "@workspace/db/schema";
 import { eq, sql } from "drizzle-orm";
@@ -6,7 +7,7 @@ import { CreateReportBody } from "@workspace/api-zod";
 
 const router: IRouter = Router();
 
-router.post("/reports", async (req, res) => {
+router.post("/reports", requireAuth, async (req, res) => {
   const body = CreateReportBody.safeParse(req.body);
   if (!body.success) {
     res.status(400).json({ error: "Validation failed", details: String(body.error) });
@@ -15,20 +16,36 @@ router.post("/reports", async (req, res) => {
 
   const { postId, reason, details } = body.data;
 
-  const post = await db
-    .select({ id: postsTable.id })
+  const [post] = await db
+    .select({
+      id: postsTable.id,
+      userId: postsTable.userId,
+      status: postsTable.status,
+      expiresAt: postsTable.expiresAt,
+    })
     .from(postsTable)
     .where(eq(postsTable.id, postId))
     .limit(1);
 
-  if (!post.length) {
+  if (
+    !post ||
+    post.status !== "active" ||
+    (post.expiresAt && post.expiresAt.getTime() <= Date.now())
+  ) {
     res.status(404).json({ error: "Post not found" });
     return;
   }
 
+  if (post.userId === req.user!.id) {
+    res.status(400).json({ error: "You cannot report your own post" });
+    return;
+  }
+
+  const normalizedDetails = details?.trim();
+
   const [report] = await db
     .insert(reportsTable)
-    .values({ postId, reason, details: details ?? null })
+    .values({ postId, reason, details: normalizedDetails || null })
     .returning();
 
   // Increment report count on the post

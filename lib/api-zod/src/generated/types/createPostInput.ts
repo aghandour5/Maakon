@@ -29,6 +29,10 @@ export interface CreatePostInput {
   providerType?: string | null;
   contactMethod?: string | null;
   contactInfo?: string | null;
+  /** Exact user-provided latitude from the map */
+  providedLat?: number | null;
+  /** Exact user-provided longitude from the map */
+  providedLng?: number | null;
   /**
    * How many days until this post expires (default 30)
    * @minimum 1

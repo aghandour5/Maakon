@@ -85,12 +85,13 @@
   --popover-foreground: 222 47% 10%;
   --popover-border: 214 32% 90%;
 
-  /* Vivid trust-blue */
-  --primary: 218 100% 42%;
+  /* Flag Red */
+  --primary: 355 83% 52%; /* #ed1c24 */
   --primary-foreground: 0 0% 100%;
 
-  --secondary: 216 30% 94%;
-  --secondary-foreground: 222 47% 14%;
+  /* Cedar Green */
+  --secondary: 149 100% 33%; /* #00a651 */
+  --secondary-foreground: 0 0% 100%;
 
   --muted: 216 28% 93%;
   --muted-foreground: 215 18% 52%;
@@ -98,20 +99,21 @@
   --accent: 216 30% 94%;
   --accent-foreground: 222 47% 14%;
 
-  /* Vivid crisis-red */
-  --destructive: 4 88% 50%;
+  /* Keep destructive red similar but slightly darker for contrast if needed */
+  --destructive: 355 83% 52%;
   --destructive-foreground: 0 0% 100%;
 
-  /* Rich emerald */
-  --success: 152 70% 40%;
+  /* Cedar Green for success states */
+  --success: 149 100% 33%;
   --success-foreground: 0 0% 100%;
 
+  /* Info blue */
   --info: 217 91% 60%;
   --info-foreground: 0 0% 100%;
 
   --border: 214 28% 89%;
   --input: 214 28% 89%;
-  --ring: 218 100% 42%;
+  --ring: 355 83% 52%;
 
   --app-font-sans: 'Inter', sans-serif;
   --app-font-arabic: 'Cairo', sans-serif;
@@ -216,13 +218,50 @@
   z-index: 999 !important;
   box-shadow: 0 0 0 3px white, 0 0 0 5.5px currentColor, 0 8px 20px rgba(0,0,0,0.35) !important;
 }
-.marker-need { background-color: hsl(4 88% 50%); }
-.marker-offer { background-color: hsl(152 70% 40%); }
-.marker-ngo { background-color: hsl(218 100% 42%); border-radius: 10px; }
+.marker-need { 
+  background-color: hsl(355 83% 52%); 
+  position: relative;
+} 
+.marker-need::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 50px;
+  height: 50px;
+  background-color: hsla(355, 83%, 52%, 0.25);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: -1;
+}
+.marker-need::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100px;
+  height: 100px;
+  background-color: hsla(355, 83%, 52%, 0.1);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: -2;
+  animation: pulse-region 3s infinite alternate ease-in-out;
+}
+
+@keyframes pulse-region {
+  0% { transform: translate(-50%, -50%) scale(0.95); opacity: 0.8; }
+  100% { transform: translate(-50%, -50%) scale(1.05); opacity: 1; }
+}
+
+.marker-offer { background-color: hsl(149 100% 33%); } /* Cedar Green */
+.marker-ngo { background-color: hsl(218 100% 42%); border-radius: 10px; } /* Verified NGO — blue */
+.marker-ngo-unverified { background-color: hsl(30 95% 55%); border-radius: 10px; } /* Unverified NGO — orange */
 .marker-cluster {
   background: rgba(255,255,255,0.95);
-  border: 2.5px solid hsl(218 100% 42%);
-  color: hsl(218 100% 42%);
+  border: 2.5px solid hsl(355 83% 52%);
+  color: hsl(355 83% 52%);
   font-weight: 800;
   font-size: 0.8rem;
   border-radius: 50%;

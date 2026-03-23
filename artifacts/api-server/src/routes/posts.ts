@@ -1,21 +1,38 @@
 import { Router, type IRouter } from "express";
+import { requireAuth } from "../middlewares/auth";
 import { db } from "@workspace/db";
-import { postsTable } from "@workspace/db/schema";
-import { and, eq, gt, or, isNull } from "drizzle-orm";
+import { postsTable, ngosTable } from "@workspace/db/schema";
+import { and, eq, gt, isNull, or, desc } from "drizzle-orm";
 import {
   ListPostsQueryParams,
   CreatePostBody,
   GetPostParams,
 } from "@workspace/api-zod";
+import * as apiZod from "@workspace/api-zod";
+import { getPublicCoordinates } from "../lib/post-location";
 
 const router: IRouter = Router();
+const ngosTableWithUserId = ngosTable as typeof ngosTable & {
+  userId: unknown;
+};
+const UpdatePostBody = (apiZod as unknown as {
+  UpdatePostBody: { safeParse: (input: unknown) => { success: boolean; data?: any } };
+}).UpdatePostBody;
 
-/**
- * Build a safe public post object — NEVER exposes private coordinates or address.
- */
 function toPublicPost(post: typeof postsTable.$inferSelect) {
+  const { lat: publicLat, lng: publicLng } =
+    post.publicLat != null && post.publicLng != null
+      ? clampCoastalCoords(
+          post.publicLat,
+          post.publicLng,
+          post.district,
+          post.governorate,
+        )
+      : { lat: null, lng: null };
+
   return {
     id: post.id,
+    userId: post.userId,
     postType: post.postType,
     title: post.title,
     category: post.category,
@@ -23,9 +40,8 @@ function toPublicPost(post: typeof postsTable.$inferSelect) {
     urgency: post.urgency ?? null,
     governorate: post.governorate,
     district: post.district ?? null,
-    // publicLat/publicLng are the safe fuzzed coordinates — private ones are NEVER returned
-    publicLat: post.publicLat ?? null,
-    publicLng: post.publicLng ?? null,
+    publicLat: publicLat ?? null,
+    publicLng: publicLng ?? null,
     providerType: post.providerType ?? null,
     verifiedBadgeType: post.verifiedBadgeType ?? null,
     contactMethod: post.contactMethod ?? null,
@@ -36,55 +52,71 @@ function toPublicPost(post: typeof postsTable.$inferSelect) {
     updatedAt: post.updatedAt,
     expiresAt: post.expiresAt ?? null,
     lastConfirmedAt: post.lastConfirmedAt ?? null,
-    // privateLat, privateLng, exactAddressPrivate — NEVER included
   };
 }
 
-/** Fuzz a coordinate to ~district level (±0.05 degrees ≈ 5km) */
-function fuzzCoordinate(coord: number): number {
-  const jitter = (Math.random() - 0.5) * 0.1;
-  return Math.round((coord + jitter) * 10000) / 10000;
+function toPrivatePost(post: typeof postsTable.$inferSelect) {
+  return {
+    ...toPublicPost(post),
+    privateLat: post.privateLat ?? null,
+    privateLng: post.privateLng ?? null,
+    exactAddressPrivate: post.exactAddressPrivate ?? null,
+  };
 }
 
-/** District-level approximate centers for Lebanese governorates */
-const GOVERNORATE_CENTERS: Record<string, { lat: number; lng: number }> = {
-  "Beirut": { lat: 33.8938, lng: 35.5018 },
-  "Mount Lebanon": { lat: 33.8100, lng: 35.6000 },
-  "North Lebanon": { lat: 34.4333, lng: 35.8333 },
-  "South Lebanon": { lat: 33.2717, lng: 35.2033 },
-  "Nabatieh": { lat: 33.3772, lng: 35.4840 },
-  "Bekaa": { lat: 33.8500, lng: 35.9017 },
-  "Akkar": { lat: 34.5581, lng: 36.0808 },
-  "Baalbek-Hermel": { lat: 34.0049, lng: 36.2098 },
+const COASTAL_BOUNDS: Record<string, [number, number, number, number]> = {
+  Beirut: [33.85, 33.93, 35.49, 35.56],
+  "Beirut City": [33.85, 33.93, 35.49, 35.56],
 };
 
-function getPublicCoordinates(
-  postType: string,
+function clampCoastalCoords(
+  lat: number,
+  lng: number,
+  district: string | null | undefined,
   governorate: string,
-  providedLat?: number | null,
-  providedLng?: number | null,
-) {
-  if (postType === "need") {
-    // For needs: always use fuzzed district-center coordinates, never exact
-    const center = GOVERNORATE_CENTERS[governorate] ?? { lat: 33.8547, lng: 35.8623 };
-    return { publicLat: fuzzCoordinate(center.lat), publicLng: fuzzCoordinate(center.lng) };
+): { lat: number; lng: number } {
+  const bounds = COASTAL_BOUNDS[district ?? ""] ?? COASTAL_BOUNDS[governorate];
+
+  if (!bounds) {
+    return { lat, lng };
   }
-  // For offers: use provided coordinates if available, else governorate center
-  if (providedLat && providedLng) {
-    return { publicLat: providedLat, publicLng: providedLng };
+
+  const [minLat, maxLat, minLng, maxLng] = bounds;
+  return {
+    lat: Math.min(Math.max(lat, minLat), maxLat),
+    lng: Math.min(Math.max(lng, minLng), maxLng),
+  };
+}
+
+function isPubliclyVisiblePost(post: typeof postsTable.$inferSelect): boolean {
+  if (post.status !== "active") {
+    return false;
   }
-  const center = GOVERNORATE_CENTERS[governorate] ?? { lat: 33.8547, lng: 35.8623 };
-  return { publicLat: center.lat, publicLng: center.lng };
+
+  return !post.expiresAt || post.expiresAt.getTime() > Date.now();
 }
 
 router.get("/posts", async (req, res) => {
   const query = ListPostsQueryParams.safeParse(req.query);
   if (!query.success) {
-    res.status(400).json({ error: "Invalid query parameters", details: String(query.error) });
+    res
+      .status(400)
+      .json({ error: "Invalid query parameters", details: String(query.error) });
     return;
   }
 
-  const { postType, category, governorate, district, urgency, activeOnly, verifiedNgoOnly } = query.data;
+  let {
+    postType,
+    category,
+    governorate,
+    district,
+    urgency,
+    activeOnly,
+    verifiedNgoOnly,
+  } = query.data;
+
+  if (req.query.activeOnly === "false") activeOnly = false;
+  if (req.query.verifiedNgoOnly === "false") verifiedNgoOnly = false;
 
   const filters = [];
   if (postType) filters.push(eq(postsTable.postType, postType));
@@ -99,16 +131,23 @@ router.get("/posts", async (req, res) => {
     filters.push(or(isNull(postsTable.expiresAt), gt(postsTable.expiresAt, now))!);
   }
 
-  const posts = await db
-    .select()
+  const rows = await db
+    .select({
+      post: postsTable,
+      ngoId: ngosTableWithUserId.id,
+    })
     .from(postsTable)
+    .leftJoin(ngosTableWithUserId, eq(postsTable.userId, ngosTableWithUserId.userId as any))
     .where(filters.length > 0 ? and(...filters) : undefined)
     .orderBy(postsTable.createdAt);
 
-  res.json(posts.map(toPublicPost));
+  res.json(rows.map(({ post, ngoId }) => ({
+    ...toPublicPost(post),
+    ngoId: post.providerType === "ngo" ? ngoId : null,
+  })));
 });
 
-router.post("/posts", async (req, res) => {
+router.post("/posts", requireAuth, async (req, res) => {
   const body = CreatePostBody.safeParse(req.body);
   if (!body.success) {
     res.status(400).json({ error: "Validation failed", details: String(body.error) });
@@ -127,13 +166,64 @@ router.post("/posts", async (req, res) => {
     providerType,
     contactMethod,
     contactInfo,
+    providedLat,
+    providedLng,
     expiresInDays,
-  } = body.data;
+  } = body.data as typeof body.data & {
+    providedLat?: number | null;
+    providedLng?: number | null;
+  };
 
-  const { publicLat, publicLng } = getPublicCoordinates(postType, governorate);
+  const { publicLat, publicLng } = getPublicCoordinates(
+    postType,
+    governorate,
+    district,
+    providedLat,
+    providedLng,
+    providerType,
+  );
 
-  // Compute expiry: use caller-supplied duration (capped 1–90 days) or default 30 days
-  const daysUntilExpiry = expiresInDays && expiresInDays > 0 ? Math.min(expiresInDays, 90) : 30;
+  let verifiedBadgeType: "ngo" | null = null;
+  let ngoId: number | null = null;
+  if (providerType === "ngo") {
+    let [ngo] = await db
+      .select()
+      .from(ngosTable)
+      .where(eq(ngosTableWithUserId.userId as never, req.user!.id))
+      .limit(1);
+
+    if (!ngo) {
+      // Auto-create unverified NGO so it appears in the admin console
+      const [newNgo] = await db
+        .insert(ngosTable)
+        .values({
+          name: title, // Initially use post title as NGO name
+          description: description,
+          governorate: governorate,
+          district: district ?? null,
+          lat: providedLat ?? null,
+          lng: providedLng ?? null,
+          phone: contactInfo ?? null,
+          status: "active",
+        } as any) // Cast required due to inference limits
+        .returning();
+      
+      // Link userId using the locally defined type
+      await db
+        .update(ngosTableWithUserId)
+        .set({ userId: req.user!.id } as any)
+        .where(eq(ngosTable.id, newNgo.id));
+      ngo = newNgo;
+    }
+
+    ngoId = ngo.id;
+    if (ngo && ngo.verifiedAt) {
+      verifiedBadgeType = "ngo";
+    }
+  }
+
+  const daysUntilExpiry =
+    expiresInDays && expiresInDays > 0 ? Math.min(expiresInDays, 90) : 30;
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + daysUntilExpiry);
 
@@ -149,21 +239,91 @@ router.post("/posts", async (req, res) => {
       district: district ?? null,
       publicLat,
       publicLng,
-      privateLat: null,
-      privateLng: null,
+      privateLat: providedLat ?? null,
+      privateLng: providedLng ?? null,
       exactAddressPrivate: exactAddressPrivate ?? null,
       providerType: providerType ?? null,
+      verifiedBadgeType,
       contactMethod: contactMethod ?? null,
       contactInfo: contactInfo ?? null,
-      // New posts are immediately active so they appear on the map.
-      // Pending status is reserved for admin-reviewed content only.
       status: "active",
+      userId: req.user!.id,
       expiresAt,
       lastConfirmedAt: new Date(),
     })
     .returning();
 
-  res.status(201).json(toPublicPost(post));
+  res.status(201).json({
+    ...toPublicPost(post),
+    ngoId,
+  });
+});
+
+router.get("/posts/me", requireAuth, async (req, res) => {
+  const rows = await db
+    .select({
+      post: postsTable,
+      ngoId: ngosTableWithUserId.id,
+    })
+    .from(postsTable)
+    .leftJoin(ngosTableWithUserId, eq(postsTable.userId, ngosTableWithUserId.userId as any))
+    .where(eq(postsTable.userId, req.user!.id))
+    .orderBy(desc(postsTable.createdAt));
+
+  res.json(rows.map(({ post, ngoId }) => ({
+    ...toPrivatePost(post),
+    ngoId: post.providerType === "ngo" ? ngoId : null,
+  })));
+});
+
+router.patch("/posts/:id", requireAuth, async (req, res) => {
+  const params = GetPostParams.safeParse({ id: Number(req.params.id) });
+  if (!params.success) return void res.status(400).json({ error: "Invalid post ID" });
+
+  const body = UpdatePostBody.safeParse(req.body);
+  if (!body.success) return void res.status(400).json({ error: "Validation failed" });
+
+  const [post] = await db
+    .select()
+    .from(postsTable)
+    .where(eq(postsTable.id, params.data.id))
+    .limit(1);
+
+  if (!post) return void res.status(404).json({ error: "Post not found" });
+  if (post.userId !== req.user!.id) return void res.status(403).json({ error: "Forbidden" });
+
+  const { title, description, status } = body.data;
+
+  const [updatedPost] = await db
+    .update(postsTable)
+    .set({
+      ...(title ? { title } : {}),
+      ...(description ? { description } : {}),
+      ...(status ? { status } : {}),
+      updatedAt: new Date(),
+    })
+    .where(eq(postsTable.id, post.id))
+    .returning();
+
+  res.json(toPrivatePost(updatedPost));
+});
+
+router.delete("/posts/:id", requireAuth, async (req, res) => {
+  const params = GetPostParams.safeParse({ id: Number(req.params.id) });
+  if (!params.success) return void res.status(400).json({ error: "Invalid post ID" });
+
+  const [post] = await db
+    .select()
+    .from(postsTable)
+    .where(eq(postsTable.id, params.data.id))
+    .limit(1);
+
+  if (!post) return void res.status(404).json({ error: "Post not found" });
+  if (post.userId !== req.user!.id) return void res.status(403).json({ error: "Forbidden" });
+
+  await db.delete(postsTable).where(eq(postsTable.id, post.id));
+
+  res.status(204).send();
 });
 
 router.get("/posts/:id", async (req, res) => {
@@ -173,18 +333,25 @@ router.get("/posts/:id", async (req, res) => {
     return;
   }
 
-  const [post] = await db
-    .select()
+  const [row] = await db
+    .select({
+      post: postsTable,
+      ngoId: ngosTableWithUserId.id,
+    })
     .from(postsTable)
+    .leftJoin(ngosTableWithUserId, eq(postsTable.userId, ngosTableWithUserId.userId as any))
     .where(eq(postsTable.id, params.data.id))
     .limit(1);
 
-  if (!post) {
+  if (!row || !isPubliclyVisiblePost(row.post)) {
     res.status(404).json({ error: "Post not found" });
     return;
   }
 
-  res.json(toPublicPost(post));
+  res.json({
+    ...toPublicPost(row.post),
+    ngoId: row.post.providerType === "ngo" ? row.ngoId : null,
+  });
 });
 
 export default router;

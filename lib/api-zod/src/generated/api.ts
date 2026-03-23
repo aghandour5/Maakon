@@ -35,6 +35,11 @@ export const ListPostsQueryParams = zod.object({
 export const ListPostsResponseItem = zod
   .object({
     id: zod.number(),
+    userId: zod.number(),
+    ngoId: zod
+      .number()
+      .nullish()
+      .describe("ID of the NGO if the provider is an NGO"),
     postType: zod.enum(["need", "offer"]),
     title: zod.string(),
     category: zod.string(),
@@ -93,6 +98,14 @@ export const CreatePostBody = zod.object({
   providerType: zod.string().nullish(),
   contactMethod: zod.string().nullish(),
   contactInfo: zod.string().nullish(),
+  providedLat: zod
+    .number()
+    .nullish()
+    .describe("Exact user-provided latitude from the map"),
+  providedLng: zod
+    .number()
+    .nullish()
+    .describe("Exact user-provided longitude from the map"),
   expiresInDays: zod
     .number()
     .min(1)
@@ -100,6 +113,56 @@ export const CreatePostBody = zod.object({
     .nullish()
     .describe("How many days until this post expires (default 30)"),
 });
+
+/**
+ * @summary List posts created by the authenticated user
+ */
+export const ListMyPostsResponseItem = zod
+  .object({
+    id: zod.number(),
+    userId: zod.number(),
+    ngoId: zod
+      .number()
+      .nullish()
+      .describe("ID of the NGO if the provider is an NGO"),
+    postType: zod.enum(["need", "offer"]),
+    title: zod.string(),
+    category: zod.string(),
+    description: zod.string(),
+    urgency: zod.enum(["critical", "high", "medium", "low"]).nullish(),
+    governorate: zod.string(),
+    district: zod.string().nullish(),
+    publicLat: zod
+      .number()
+      .nullish()
+      .describe("Fuzzed district-level latitude (never exact for need posts)"),
+    publicLng: zod
+      .number()
+      .nullish()
+      .describe("Fuzzed district-level longitude (never exact for need posts)"),
+    providerType: zod.string().nullish(),
+    verifiedBadgeType: zod.string().nullish(),
+    contactMethod: zod.string().nullish(),
+    contactInfo: zod.string().nullish(),
+    status: zod.enum(["pending", "active", "expired", "removed"]),
+    reportCount: zod.number(),
+    createdAt: zod.date(),
+    updatedAt: zod.date(),
+    expiresAt: zod.date().nullish(),
+    lastConfirmedAt: zod.date().nullish(),
+  })
+  .describe("A post with no private location data exposed")
+  .and(
+    zod.object({
+      privateLat: zod.number().nullish(),
+      privateLng: zod.number().nullish(),
+      exactAddressPrivate: zod.string().nullish(),
+    }),
+  )
+  .describe(
+    "A post that includes exact private coordinates and address, returned only to its owner",
+  );
+export const ListMyPostsResponse = zod.array(ListMyPostsResponseItem);
 
 /**
  * @summary Get public post detail
@@ -111,6 +174,11 @@ export const GetPostParams = zod.object({
 export const GetPostResponse = zod
   .object({
     id: zod.number(),
+    userId: zod.number(),
+    ngoId: zod
+      .number()
+      .nullish()
+      .describe("ID of the NGO if the provider is an NGO"),
     postType: zod.enum(["need", "offer"]),
     title: zod.string(),
     category: zod.string(),
@@ -138,6 +206,86 @@ export const GetPostResponse = zod
     lastConfirmedAt: zod.date().nullish(),
   })
   .describe("A post with no private location data exposed");
+
+/**
+ * @summary Update a post owned by the authenticated user
+ */
+export const UpdatePostParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const updatePostBodyTitleMin = 3;
+export const updatePostBodyTitleMax = 120;
+
+export const updatePostBodyDescriptionMin = 10;
+export const updatePostBodyDescriptionMax = 1000;
+
+export const UpdatePostBody = zod.object({
+  title: zod
+    .string()
+    .min(updatePostBodyTitleMin)
+    .max(updatePostBodyTitleMax)
+    .optional(),
+  description: zod
+    .string()
+    .min(updatePostBodyDescriptionMin)
+    .max(updatePostBodyDescriptionMax)
+    .optional(),
+  status: zod.enum(["active", "hidden", "resolved"]).optional(),
+});
+
+export const UpdatePostResponse = zod
+  .object({
+    id: zod.number(),
+    userId: zod.number(),
+    ngoId: zod
+      .number()
+      .nullish()
+      .describe("ID of the NGO if the provider is an NGO"),
+    postType: zod.enum(["need", "offer"]),
+    title: zod.string(),
+    category: zod.string(),
+    description: zod.string(),
+    urgency: zod.enum(["critical", "high", "medium", "low"]).nullish(),
+    governorate: zod.string(),
+    district: zod.string().nullish(),
+    publicLat: zod
+      .number()
+      .nullish()
+      .describe("Fuzzed district-level latitude (never exact for need posts)"),
+    publicLng: zod
+      .number()
+      .nullish()
+      .describe("Fuzzed district-level longitude (never exact for need posts)"),
+    providerType: zod.string().nullish(),
+    verifiedBadgeType: zod.string().nullish(),
+    contactMethod: zod.string().nullish(),
+    contactInfo: zod.string().nullish(),
+    status: zod.enum(["pending", "active", "expired", "removed"]),
+    reportCount: zod.number(),
+    createdAt: zod.date(),
+    updatedAt: zod.date(),
+    expiresAt: zod.date().nullish(),
+    lastConfirmedAt: zod.date().nullish(),
+  })
+  .describe("A post with no private location data exposed")
+  .and(
+    zod.object({
+      privateLat: zod.number().nullish(),
+      privateLng: zod.number().nullish(),
+      exactAddressPrivate: zod.string().nullish(),
+    }),
+  )
+  .describe(
+    "A post that includes exact private coordinates and address, returned only to its owner",
+  );
+
+/**
+ * @summary Delete a post owned by the authenticated user
+ */
+export const DeletePostParams = zod.object({
+  id: zod.coerce.number(),
+});
 
 /**
  * @summary List verified NGOs

@@ -1,9 +1,11 @@
-import { pgTable, serial, text, timestamp, doublePrecision } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, timestamp, doublePrecision, integer } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
+import { usersTable } from "./users";
 
 export const ngosTable = pgTable("ngos", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => usersTable.id, { onDelete: "set null" }),
   name: text("name").notNull(),
   description: text("description"),
   governorate: text("governorate").notNull(),

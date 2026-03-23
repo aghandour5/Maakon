@@ -1,3 +1,4 @@
+import "dotenv/config";
 import app from "./app";
 import { logger } from "./lib/logger";
 
@@ -15,6 +16,7 @@ if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
-app.listen(port, () => {
-  logger.info({ port }, "Server listening");
+app.listen(port, "0.0.0.0", () => {
+  logger.info({ port }, "Server listening on all interfaces (0.0.0.0)");
 });
+

@@ -36,7 +36,11 @@ export const postsTable = pgTable("posts", {
   status: postStatusEnum("status").default("pending").notNull(),
   reportCount: integer("report_count").default(0).notNull(),
 
+  // userId is nullable — drafts are created before sign-in
   userId: integer("user_id").references(() => usersTable.id),
+
+  // Secure token to link a draft post to a user after email-link sign-in
+  draftToken: text("draft_token"),
 
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { TopNav } from "@/components/layout/TopNav";
 import { useListPosts, useListNgos, useGetMetadata } from "@workspace/api-client-react";
@@ -7,10 +7,11 @@ import { MapContainer, TileLayer, Marker, Popup, ZoomControl, useMap } from "rea
 import MarkerClusterGroup from "react-leaflet-cluster";
 import L from "leaflet";
 import { PostDetailsModal } from "@/components/map/PostDetailsModal";
-import { Filter, X, MapPin, ChevronRight, SearchX, Plus, AlertTriangle } from "lucide-react";
+import { Filter, X, MapPin, ChevronRight, SearchX, Plus, Minus, Maximize, AlertTriangle, LocateFixed } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ar, enUS } from "date-fns/locale";
 import { useLocation } from "wouter";
+import { useAuthGate } from "@/hooks/useAuthGate";
 
 // ─── Icons ──────────────────────────────────────────────────────────────────
 
@@ -28,9 +29,14 @@ const SHIELD_SVG = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" 
 const icons = {
   need: makeIcon('marker-need'),
   offer: makeIcon('marker-offer'),
+  offerVerified: makeIcon('marker-offer', SHIELD_SVG),
+  offerUnverified: makeIcon('marker-offer bg-green-600', '<div style="position:absolute;top:-2px;right:-2px;width:10px;height:10px;background-color:#f97316;border-radius:50%;border:2px solid white;z-index:10"></div>'),
   ngo: makeIcon('marker-ngo', SHIELD_SVG),
+  ngoUnverified: makeIcon('marker-ngo-unverified'),
   selectedNeed: makeIcon('marker-need marker-selected', '', 32),
   selectedOffer: makeIcon('marker-offer marker-selected', '', 32),
+  selectedOfferVerified: makeIcon('marker-offer marker-selected', SHIELD_SVG, 32),
+  selectedOfferUnverified: makeIcon('marker-offer marker-selected bg-green-600', '<div style="position:absolute;top:-1px;right:-1px;width:12px;height:12px;background-color:#f97316;border-radius:50%;border:2px solid white;z-index:10"></div>', 32),
 };
 
 const createClusterCustomIcon = (
@@ -54,11 +60,88 @@ function MapController({ center }: { center: [number, number] | null }) {
   return null;
 }
 
+// ─── Modern Custom Leaflet Controls ─────────────────────────────────────────
+
+function ModernMapControls() {
+  const map = useMap();
+  const { i18n, t } = useTranslation();
+  const isRtl = i18n.dir() === "rtl";
+  const ref = useRef<HTMLDivElement>(null);
+  const [locating, setLocating] = useState(false);
+  const [locateError, setLocateError] = useState(false);
+
+  useEffect(() => {
+    if (ref.current) {
+      L.DomEvent.disableClickPropagation(ref.current);
+      L.DomEvent.disableScrollPropagation(ref.current);
+    }
+  }, []);
+
+  const handleLocate = () => {
+    if (!navigator.geolocation) return;
+    setLocating(true);
+    setLocateError(false);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLocating(false);
+        map.flyTo([pos.coords.latitude, pos.coords.longitude], 14, { duration: 1 });
+      },
+      () => {
+        setLocating(false);
+        setLocateError(true);
+        setTimeout(() => setLocateError(false), 3000);
+      },
+      { timeout: 8000 },
+    );
+  };
+
+  return (
+    <div ref={ref} className={`absolute top-20 sm:top-24 ${isRtl ? 'right-4 sm:right-6' : 'left-4 sm:left-6'} z-[1000] flex flex-col gap-2`}>
+      <button
+        onClick={() => map.zoomIn()}
+        className="w-10 h-10 bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.12)] border border-slate-200/50 flex flex-col items-center justify-center text-slate-700 hover:bg-white hover:text-emerald-600 transition-all hover:scale-105 active:scale-95"
+      >
+        <Plus className="w-5 h-5" />
+      </button>
+      <button
+        onClick={() => map.zoomOut()}
+        className="w-10 h-10 bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.12)] border border-slate-200/50 flex flex-col items-center justify-center text-slate-700 hover:bg-white hover:text-emerald-600 transition-all hover:scale-105 active:scale-95"
+      >
+        <Minus className="w-5 h-5" />
+      </button>
+      <button
+        onClick={() => map.flyToBounds([[33.05, 35.1], [34.70, 36.65]], { duration: 1.2 })}
+        className="w-10 h-10 bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.12)] border border-slate-200/50 flex items-center justify-center text-slate-700 hover:bg-white hover:text-emerald-600 transition-all hover:scale-105 active:scale-95 mt-1 sm:mt-2"
+        title={t('fit_to_screen') || "Fit to Screen"}
+      >
+        <Maximize className="w-4 h-4 sm:w-5 sm:h-5" />
+      </button>
+      {/* Locate me */}
+      <button
+        onClick={handleLocate}
+        disabled={locating}
+        title={t('locate_me') || "My Location"}
+        className={`w-10 h-10 backdrop-blur-md rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.12)] border flex items-center justify-center transition-all hover:scale-105 active:scale-95 ${locateError
+          ? 'bg-red-50 border-red-200 text-red-500'
+          : 'bg-white/90 border-slate-200/50 text-slate-700 hover:bg-white hover:text-blue-600'
+          } ${locating ? 'opacity-60 cursor-wait' : ''}`}
+      >
+        <LocateFixed className={`w-4 h-4 sm:w-5 sm:h-5 ${locating ? 'animate-pulse text-blue-500' : ''}`} />
+      </button>
+    </div>
+  );
+}
+
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 type SelectedItem = { item: PostPublic; type: 'post' } | { item: Ngo; type: 'ngo' };
 
 // ─── Page ───────────────────────────────────────────────────────────────────
+
+const LEBANON_BOUNDS: L.LatLngBoundsExpression = [
+  [33.05, 35.1], // South-West (approx)
+  [34.70, 36.65] // North-East (approx)
+];
 
 export default function MapPage() {
   const { t, i18n } = useTranslation();
@@ -73,11 +156,12 @@ export default function MapPage() {
   const [selectedPostId, setSelectedPostId] = useState<number | null>(null);
   const [mapCenter, setMapCenter] = useState<[number, number] | null>(null);
 
-  const { data: posts, isLoading: isLoadingPosts } = useListPosts(filters);
-  const { data: ngos, isLoading: isLoadingNgos } = useListNgos(
+  const { data: posts, isLoading: isLoadingPosts, isError: isErrorPosts } = useListPosts(filters);
+  const { data: ngos, isLoading: isLoadingNgos, isError: isErrorNgos } = useListNgos(
     filters.governorate ? { governorate: filters.governorate } : undefined
   );
   const { data: metadata } = useGetMetadata();
+  const { requireAuth } = useAuthGate();
 
   // Trigger Leaflet resize after mount
   useEffect(() => {
@@ -152,18 +236,23 @@ export default function MapPage() {
   // ── Loading / empty states ──────────────────────────────────────────────
 
   const isLoading = isLoadingPosts || isLoadingNgos;
-  const hasResults = (posts?.length ?? 0) > 0;
+  const isError = isErrorPosts || isErrorNgos;
+  const visibleNgos = (!filters.postType || filters.verifiedNgoOnly) ? (ngos ?? []) : [];
+  const totalResults = (posts?.length ?? 0) + visibleNgos.length;
+  const hasResults = totalResults > 0;
 
   // ── Render ──────────────────────────────────────────────────────────────
 
   return (
-    <div className="h-screen w-full flex flex-col bg-background overflow-hidden relative">
+    <div className="h-[100dvh] w-full flex flex-col bg-background overflow-hidden relative">
       <TopNav title={t('view_map')} showBack />
 
-      <main className="flex-1 relative z-0 mt-16">
+      <main className="flex-1 relative z-0">
         <MapContainer
-          center={[33.8547, 35.8623]}
-          zoom={8}
+          bounds={LEBANON_BOUNDS}
+          minZoom={8}
+          maxBounds={LEBANON_BOUNDS}
+          maxBoundsViscosity={1.0}
           className="w-full h-full"
           zoomControl={false}
           attributionControl={false}
@@ -172,7 +261,7 @@ export default function MapPage() {
             url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
             maxZoom={19}
           />
-          <ZoomControl position={isRtl ? "bottomleft" : "bottomright"} />
+          <ModernMapControls />
           <MapController center={mapCenter} />
 
           <MarkerClusterGroup
@@ -184,9 +273,18 @@ export default function MapPage() {
             {posts?.map(post => {
               if (!post.publicLat || !post.publicLng) return null;
               const isSelected = post.id === selectedPostId;
-              const icon = isSelected
+              
+              let icon = isSelected
                 ? (post.postType === 'need' ? icons.selectedNeed : icons.selectedOffer)
                 : (post.postType === 'need' ? icons.need : icons.offer);
+
+              if (post.postType === 'offer' && post.providerType === 'ngo') {
+                if (isSelected) {
+                  icon = post.verifiedBadgeType === 'ngo' ? icons.selectedOfferVerified : icons.selectedOfferUnverified;
+                } else {
+                  icon = post.verifiedBadgeType === 'ngo' ? icons.offerVerified : icons.offerUnverified;
+                }
+              }
 
               return (
                 <Marker
@@ -212,6 +310,11 @@ export default function MapPage() {
                         {post.urgency && post.postType === 'need' && (
                           <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${post.urgency === 'critical' ? 'bg-red-500 text-white' : 'bg-orange-100 text-orange-700'}`}>
                             {t(post.urgency)}
+                          </span>
+                        )}
+                        {post.providerType === 'ngo' && (
+                          <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${post.verifiedBadgeType === 'ngo' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'}`}>
+                            {post.verifiedBadgeType === 'ngo' ? `✓ ${t('verified_ngo')}` : `● ${t('unverified_ngo', 'Unverified')}`}
                           </span>
                         )}
                       </div>
@@ -242,17 +345,20 @@ export default function MapPage() {
             {/* NGO markers */}
             {(!filters.postType || filters.verifiedNgoOnly) && ngos?.map(ngo => {
               if (!ngo.lat || !ngo.lng) return null;
+              const isVerified = !!ngo.verifiedAt;
               return (
                 <Marker
                   key={`ngo-${ngo.id}`}
                   position={[ngo.lat, ngo.lng]}
-                  icon={icons.ngo}
+                  icon={isVerified ? icons.ngo : icons.ngoUnverified}
                   eventHandlers={{ click: () => openNgo(ngo) }}
                 >
                   <Popup className="leaflet-popup-custom">
                     <div className={`p-2 min-w-[160px] ${isRtl ? 'text-right' : 'text-left'}`}>
-                      <span className="text-[10px] uppercase font-bold text-blue-600 mb-1 block">
-                        ✓ {t('verified_ngo')}
+                      <span className={`text-[10px] uppercase font-bold mb-1 block ${
+                        isVerified ? 'text-blue-600' : 'text-orange-500'
+                      }`}>
+                        {isVerified ? `✓ ${t('verified_ngo')}` : `● ${t('unverified_ngo', 'Unverified NGO')}`}
                       </span>
                       <strong className="text-sm block mb-1 leading-tight text-foreground">
                         {ngo.name}
@@ -265,7 +371,9 @@ export default function MapPage() {
                       )}
                       <button
                         onClick={() => openNgo(ngo)}
-                        className="w-full text-center py-1.5 rounded-lg bg-blue-600 text-white text-xs font-semibold"
+                        className={`w-full text-center py-1.5 rounded-lg text-white text-xs font-semibold ${
+                          isVerified ? 'bg-blue-600' : 'bg-orange-500'
+                        }`}
                       >
                         {t('view_details')}
                       </button>
@@ -279,7 +387,7 @@ export default function MapPage() {
 
         {/* Loading indicator */}
         {isLoading && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-background/90 backdrop-blur px-4 py-2 rounded-full shadow-md z-[1000] border border-border text-sm font-medium flex items-center gap-2">
+          <div className="absolute top-20 left-1/2 -translate-x-1/2 bg-background/90 backdrop-blur px-4 py-2 rounded-full shadow-md z-[1000] border border-border text-sm font-medium flex items-center gap-2">
             <span className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
             {t('loading')}
           </div>
@@ -287,7 +395,7 @@ export default function MapPage() {
 
         {/* Map Legend */}
         <div
-          className={`absolute bottom-6 ${isRtl ? 'right-6' : 'left-6'} z-[400] px-3.5 py-3 rounded-2xl flex flex-col gap-2`}
+          className={`absolute bottom-4 sm:bottom-6 ${isRtl ? 'right-4 sm:right-6' : 'left-4 sm:left-6'} z-[400] px-2.5 py-2 sm:px-3.5 sm:py-3 rounded-xl sm:rounded-2xl flex flex-col gap-1.5 sm:gap-2`}
           style={{
             background: 'rgba(255,255,255,0.92)',
             backdropFilter: 'blur(16px)',
@@ -303,35 +411,40 @@ export default function MapPage() {
             { color: '#3b82f6', label: t('ngos') },
           ].map(({ color, label }) => (
             <div key={label} className="flex items-center gap-2.5">
-              <div className="w-3 h-3 rounded-full shadow-sm shrink-0" style={{ backgroundColor: color, boxShadow: `0 1px 4px ${color}88` }} />
-              <span className="text-xs font-semibold text-gray-600">{label}</span>
+              <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full shadow-sm shrink-0" style={{ backgroundColor: color, boxShadow: `0 1px 4px ${color}88` }} />
+              <span className="text-[10px] sm:text-xs font-semibold text-gray-600 leading-none">{label}</span>
             </div>
           ))}
+          <div className="mt-1.5 pt-1.5 border-t border-slate-200/60">
+            <p className="text-[9px] font-semibold text-slate-500 leading-tight">
+              {t('location_privacy_note', 'Location of needs are not exact for privacy')}
+            </p>
+          </div>
         </div>
 
-        {/* Speed-dial FAB — bottom corner opposite the legend */}
-        <div className={`absolute bottom-6 ${isRtl ? 'left-6' : 'right-6'} z-[400] flex flex-col-reverse items-end gap-2.5`}>
+        {/* Speed-dial FAB — bottom corner opposite the legend, higher up to avoid zoom controls */}
+        <div className={`absolute bottom-20 sm:bottom-15 ${isRtl ? 'left-4 sm:left-6' : 'right-4 sm:right-6'} z-[400] flex flex-col-reverse items-end gap-2.5`}>
           {/* Main "+" toggle button */}
           <button
             onClick={() => setShowFab(prev => !prev)}
-            className="w-14 h-14 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95"
+            className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95"
             style={{
               background: showFab
                 ? '#1e293b'
-                : 'linear-gradient(135deg, #1d4ed8, #3b82f6)',
-              boxShadow: '0 8px 24px rgba(29,78,216,0.45), 0 2px 8px rgba(0,0,0,0.2)',
+                : 'linear-gradient(135deg, #059669, #10b981)',
+              boxShadow: '0 8px 24px rgba(5,150,105,0.45), 0 2px 8px rgba(0,0,0,0.2)',
               transform: showFab ? 'rotate(45deg)' : 'rotate(0deg)',
             }}
             aria-label={t('create_need')}
           >
-            <Plus className="w-7 h-7 text-white" />
+            <Plus className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
           </button>
 
           {/* Expanded options */}
           {showFab && (
             <>
               <button
-                onClick={() => setLocation('/offer/new')}
+                onClick={requireAuth(() => setLocation('/offer/new'))}
                 className="flex items-center gap-2.5 px-4 py-3 rounded-2xl font-bold text-sm text-white active:scale-95 transition-all duration-150 whitespace-nowrap"
                 style={{
                   background: 'linear-gradient(135deg, #059669, #10b981)',
@@ -342,7 +455,7 @@ export default function MapPage() {
                 {t('create_offer')}
               </button>
               <button
-                onClick={() => setLocation('/need/new')}
+                onClick={requireAuth(() => setLocation('/need/new'))}
                 className="flex items-center gap-2.5 px-4 py-3 rounded-2xl font-bold text-sm text-white active:scale-95 transition-all duration-150 whitespace-nowrap"
                 style={{
                   background: 'linear-gradient(135deg, #dc2626, #ef4444)',
@@ -359,10 +472,10 @@ export default function MapPage() {
         {/* Filter Toggle Button */}
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className={`absolute top-4 ${isRtl ? 'left-4' : 'right-4'} z-[400] flex items-center gap-2 px-4 h-10 rounded-full font-semibold text-sm transition-all active:scale-95`}
+          className={`absolute top-20 sm:top-24 ${isRtl ? 'left-4' : 'right-4'} z-[400] flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 h-9 sm:h-10 rounded-full font-semibold text-[13px] sm:text-sm transition-all active:scale-95`}
           style={{
             background: showFilters
-              ? 'linear-gradient(135deg, #1d4ed8, #3b82f6)'
+              ? 'linear-gradient(135deg, #059669, #10b981)'
               : 'rgba(255,255,255,0.92)',
             backdropFilter: 'blur(16px)',
             WebkitBackdropFilter: 'blur(16px)',
@@ -375,7 +488,7 @@ export default function MapPage() {
           {t('filters')}
           {activeFilterCount > 0 && (
             <span className="text-xs rounded-full w-5 h-5 flex items-center justify-center font-black"
-              style={{ background: showFilters ? 'rgba(255,255,255,0.25)' : '#3b82f6', color: 'white' }}>
+              style={{ background: showFilters ? 'rgba(255,255,255,0.25)' : '#059669', color: 'white' }}>
               {activeFilterCount}
             </span>
           )}
@@ -387,7 +500,7 @@ export default function MapPage() {
             className={`
               absolute z-[500] bg-card border-border shadow-2xl
               bottom-0 left-0 right-0 rounded-t-2xl border-t md:border
-              md:bottom-auto md:top-16 md:rounded-2xl md:w-80
+              md:bottom-auto md:top-22 md:rounded-2xl md:w-80
               ${isRtl ? 'md:left-4 md:right-auto' : 'md:right-4 md:left-auto'}
               flex flex-col max-h-[85vh] md:max-h-[calc(100vh-6rem)]
             `}
@@ -427,13 +540,12 @@ export default function MapPage() {
                       <button
                         key={pt}
                         onClick={() => updateStringFilter('postType', filters.postType === pt ? undefined : pt)}
-                        className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium border transition-colors ${
-                          filters.postType === pt
-                            ? pt === 'need'
-                              ? 'bg-red-500 text-white border-red-500'
-                              : 'bg-green-500 text-white border-green-500'
-                            : 'bg-background text-foreground border-border hover:bg-secondary'
-                        }`}
+                        className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium border transition-colors ${filters.postType === pt
+                          ? pt === 'need'
+                            ? 'bg-red-500 text-white border-red-500'
+                            : 'bg-green-500 text-white border-green-500'
+                          : 'bg-background text-foreground border-border hover:bg-secondary'
+                          }`}
                       >
                         {t(pt)}
                       </button>
@@ -497,11 +609,10 @@ export default function MapPage() {
                         <button
                           key={u}
                           onClick={() => updateStringFilter('urgency', filters.urgency === u ? undefined : u)}
-                          className={`py-1.5 px-3 rounded-lg text-xs font-medium border transition-colors ${
-                            filters.urgency === u
-                              ? 'bg-primary text-primary-foreground border-primary'
-                              : 'bg-background text-foreground border-border hover:bg-secondary'
-                          }`}
+                          className={`py-1.5 px-3 rounded-lg text-xs font-medium border transition-colors ${filters.urgency === u
+                            ? 'bg-primary text-primary-foreground border-primary'
+                            : 'bg-background text-foreground border-border hover:bg-secondary'
+                            }`}
                         >
                           {t(u)}
                         </button>
@@ -525,7 +636,9 @@ export default function MapPage() {
                   <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                     {isLoading
                       ? t('loading')
-                      : t('results_count', { count: posts?.length ?? 0 })
+                      : isError
+                        ? t('error') || "Error loading results"
+                        : t('results_count', { count: totalResults })
                     }
                   </span>
                 </div>
@@ -545,8 +658,17 @@ export default function MapPage() {
                   </div>
                 )}
 
+                {/* Error state */}
+                {!isLoading && isError && (
+                  <div className="flex flex-col items-center gap-2 py-8 px-4 text-center">
+                    <AlertTriangle className="w-8 h-8 text-red-500/50" />
+                    <p className="text-sm font-medium text-red-600">Failed to load data</p>
+                    <p className="text-xs text-red-600/70">Please check your connection and try again.</p>
+                  </div>
+                )}
+
                 {/* Empty state */}
-                {!isLoading && !hasResults && (
+                {!isLoading && !isError && !hasResults && (
                   <div className="flex flex-col items-center gap-2 py-8 px-4 text-center">
                     <SearchX className="w-8 h-8 text-muted-foreground/50" />
                     <p className="text-sm font-medium text-muted-foreground">{t('no_results')}</p>
@@ -563,14 +685,37 @@ export default function MapPage() {
                 )}
 
                 {/* Results */}
-                {!isLoading && hasResults && (
+                {!isLoading && !isError && hasResults && (
                   <div className="flex flex-col divide-y divide-border max-h-52 overflow-y-auto">
-                    {posts!.map(post => (
+                    {visibleNgos.map(ngo => {
+                      const isVerified = !!ngo.verifiedAt;
+                      return (
+                      <button
+                        key={`list-ngo-${ngo.id}`}
+                        className={`flex items-start gap-3 px-4 py-3 hover:bg-secondary/50 text-start transition-colors ${(selectedItem?.type === 'ngo' && selectedItem.item.id === ngo.id) ? 'bg-secondary/60' : ''
+                          }`}
+                        onClick={() => {
+                          openNgo(ngo);
+                          setShowFilters(false);
+                        }}
+                      >
+                        <div className={`w-2.5 h-2.5 rounded-full mt-1.5 shrink-0 ${isVerified ? 'bg-blue-600' : 'bg-orange-500'}`} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate">{ngo.name}</p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {ngo.governorate}{ngo.district ? ` • ${ngo.district}` : ''}
+                            {" • "}{isVerified ? t('verified_ngo') : t('unverified_ngo', 'Unverified')}
+                          </p>
+                        </div>
+                        <ChevronRight className={`w-4 h-4 text-muted-foreground shrink-0 mt-1 ${isRtl ? 'rotate-180' : ''}`} />
+                      </button>
+                      );
+                    })}
+                    {posts?.map(post => (
                       <button
                         key={post.id}
-                        className={`flex items-start gap-3 px-4 py-3 hover:bg-secondary/50 text-start transition-colors ${
-                          post.id === selectedPostId ? 'bg-secondary/60' : ''
-                        }`}
+                        className={`flex items-start gap-3 px-4 py-3 hover:bg-secondary/50 text-start transition-colors ${post.id === selectedPostId ? 'bg-secondary/60' : ''
+                          }`}
                         onClick={() => {
                           openPost(post, true);
                           setShowFilters(false);
@@ -579,7 +724,7 @@ export default function MapPage() {
                         <div className={`w-2.5 h-2.5 rounded-full mt-1.5 shrink-0 ${post.postType === 'need' ? 'bg-red-500' : 'bg-green-500'}`} />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-foreground truncate">{post.title}</p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs text-muted-foreground truncate">
                             {post.governorate}{post.district ? ` • ${post.district}` : ''}
                           </p>
                         </div>
@@ -599,6 +744,12 @@ export default function MapPage() {
         onClose={closeModal}
         item={selectedItem?.item ?? null}
         type={selectedItem?.type ?? 'post'}
+        onViewNgo={(ngoId) => {
+          const ngo = ngos?.find(n => n.id === ngoId);
+          if (ngo) {
+            openNgo(ngo);
+          }
+        }}
       />
     </div>
   );

@@ -47,3 +47,18 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# Environment variables (keep .env.example tracked)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.cert
+*.pfx
+*.sqlite
+*.sqlite3
+*.db
+!Thumbs.db
+firebase-key.json
+*credentials*.json

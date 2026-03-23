@@ -14,6 +14,9 @@ import type { PostPublicUrgency } from "./postPublicUrgency";
  */
 export interface PostPublic {
   id: number;
+  userId: number;
+  /** ID of the NGO if the provider is an NGO */
+  ngoId?: number | null;
   postType: PostPublicPostType;
   title: string;
   category: string;

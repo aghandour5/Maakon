@@ -13,6 +13,7 @@ const CATEGORIES = [
   "legal",
   "psychological",
   "education",
+  "volunteers",
   "other",
 ];
 

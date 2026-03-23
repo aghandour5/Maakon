@@ -4,11 +4,16 @@
  * but NEVER exposes privateLat or privateLng.
  */
 import { Router, type IRouter } from "express";
+import { requireAuth, requireAdmin } from "../middlewares/auth";
 import { db } from "@workspace/db";
-import { postsTable, reportsTable, ngosTable, adminActionsTable } from "@workspace/db/schema";
+import { postsTable, reportsTable, ngosTable, adminActionsTable, usersTable } from "@workspace/db/schema";
 import { eq, desc, and, sql } from "drizzle-orm";
+import { supabaseAdmin } from "../lib/supabase-admin";
 
 const router: IRouter = Router();
+
+// Protect all /admin routes
+router.use("/admin", requireAuth, requireAdmin);
 
 type PostStatus = "pending" | "active" | "hidden" | "resolved" | "expired" | "removed";
 type ReportStatus = "pending" | "reviewed" | "dismissed" | "actioned";
@@ -196,6 +201,51 @@ router.patch("/admin/reports/:id/status", async (req, res) => {
   res.json(report);
 });
 
+// ── Users ───────────────────────────────────────────────────────────────────────
+
+router.get("/admin/users", async (_req, res) => {
+  try {
+    const users = await db.select().from(usersTable).orderBy(desc(usersTable.createdAt));
+    res.json(users);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch users" });
+  }
+});
+
+router.delete("/admin/users/:id", async (req, res) => {
+  const id = Number(req.params.id);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "Invalid User ID" });
+    return;
+  }
+  try {
+    const [user] = await db
+      .delete(usersTable)
+      .where(eq(usersTable.id, id))
+      .returning();
+
+    if (!user) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+
+    // Attempt to delete from Supabase Auth if a UID is present and the admin client is configured
+    const supabaseUid = (user as { supabaseUid?: string | null }).supabaseUid;
+    if (supabaseUid && supabaseAdmin) {
+      const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(supabaseUid);
+      if (authError) {
+        console.error(`Failed to delete user from Supabase Auth [${supabaseUid}]:`, authError);
+      }
+    }
+
+    res.json(user);
+  } catch (err: any) {
+    console.error(err);
+    res.status(500).json({ error: err.message || "Failed to delete user" });
+  }
+});
+
 // ── NGOs ───────────────────────────────────────────────────────────────────────
 
 router.get("/admin/ngos", async (_req, res) => {
@@ -209,10 +259,14 @@ router.get("/admin/ngos", async (_req, res) => {
 });
 
 router.post("/admin/ngos", async (req, res) => {
-  const { name, description, governorate, district, lat, lng, phone, website, status } = req.body ?? {};
+  const { name, description, governorate, district, lat, lng, phone, website, status, verified } = req.body ?? {};
 
   if (!name || typeof name !== "string" || name.length < 2) {
     res.status(400).json({ error: "name is required (min 2 chars)" });
+    return;
+  }
+  if (!description || typeof description !== "string" || description.length < 10) {
+    res.status(400).json({ error: "description is required (min 10 chars)" });
     return;
   }
   if (!governorate || typeof governorate !== "string") {
@@ -224,7 +278,7 @@ router.post("/admin/ngos", async (req, res) => {
     .insert(ngosTable)
     .values({
       name: String(name),
-      description: description ? String(description) : null,
+      description: String(description),
       governorate: String(governorate),
       district: district ? String(district) : null,
       lat: lat != null ? Number(lat) : null,
@@ -232,6 +286,7 @@ router.post("/admin/ngos", async (req, res) => {
       phone: phone ? String(phone) : null,
       website: website ? String(website) : null,
       status: status ? String(status) : "active",
+      verifiedAt: verified ? new Date() : null,
     })
     .returning();
 
@@ -277,6 +332,29 @@ router.patch("/admin/ngos/:id", async (req, res) => {
   res.json(ngo);
 });
 
+router.delete("/admin/ngos/:id", async (req, res) => {
+  const id = Number(req.params.id);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "Invalid NGO ID" });
+    return;
+  }
+  try {
+    const [ngo] = await db
+      .delete(ngosTable)
+      .where(eq(ngosTable.id, id))
+      .returning();
+
+    if (!ngo) {
+      res.status(404).json({ error: "NGO not found" });
+      return;
+    }
+    res.json(ngo);
+  } catch (err: any) {
+    console.error(err);
+    res.status(500).json({ error: err.message || "Failed to delete NGO" });
+  }
+});
+
 router.patch("/admin/ngos/:id/verify", async (req, res) => {
   const id = Number(req.params.id);
   const [ngo] = await db
@@ -289,6 +367,14 @@ router.patch("/admin/ngos/:id/verify", async (req, res) => {
     res.status(404).json({ error: "NGO not found" });
     return;
   }
+
+  if (ngo.userId) {
+    await db
+      .update(postsTable)
+      .set({ verifiedBadgeType: "ngo" })
+      .where(and(eq(postsTable.userId, ngo.userId), eq(postsTable.providerType, "ngo")));
+  }
+
   res.json(ngo);
 });
 
@@ -304,6 +390,14 @@ router.delete("/admin/ngos/:id/verify", async (req, res) => {
     res.status(404).json({ error: "NGO not found" });
     return;
   }
+
+  if (ngo.userId) {
+    await db
+      .update(postsTable)
+      .set({ verifiedBadgeType: null })
+      .where(and(eq(postsTable.userId, ngo.userId), eq(postsTable.providerType, "ngo")));
+  }
+
   res.json(ngo);
 });
 
