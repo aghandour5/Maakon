@@ -135,7 +135,7 @@ router.patch("/admin/posts/:id/status", async (req, res) => {
   }
 
   await db.insert(adminActionsTable).values({
-    adminId: null,
+    adminId: req.user!.id,
     targetType: "post",
     targetId: id,
     action: `status:${status}`,
