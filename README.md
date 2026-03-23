@@ -99,7 +99,7 @@ All under `/api`:
 | POST | `/api/reports` | Report a post |
 | GET | `/api/metadata` | Filter options |
 
-Admin (no auth — dev only):
+Admin (Requires `admin` role and active session):
 
 | Method | Path |
 |--------|------|

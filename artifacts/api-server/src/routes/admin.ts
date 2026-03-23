@@ -1,5 +1,6 @@
 /**
- * Admin/moderation routes — dev-only, no authentication.
+ * Admin/moderation routes.
+ * Requires an authenticated user with the 'admin' role.
  * Exposes full post list (with exactAddressPrivate for moderation context)
  * but NEVER exposes privateLat or privateLng.
  */
