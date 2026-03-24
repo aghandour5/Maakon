@@ -73,7 +73,7 @@ export default function Home() {
         <div className="flex items-center justify-between h-16 sm:h-20 px-5 sm:px-8 rounded-2xl mx-auto max-w-4xl border border-white/10 bg-white/5 shadow-sm">
           {/* Brand */}
           <Link href="/" className="shrink-0 flex items-center gap-2 sm:gap-4 group">
-            <img src="/logo.svg" alt="Maakon" className="h-6 sm:h-10 w-auto drop-shadow-md group-hover:scale-105 transition-transform" />
+            <img src="/logo.svg" alt="Maakon" className="h-6 sm:h-10 w-auto drop-shadow-md group-hover:scale-105 transition-transform" style={{ filter: "brightness(0) invert(1)" }} />
             <div className="flex flex-col justify-center">
               <span className="text-white font-black leading-none text-base sm:text-xl tracking-tight">Maakon</span>
               <span className="text-emerald-50/80 text-[7px] sm:text-xs mt-0.5 sm:mt-1 font-semibold tracking-wide uppercase">Lebanon Crisis Response — معكن</span>
@@ -100,7 +100,7 @@ export default function Home() {
                 className="hidden sm:flex items-center gap-1.5 px-4 h-9 rounded-xl font-bold text-sm text-white transition-opacity hover:opacity-90 shadow-sm"
                 style={{ background: "#ed1c24" }}
               >
-                Sign In
+                {t("sign_in")}
               </button>
             ) : (
               <button
@@ -160,7 +160,7 @@ export default function Home() {
                       onClick={() => { setMobileMenuOpen(false); openAuthModal(); }}
                       className="w-full px-4 py-3 rounded-xl text-sm font-bold text-white transition-opacity hover:opacity-90 text-center shadow-md bg-red-600"
                     >
-                      Sign In
+                      {t("sign_in")}
                     </button>
                   ) : (
                     <button
@@ -191,6 +191,7 @@ export default function Home() {
             src="/logo.svg"
             alt="Maakon Logo"
             className="h-28 sm:h-40 md:h-56 w-auto object-contain mb-2 sm:mb-5 drop-shadow-xl"
+            style={{ filter: "brightness(0) invert(1)" }}
           />
 
           <h1

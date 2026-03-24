@@ -63,7 +63,7 @@ export default function EmailStep({ email, setEmail, onNext }: EmailStepProps) {
           <Mail className="w-7 h-7 text-blue-600" />
         </div>
         <p className="text-sm text-gray-500">
-          {t("email_sign_in_desc", "Enter your email to receive a sign-in link. No password needed.")}
+          {t("email_sign_in_desc")}
         </p>
       </div>
 

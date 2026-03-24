@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTranslation } from "react-i18next";
 import { useToast } from "@/hooks/use-toast";
 import { TopNav } from "@/components/layout/TopNav";
 import { Link } from "wouter";
@@ -43,19 +44,19 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   return res.json();
 }
 
-function daysUntil(dateStr: string | null): string {
+function daysUntil(dateStr: string | null, t: any): string {
   if (!dateStr) return "—";
   const diff = Math.round((new Date(dateStr).getTime() - Date.now()) / 86400000);
-  if (diff < 0) return `Expired ${Math.abs(diff)}d ago`;
-  if (diff === 0) return "Expires today";
-  return `${diff}d left`;
+  if (diff < 0) return t("myposts_expired_days_ago", { days: Math.abs(diff) });
+  if (diff === 0) return t("myposts_expires_today");
+  return t("myposts_days_left", { days: diff });
 }
 
-function timeAgo(dateStr: string): string {
+function timeAgo(dateStr: string, t: any): string {
   const diff = Math.round((Date.now() - new Date(dateStr).getTime()) / 60000);
-  if (diff < 60) return `${diff}m ago`;
-  if (diff < 1440) return `${Math.round(diff / 60)}h ago`;
-  return `${Math.round(diff / 1440)}d ago`;
+  if (diff < 60) return t("myposts_mins_ago", { mins: diff });
+  if (diff < 1440) return t("myposts_hours_ago", { hours: Math.round(diff / 60) });
+  return t("myposts_days_ago", { days: Math.round(diff / 1440) });
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
@@ -71,6 +72,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.
 
 export default function MyPosts() {
   const { isAuthenticated, isLoading: authLoading, openAuthModal } = useAuth();
+  const { t } = useTranslation();
   const { toast } = useToast();
 
   const [posts, setPosts] = useState<MyPost[]>([]);
@@ -86,11 +88,11 @@ export default function MyPosts() {
       const data = await apiFetch<MyPost[]>("/posts/me");
       setPosts(data);
     } catch {
-      toast({ title: "Failed to load your posts", variant: "destructive" });
+      toast({ title: t("toast_failed_load"), variant: "destructive" });
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [toast, t]);
 
   useEffect(() => {
     if (isAuthenticated) fetchPosts();
@@ -103,10 +105,10 @@ export default function MyPosts() {
         method: "PATCH",
         body: JSON.stringify({ status }),
       });
-      toast({ title: `Post marked as ${status}` });
-      await fetchPosts();
+      setPosts(posts.map(p => p.id === postId ? { ...p, status } : p));
+      toast({ title: t("toast_post_marked", { status: t(`myposts_status_${status}`) }) });
     } catch {
-      toast({ title: "Failed to update post", variant: "destructive" });
+      toast({ title: t("toast_failed_update"), variant: "destructive" });
     } finally {
       setActionLoading(null);
     }
@@ -117,10 +119,10 @@ export default function MyPosts() {
     try {
       setActionLoading(postId);
       await apiFetch(`/posts/${postId}`, { method: "DELETE" });
-      toast({ title: "Post deleted" });
-      await fetchPosts();
+      setPosts(posts.filter(p => p.id !== postId));
+      toast({ title: t("toast_post_deleted") });
     } catch {
-      toast({ title: "Failed to delete post", variant: "destructive" });
+      toast({ title: t("toast_failed_delete"), variant: "destructive" });
     } finally {
       setActionLoading(null);
     }
@@ -140,11 +142,11 @@ export default function MyPosts() {
         method: "PATCH",
         body: JSON.stringify({ title: editTitle, description: editDescription }),
       });
-      toast({ title: "Post updated successfully" });
+      setPosts(posts.map(p => p.id === editingPost.id ? { ...p, title: editTitle, description: editDescription } : p));
       setEditingPost(null);
-      await fetchPosts();
+      toast({ title: t("toast_post_updated") });
     } catch {
-      toast({ title: "Failed to update post", variant: "destructive" });
+      toast({ title: t("toast_failed_update"), variant: "destructive" });
     } finally {
       setActionLoading(null);
     }
@@ -167,13 +169,13 @@ export default function MyPosts() {
         <main className="min-h-screen flex flex-col items-center justify-center bg-slate-50 pt-20 px-4">
           <div className="text-center max-w-md">
             <ClipboardList className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-slate-800 mb-2">My Posts</h1>
-            <p className="text-slate-500 mb-6">Sign in to view and manage your listings.</p>
+            <h1 className="text-2xl font-bold text-slate-800 mb-2">{t("myposts_title")}</h1>
+            <p className="text-slate-500 mb-6">{t("sign_in_manage_posts")}</p>
             <button
               onClick={openAuthModal}
               className="px-6 py-3 rounded-2xl font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:opacity-90 transition-opacity shadow-lg"
             >
-              Sign In
+              {t("sign_in")}
             </button>
           </div>
         </main>
@@ -185,15 +187,15 @@ export default function MyPosts() {
 
   return (
     <>
-      <TopNav showBack title="My Posts" />
+      <TopNav showBack title={t("myposts_title")} />
       <main className="min-h-screen bg-gradient-to-b from-slate-50 to-white pt-24 sm:pt-28 pb-12 px-4 sm:px-6">
         <div className="max-w-3xl mx-auto">
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-800">My Posts</h1>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-800">{t("myposts_title")}</h1>
               <p className="text-sm text-slate-500 mt-1">
-                {posts.length} {posts.length === 1 ? "listing" : "listings"}
+                {posts.length} {posts.length === 1 ? t("myposts_listing") : t("myposts_listings")}
               </p>
             </div>
             <div className="flex gap-2">
@@ -202,14 +204,14 @@ export default function MyPosts() {
                 className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-bold text-sm bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-all no-underline"
               >
                 <Plus className="w-4 h-4" />
-                <span className="hidden sm:inline">Need</span>
+                <span className="hidden sm:inline">{t("create_need")}</span>
               </Link>
               <Link
                 href="/offer/new"
                 className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-bold text-sm bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-all no-underline"
               >
                 <Plus className="w-4 h-4" />
-                <span className="hidden sm:inline">Offer</span>
+                <span className="hidden sm:inline">{t("create_offer")}</span>
               </Link>
             </div>
           </div>
@@ -229,22 +231,22 @@ export default function MyPosts() {
               className="flex flex-col items-center py-20 text-center"
             >
               <ClipboardList className="w-16 h-16 text-slate-200 mb-4" />
-              <h2 className="text-xl font-bold text-slate-600 mb-2">No posts yet</h2>
+              <h2 className="text-xl font-bold text-slate-600 mb-2">{t("myposts_no_posts_title")}</h2>
               <p className="text-slate-400 mb-6 max-w-sm">
-                Create your first listing to start helping or receiving help in your community.
+                {t("myposts_no_posts_desc")}
               </p>
               <div className="flex gap-3">
                 <Link
                   href="/need/new"
                   className="px-6 py-3 rounded-2xl font-bold text-white bg-gradient-to-r from-red-500 to-orange-500 shadow-lg hover:opacity-90 transition-opacity no-underline"
                 >
-                  I Need Help
+                  {t("i_need_help")}
                 </Link>
                 <Link
                   href="/offer/new"
                   className="px-6 py-3 rounded-2xl font-bold text-white bg-gradient-to-r from-emerald-500 to-green-500 shadow-lg hover:opacity-90 transition-opacity no-underline"
                 >
-                  I Want to Help
+                  {t("offer_help")}
                 </Link>
               </div>
             </motion.div>
@@ -278,12 +280,12 @@ export default function MyPosts() {
                                     : "bg-emerald-50 text-emerald-600"
                                 }`}
                               >
-                                {post.postType}
+                                {t(post.postType)}
                               </span>
-                              <span className="text-xs text-slate-400 font-medium">{post.category}</span>
+                              <span className="text-xs text-slate-400 font-medium">{t(post.category)}</span>
                               <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold border ${statusInfo.color}`}>
                                 {statusInfo.icon}
-                                {statusInfo.label}
+                                {t(`myposts_status_${post.status}`)}
                               </span>
                             </div>
                             <h3 className="font-bold text-slate-800 text-base sm:text-lg truncate">{post.title}</h3>
@@ -295,10 +297,10 @@ export default function MyPosts() {
                         <div className="flex flex-wrap items-center gap-3 mt-3 text-xs text-slate-400">
                           <span className="flex items-center gap-1">
                             <MapPin className="w-3.5 h-3.5" />
-                            {post.governorate}{post.district ? `, ${post.district}` : ""}
+                            {t(post.governorate)}{post.district ? `, ${t(post.district)}` : ""}
                           </span>
-                          <span>Created {timeAgo(post.createdAt)}</span>
-                          <span>{daysUntil(post.expiresAt)}</span>
+                          <span>{t("myposts_created_time")} {timeAgo(post.createdAt, t)}</span>
+                          <span>{daysUntil(post.expiresAt, t)}</span>
                         </div>
                       </div>
 
@@ -310,7 +312,7 @@ export default function MyPosts() {
                           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-200/60 transition-colors disabled:opacity-40"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
-                          Edit
+                          {t("myposts_edit")}
                         </button>
                         {post.status === "active" && (
                           <button
@@ -319,7 +321,7 @@ export default function MyPosts() {
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-orange-600 hover:bg-orange-50 transition-colors disabled:opacity-40"
                           >
                             {isBeingActioned ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <EyeOff className="w-3.5 h-3.5" />}
-                            Hide
+                            {t("myposts_hide")}
                           </button>
                         )}
                         {post.status === "hidden" && (
@@ -329,7 +331,7 @@ export default function MyPosts() {
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-emerald-600 hover:bg-emerald-50 transition-colors disabled:opacity-40"
                           >
                             {isBeingActioned ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Eye className="w-3.5 h-3.5" />}
-                            Show
+                            {t("myposts_show")}
                           </button>
                         )}
                         {(post.status === "active" || post.status === "hidden") && (
@@ -339,7 +341,7 @@ export default function MyPosts() {
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-blue-600 hover:bg-blue-50 transition-colors disabled:opacity-40"
                           >
                             {isBeingActioned ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
-                            Resolved
+                            {t("myposts_status_resolved")}
                           </button>
                         )}
                         <div className="flex-1" />
@@ -349,7 +351,7 @@ export default function MyPosts() {
                           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-red-500 hover:bg-red-50 transition-colors disabled:opacity-40"
                         >
                           {isBeingActioned ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-                          Delete
+                          {t("myposts_delete")}
                         </button>
                       </div>
                     </motion.div>
@@ -379,12 +381,12 @@ export default function MyPosts() {
               className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden"
             >
               <div className="p-6 border-b border-slate-100">
-                <h2 className="text-lg font-bold text-slate-800">Edit Post</h2>
-                <p className="text-sm text-slate-400 mt-0.5">Update your listing details</p>
+                <h2 className="text-lg font-bold text-slate-800">{t("myposts_edit_post_title")}</h2>
+                <p className="text-sm text-slate-400 mt-0.5">{t("myposts_edit_post_desc")}</p>
               </div>
               <div className="p-6 space-y-4">
                 <div>
-                  <label className="block text-sm font-semibold text-slate-600 mb-1.5">Title</label>
+                  <label className="block text-sm font-semibold text-slate-600 mb-1.5">{t("myposts_title_label")}</label>
                   <input
                     type="text"
                     value={editTitle}
@@ -394,7 +396,7 @@ export default function MyPosts() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-slate-600 mb-1.5">Description</label>
+                  <label className="block text-sm font-semibold text-slate-600 mb-1.5">{t("myposts_description_label")}</label>
                   <textarea
                     value={editDescription}
                     onChange={(e) => setEditDescription(e.target.value)}
@@ -409,7 +411,7 @@ export default function MyPosts() {
                   onClick={() => setEditingPost(null)}
                   className="px-4 py-2 rounded-xl text-sm font-semibold text-slate-500 hover:bg-slate-100 transition-colors"
                 >
-                  Cancel
+                  {t("myposts_cancel_btn")}
                 </button>
                 <button
                   onClick={handleSaveEdit}
@@ -417,7 +419,7 @@ export default function MyPosts() {
                   className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:opacity-90 transition-opacity disabled:opacity-40 shadow"
                 >
                   {actionLoading === editingPost.id && <Loader2 className="w-4 h-4 animate-spin" />}
-                  Save Changes
+                  {t("myposts_save_changes")}
                 </button>
               </div>
             </motion.div>

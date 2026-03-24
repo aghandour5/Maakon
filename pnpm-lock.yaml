@@ -137,6 +137,11 @@ overrides:
   rollup>@rollup/rollup-win32-arm64-msvc: '-'
   rollup>@rollup/rollup-win32-ia32-msvc: '-'
 
+patchedDependencies:
+  '@supabase/auth-js@2.99.3':
+    hash: 4359428135a2abb5ab83de0e0915a68eabcdd866e8d85602eeb81a55f41aca70
+    path: patches/@supabase__auth-js@2.99.3.patch
+
 importers:
 
   .:
@@ -4395,7 +4400,7 @@ snapshots:
 
   '@sindresorhus/merge-streams@4.0.0': {}
 
-  '@supabase/auth-js@2.99.3':
+  '@supabase/auth-js@2.99.3(patch_hash=4359428135a2abb5ab83de0e0915a68eabcdd866e8d85602eeb81a55f41aca70)':
     dependencies:
       tslib: 2.8.1
 
@@ -4424,7 +4429,7 @@ snapshots:
 
   '@supabase/supabase-js@2.99.3':
     dependencies:
-      '@supabase/auth-js': 2.99.3
+      '@supabase/auth-js': 2.99.3(patch_hash=4359428135a2abb5ab83de0e0915a68eabcdd866e8d85602eeb81a55f41aca70)
       '@supabase/functions-js': 2.99.3
       '@supabase/postgrest-js': 2.99.3
       '@supabase/realtime-js': 2.99.3

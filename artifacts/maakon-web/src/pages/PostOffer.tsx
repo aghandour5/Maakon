@@ -86,8 +86,7 @@ function LocationPicker({ position, setPosition }: { position: [number, number] 
 function FieldLabel({ children, isRtl }: { children: React.ReactNode; isRtl?: boolean }) {
   return (
     <label
-      className="block text-xs font-bold text-foreground/60 uppercase tracking-wider mb-2"
-      style={isRtl ? { textAlign: "right" } : {}}
+      className="block text-start text-xs font-bold text-foreground/60 uppercase tracking-wider mb-2"
     >
       {children}
     </label>
@@ -203,7 +202,7 @@ export default function PostOffer() {
             toast({
               variant: "destructive",
               title: t("submit_error") || "Failed to submit post",
-              description: error instanceof Error ? error.message : "Our servers are currently unavailable. Please try again later.",
+              description: error instanceof Error ? error.message : t("toast_server_error"),
             });
           }
         }
@@ -234,7 +233,7 @@ export default function PostOffer() {
         toast({
           variant: "destructive",
           title: t("submit_error") || "Failed to save draft",
-          description: error instanceof Error ? error.message : "Please try again.",
+          description: error instanceof Error ? error.message : t("toast_try_again"),
         });
       } finally {
         setIsDraftLoading(false);
@@ -410,9 +409,8 @@ export default function PostOffer() {
                               key={prov}
                               type="button"
                               onClick={() => patch({ providerType: prov })}
-                              className="p-4 rounded-2xl flex items-center gap-4 transition-all duration-150 active:scale-95 border-2"
+                              className="p-4 rounded-2xl flex text-start items-center gap-4 transition-all duration-150 active:scale-95 border-2"
                               style={{
-                                ...(isRtl ? { flexDirection: "row-reverse", textAlign: "right" } : { textAlign: "left" }),
                                 ...(selected
                                   ? { background: "linear-gradient(135deg, #059669, #10b981)", borderColor: "transparent", color: "white", boxShadow: "0 4px 12px rgba(5,150,105,0.35)" }
                                   : { background: "#f0fdf4", borderColor: "#bbf7d0", color: "#065f46" }),
@@ -482,9 +480,7 @@ export default function PostOffer() {
                           onChange={(e) => patch({ governorate: e.target.value, district: "" })}
                         >
                           <option value="" disabled>{t("select_placeholder")}</option>
-                          {metadata?.governorates.map((g) => (
-                            <option key={g} value={g}>{g}</option>
-                          ))}
+                          {metadata?.governorates.map((g) => <option key={g} value={g}>{t(g)}</option>)}
                         </select>
                         <FieldError msg={errors.governorate} />
                       </div>
@@ -497,7 +493,7 @@ export default function PostOffer() {
                           >
                             <option value="" disabled>{t("select_placeholder")}</option>
                             {metadata.districts[formData.governorate].map((d) => (
-                              <option key={d} value={d}>{d}</option>
+                              <option key={d} value={d}>{t(d)}</option>
                             ))}
                           </select>
                         </div>
@@ -539,9 +535,7 @@ export default function PostOffer() {
                           onChange={(e) => patch({ contactMethod: e.target.value })}
                         >
                           <option value="" disabled>{t("select_placeholder")}</option>
-                          {metadata?.contactMethods.map((c) => (
-                            <option key={c} value={c}>{c}</option>
-                          ))}
+                          {metadata?.contactMethods.map((c) => <option key={c} value={c}>{t(c)}</option>)}
                         </select>
                       </div>
                       <div>
@@ -622,8 +616,8 @@ export default function PostOffer() {
                   return (
                   <div className="flex flex-col h-full">
                     <div className="mb-4">
-                      <h2 className="text-xl font-black text-gray-900 mb-0.5">Exact Location</h2>
-                      <p className="text-sm text-gray-400">Pinpoint exactly where help is offered (Optional but recommended).</p>
+                      <h2 className="text-xl font-black text-gray-900 mb-0.5">{t("exact_location_title")}</h2>
+                      <p className="text-sm text-gray-400">{t("exact_location_desc")}</p>
                     </div>
                     <div className="h-[300px] w-full border-2 border-slate-200 rounded-2xl overflow-hidden relative z-0">
                       <MapContainer center={[33.8547, 35.8623]} zoom={8} style={{ height: "100%", width: "100%" }}>
@@ -638,12 +632,12 @@ export default function PostOffer() {
                       <div className="mt-3 flex items-start gap-2 px-3 py-2.5 rounded-xl bg-orange-50 border border-orange-200">
                         <AlertCircle className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
                         <p className="text-xs text-orange-700 font-medium">
-                          Your pin is about {Math.round(distKm)}km from {formData.governorate}. Make sure the pin matches where you're offering help.
+                          {t("pin_distance_warning", { dist: Math.round(distKm), gov: formData.governorate })}
                         </p>
                       </div>
                     )}
                     <p className="text-xs text-center text-slate-500 mt-3 font-medium">
-                      Tap anywhere on the map to set a marker.
+                      {t("tap_map_hint")}
                     </p>
                   </div>
                   );
@@ -668,16 +662,16 @@ export default function PostOffer() {
                       style={{ background: "linear-gradient(135deg, #ecfdf5, #d1fae5)" }}>
                       <Mail className="w-7 h-7 text-emerald-600" />
                     </div>
-                    <h2 className="text-xl font-black text-gray-900 mb-1">{t("almost_done", "Almost Done!")}</h2>
+                    <h2 className="text-xl font-black text-gray-900 mb-1">{t("almost_done")}</h2>
                     <p className="text-sm text-gray-500">
-                      {t("draft_saved_desc", "Your offer has been saved. Enter your email to publish it and create your account.")}
+                      {t("draft_saved_offer_desc")}
                     </p>
                   </div>
                   <div>
                     <input
                       type="email"
                       className="w-full px-4 py-3.5 rounded-2xl bg-slate-50 border-2 border-slate-200 focus:border-emerald-400 outline-none text-sm font-medium placeholder:text-gray-400"
-                      placeholder={t("email_placeholder", "you@example.com")}
+                      placeholder={t("email_placeholder")}
                       value={draftEmail}
                       onChange={(e) => { setDraftEmail(e.target.value); setDraftError(""); }}
                       dir="ltr"
@@ -710,11 +704,11 @@ export default function PostOffer() {
                   <div className="w-16 h-16 rounded-full bg-emerald-50 flex items-center justify-center">
                     <span className="text-3xl">📧</span>
                   </div>
-                  <h2 className="text-xl font-black text-gray-900">{t("check_email_title", "Check Your Inbox")}</h2>
+                  <h2 className="text-xl font-black text-gray-900">{t("check_email_title")}</h2>
                   <p className="text-sm text-gray-500 max-w-xs">
-                    {t("check_email_draft_desc", "We sent a sign-in link to {{email}}. Click it to publish your offer and create your account.", { email: draftEmail })}
+                    {t("check_email_draft_desc", { email: draftEmail })}
                   </p>
-                  <p className="text-xs text-gray-400">{t("check_email_hint", "Don't see it? Check your spam folder.")}</p>
+                  <p className="text-xs text-gray-400">{t("check_email_hint")}</p>
                 </div>
               </motion.div>
             )}
@@ -753,10 +747,10 @@ export default function PostOffer() {
                   {step === 5 ? t("sending", "Sending...") : t("submit")}
                 </>
               ) : step === 6 ? (
-                t("done", "Done")
+                t("done")
               ) : step === 5 ? (
                 <>
-                  {t("send_sign_in_link", "Send Sign-In Link")}
+                  {t("send_sign_in_link")}
                   <Mail className="w-4 h-4" />
                 </>
               ) : step === 4 ? (

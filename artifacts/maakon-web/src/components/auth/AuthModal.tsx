@@ -48,7 +48,7 @@ export default function AuthModal() {
 
   const currentTitle = () => {
     switch (step) {
-      case "email": return t("auth_title_email", "Sign In");
+      case "email": return t("sign_in");
       case "accountType": return t("auth_title_account");
       case "checkEmail": return t("auth_title_check_email", "Check Your Email");
       case "individualProfile": return t("auth_title_profile");

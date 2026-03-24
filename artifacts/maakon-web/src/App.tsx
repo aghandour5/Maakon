@@ -47,6 +47,7 @@ function Router() {
 
 function App() {
   return (
+    // queryClient is a client that is used to fetch data from the API.
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <TooltipProvider>

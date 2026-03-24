@@ -74,8 +74,7 @@ const fadeVariants = {
 function FieldLabel({ children, isRtl }: { children: React.ReactNode; isRtl?: boolean }) {
   return (
     <label
-      className="block text-xs font-bold text-foreground/60 uppercase tracking-wider mb-2"
-      style={isRtl ? { textAlign: "right" } : {}}
+      className="block text-start text-xs font-bold text-foreground/60 uppercase tracking-wider mb-2"
     >
       {children}
     </label>
@@ -221,7 +220,7 @@ export default function PostNeed() {
             toast({
                variant: "destructive",
                title: t("submit_error") || "Failed to submit post",
-               description: error instanceof Error ? error.message : "Our servers are currently unavailable. Please try again later.",
+               description: error instanceof Error ? error.message : t("toast_server_error"),
             });
           }
         }
@@ -251,7 +250,7 @@ export default function PostNeed() {
         toast({
           variant: "destructive",
           title: t("submit_error") || "Failed to save draft",
-          description: error instanceof Error ? error.message : "Please try again.",
+          description: error instanceof Error ? error.message : t("toast_try_again"),
         });
       } finally {
         setIsDraftLoading(false);
@@ -395,7 +394,7 @@ export default function PostNeed() {
                             key={prov}
                             type="button"
                             onClick={() => patch({ providerType: prov, category: undefined })}
-                            className="p-4 rounded-2xl text-left flex items-center gap-4 transition-all duration-150 active:scale-95 border-2"
+                            className="p-4 rounded-2xl text-start flex items-center gap-4 transition-all duration-150 active:scale-95 border-2"
                             style={
                               selected
                                 ? {
@@ -412,7 +411,7 @@ export default function PostNeed() {
                             }
                           >
                             <span className="text-3xl leading-none">{PROVIDER_CONFIG[prov as keyof typeof PROVIDER_CONFIG].emoji}</span>
-                            <div className="flex flex-col">
+                            <div className="flex flex-col text-start">
                               <span className="font-bold text-lg">
                                 {t(prov === "individual" ? "account_individual" : "account_ngo")}
                               </span>
@@ -603,7 +602,7 @@ export default function PostNeed() {
                            onChange={(e) => patch({ governorate: e.target.value, district: "" })}
                          >
                            <option value="" disabled>{t("select_placeholder")}</option>
-                           {metadata?.governorates.map((g) => <option key={g} value={g}>{g}</option>)}
+                           {metadata?.governorates.map((g) => <option key={g} value={g}>{t(g)}</option>)}
                          </select>
                          <FieldError msg={errors.governorate} />
                        </div>
@@ -616,7 +615,7 @@ export default function PostNeed() {
                              onChange={(e) => patch({ district: e.target.value })}
                            >
                              <option value="" disabled>{t("select_placeholder")}</option>
-                             {metadata.districts[formData.governorate].map((d) => <option key={d} value={d}>{d}</option>)}
+                             {metadata.districts[formData.governorate].map((d) => <option key={d} value={d}>{t(d)}</option>)}
                            </select>
                          </div>
                        ) : null}
@@ -751,9 +750,9 @@ export default function PostNeed() {
                         style={{ background: "linear-gradient(135deg, #fef2f2, #fee2e2)" }}>
                         <Mail className="w-7 h-7 text-red-600" />
                       </div>
-                      <h2 className="text-xl font-black text-gray-900 mb-1">{t("almost_done", "Almost Done!")}</h2>
+                      <h2 className="text-xl font-black text-gray-900 mb-1">{t("almost_done")}</h2>
                       <p className="text-sm text-gray-500">
-                        {t("draft_saved_desc", "Your request has been saved. Enter your email to publish it and create your account.")}
+                        {t("draft_saved_desc")}
                       </p>
                     </div>
 
@@ -761,7 +760,7 @@ export default function PostNeed() {
                       <input
                         type="email"
                         className="w-full px-4 py-3.5 rounded-2xl bg-slate-50 border-2 border-slate-200 focus:border-red-400 outline-none text-sm font-medium placeholder:text-gray-400"
-                        placeholder={t("email_placeholder", "you@example.com")}
+                        placeholder={t("email_placeholder")}
                         value={draftEmail}
                         onChange={(e) => { setDraftEmail(e.target.value); setDraftError(""); }}
                         dir="ltr"
@@ -785,11 +784,11 @@ export default function PostNeed() {
                     <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center">
                       <span className="text-3xl">📧</span>
                     </div>
-                    <h2 className="text-xl font-black text-gray-900">{t("check_email_title", "Check Your Inbox")}</h2>
+                    <h2 className="text-xl font-black text-gray-900">{t("check_email_title")}</h2>
                     <p className="text-sm text-gray-500 max-w-xs">
-                      {t("check_email_draft_desc", "We sent a sign-in link to {{email}}. Click it to publish your request and create your account.", { email: draftEmail })}
+                      {t("check_email_draft_desc", { email: draftEmail })}
                     </p>
-                    <p className="text-xs text-gray-400">{t("check_email_hint", "Don't see it? Check your spam folder.")}</p>
+                    <p className="text-xs text-gray-400">{t("check_email_hint")}</p>
                   </div>
                 )}
               </div>

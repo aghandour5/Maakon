@@ -17,7 +17,7 @@ const LABELS: Record<FeedbackType, { en: string; ar: string; emoji: string }> = 
 };
 
 export default function Contact() {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const isRtl = i18n.dir() === "rtl";
   const { toast } = useToast();
 
@@ -33,8 +33,8 @@ export default function Contact() {
     if (!message.trim() || message.trim().length < 10) {
       toast({
         variant: "destructive",
-        title: isRtl ? "رسالة قصيرة جداً" : "Message too short",
-        description: isRtl ? "يرجى كتابة 10 أحرف على الأقل." : "Please write at least 10 characters.",
+        title: t("msg_too_short"),
+        description: t("msg_too_short_desc"),
       });
       return;
     }
@@ -51,8 +51,8 @@ export default function Contact() {
     } catch (err) {
       toast({
         variant: "destructive",
-        title: isRtl ? "خطأ" : "Error",
-        description: isRtl ? "حدث خطأ أثناء إرسال الملاحظات. يرجى المحاولة مرة أخرى." : "Failed to submit feedback. Please try again.",
+        title: t("error"),
+        description: t("feedback_error"),
       });
     } finally {
       setSending(false);
@@ -63,7 +63,7 @@ export default function Contact() {
   if (submitted) {
     return (
       <div className="min-h-dvh flex flex-col bg-slate-50">
-        <TopNav title={isRtl ? "تواصل معنا" : "Contact Us"} showBack />
+        <TopNav title={t("contact_us_title")} showBack />
         <div className="flex-1 flex items-center justify-center px-5 pt-16">
           <motion.div
             initial={{ scale: 0.85, opacity: 0 }}
@@ -79,12 +79,10 @@ export default function Contact() {
               <CheckCircle2 className="w-10 h-10 text-emerald-600" />
             </div>
             <h2 className="text-2xl font-black text-gray-900 mb-2">
-              {isRtl ? "شكراً لك!" : "Thank You!"}
+              {t("thank_you")}
             </h2>
             <p className="text-gray-500 text-sm mb-6 leading-relaxed">
-              {isRtl
-                ? "تم استلام ملاحظاتك بنجاح. سنراجعها في أقرب وقت."
-                : "Your feedback has been received successfully. We'll review it shortly."}
+              {t("feedback_success")}
             </p>
             <button
               onClick={() => {
@@ -97,7 +95,7 @@ export default function Contact() {
               className="w-full h-12 rounded-2xl font-bold text-white text-base transition-transform active:scale-95"
               style={{ background: "linear-gradient(135deg, #ed1c24, #ff4d4d)" }}
             >
-              {isRtl ? "إرسال ملاحظة أخرى" : "Send Another"}
+              {t("send_another")}
             </button>
           </motion.div>
         </div>
@@ -108,7 +106,7 @@ export default function Contact() {
   // ── Form ────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-dvh flex flex-col bg-slate-50">
-      <TopNav title={isRtl ? "تواصل معنا" : "Contact Us"} showBack />
+      <TopNav title={t("contact_us_title")} showBack />
 
       <main className="flex-1">
         {/* Header */}
@@ -123,12 +121,10 @@ export default function Contact() {
           >
             <MessageSquare className="w-8 h-8 text-emerald-400 mx-auto mb-3" />
             <h1 className="text-2xl md:text-3xl font-black text-white mb-2">
-              {isRtl ? "نود أن نسمع منك" : "We'd Love to Hear from You"}
+              {t("contact_us_title")}
             </h1>
             <p className="text-white/50 text-sm max-w-md mx-auto">
-              {isRtl
-                ? "أخبرنا بأفكارك أو أبلغ عن مشكلة أو اقترح ميزة جديدة."
-                : "Share your thoughts, report an issue, or suggest a new feature."}
+              {t("contact_us_desc")}
             </p>
           </motion.div>
         </section>
@@ -148,8 +144,8 @@ export default function Contact() {
             <div className="p-6 flex flex-col gap-5">
               {/* Feedback type */}
               <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2.5">
-                  {isRtl ? "نوع الملاحظة" : "Feedback Type"}
+                <label className="block text-start text-xs font-bold text-gray-400 uppercase tracking-wider mb-2.5">
+                  {t("feedback_type")}
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {FEEDBACK_TYPES.map((type) => {
@@ -176,7 +172,7 @@ export default function Contact() {
                         }
                       >
                         <span className="text-base leading-none">{LABELS[type].emoji}</span>
-                        {isRtl ? LABELS[type].ar : LABELS[type].en}
+                        {t(`feedback_${type}`)}
                       </button>
                     );
                   })}
@@ -185,14 +181,14 @@ export default function Contact() {
 
               {/* Name */}
               <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-                  <User className="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" />
-                  {isRtl ? "الاسم (اختياري)" : "Name (optional)"}
+                <label className="flex items-center text-start text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                  <User className="w-3.5 h-3.5 inline-block me-1 -mt-0.5" />
+                  {t("name_optional")}
                 </label>
                 <input
                   type="text"
-                  className="w-full px-4 py-3.5 rounded-2xl bg-slate-50 border-2 border-slate-200 focus:border-red-400 focus:ring-4 focus:ring-red-400/10 transition-all outline-none text-sm font-medium placeholder:text-gray-400"
-                  placeholder={isRtl ? "اسمك" : "Your name"}
+                  className="w-full px-4 py-3.5 rounded-2xl bg-slate-50 border-2 border-slate-200 focus:border-red-400 focus:ring-4 focus:ring-red-400/10 transition-all outline-none text-sm font-medium placeholder:text-gray-400 text-start"
+                  placeholder={t("your_name")}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                 />
@@ -200,15 +196,15 @@ export default function Contact() {
 
               {/* Email */}
               <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-                  <Mail className="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" />
-                  {isRtl ? "البريد الإلكتروني (اختياري)" : "Email (optional)"}
+                <label className="flex items-center text-start text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                  <Mail className="w-3.5 h-3.5 inline-block me-1 -mt-0.5" />
+                  {t("email_optional")}
                 </label>
                 <input
                   type="email"
                   dir="ltr"
-                  className="w-full px-4 py-3.5 rounded-2xl bg-slate-50 border-2 border-slate-200 focus:border-blue-400 focus:ring-4 focus:ring-blue-400/10 transition-all outline-none text-sm font-medium placeholder:text-gray-400"
-                  placeholder="you@example.com"
+                  className="w-full text-start px-4 py-3.5 rounded-2xl bg-slate-50 border-2 border-slate-200 focus:border-blue-400 focus:ring-4 focus:ring-blue-400/10 transition-all outline-none text-sm font-medium placeholder:text-gray-400"
+                  placeholder={t("email_placeholder")}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
@@ -216,14 +212,14 @@ export default function Contact() {
 
               {/* Message */}
               <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-                  <MessageSquare className="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" />
-                  {isRtl ? "رسالتك *" : "Your Message *"}
+                <label className="flex items-center text-start text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                  <MessageSquare className="w-3.5 h-3.5 inline-block me-1 -mt-0.5" />
+                  {t("your_message")}
                 </label>
                 <textarea
                   rows={5}
-                  className="w-full px-4 py-3.5 rounded-2xl bg-slate-50 border-2 border-slate-200 focus:border-blue-400 focus:ring-4 focus:ring-blue-400/10 transition-all outline-none resize-none text-sm font-medium placeholder:text-gray-400"
-                  placeholder={isRtl ? "اكتب ملاحظاتك هنا..." : "Write your feedback here..."}
+                  className="w-full px-4 py-3.5 rounded-2xl bg-slate-50 border-2 border-slate-200 focus:border-blue-400 focus:ring-4 focus:ring-blue-400/10 transition-all outline-none resize-none text-sm font-medium placeholder:text-gray-400 text-start"
+                  placeholder={t("write_feedback_here")}
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                 />
@@ -244,7 +240,7 @@ export default function Contact() {
                 ) : (
                   <Send className="w-4 h-4" />
                 )}
-                {isRtl ? "إرسال" : "Submit Feedback"}
+                {t("submit_feedback")}
               </button>
             </div>
           </motion.form>

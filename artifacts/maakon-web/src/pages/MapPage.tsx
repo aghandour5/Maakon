@@ -227,7 +227,7 @@ export default function MapPage() {
         onClick={onClick}
         className={`w-11 h-6 rounded-full transition-colors flex items-center ${active ? 'bg-primary' : 'bg-muted'}`}
       >
-        <div className={`w-5 h-5 rounded-full bg-white shadow transition-transform mx-0.5 ${active ? 'translate-x-5' : 'translate-x-0'}`} />
+        <div className={`w-5 h-5 rounded-full bg-white shadow transition-transform mx-0.5 ${active ? (isRtl ? '-translate-x-5' : 'translate-x-5') : 'translate-x-0'}`} />
       </div>
       <span className="text-sm text-foreground">{label}</span>
     </label>
@@ -324,7 +324,7 @@ export default function MapPage() {
                       {post.district && (
                         <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
                           <MapPin className="w-3 h-3" />
-                          <span>{post.district}، {post.governorate}</span>
+                          <span>{post.district ? t(post.district) + "، " : ""}{t(post.governorate)}</span>
                         </div>
                       )}
                       <div className="text-xs text-muted-foreground mb-2">
@@ -366,7 +366,7 @@ export default function MapPage() {
                       {ngo.governorate && (
                         <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
                           <MapPin className="w-3 h-3" />
-                          <span>{ngo.governorate}</span>
+                          <span>{t(ngo.governorate)}</span>
                         </div>
                       )}
                       <button
@@ -417,7 +417,7 @@ export default function MapPage() {
           ))}
           <div className="mt-1.5 pt-1.5 border-t border-slate-200/60">
             <p className="text-[9px] font-semibold text-slate-500 leading-tight">
-              {t('location_privacy_note', 'Location of needs are not exact for privacy')}
+              {t('location_privacy_note')}
             </p>
           </div>
         </div>
@@ -578,7 +578,7 @@ export default function MapPage() {
                   >
                     <option value="">{t('all_governorates')}</option>
                     {metadata?.governorates.map(gov => (
-                      <option key={gov} value={gov}>{gov}</option>
+                      <option key={gov} value={gov}>{t(gov)}</option>
                     ))}
                   </select>
                 </div>
@@ -594,7 +594,7 @@ export default function MapPage() {
                     >
                       <option value="">{t('all_districts')}</option>
                       {availableDistricts.map(d => (
-                        <option key={d} value={d}>{d}</option>
+                        <option key={d} value={d}>{t(d)}</option>
                       ))}
                     </select>
                   </div>
@@ -703,7 +703,7 @@ export default function MapPage() {
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-foreground truncate">{ngo.name}</p>
                           <p className="text-xs text-muted-foreground truncate">
-                            {ngo.governorate}{ngo.district ? ` • ${ngo.district}` : ''}
+                            {t(ngo.governorate)}{ngo.district ? ` • ${t(ngo.district)}` : ''}
                             {" • "}{isVerified ? t('verified_ngo') : t('unverified_ngo', 'Unverified')}
                           </p>
                         </div>
@@ -725,7 +725,7 @@ export default function MapPage() {
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-foreground truncate">{post.title}</p>
                           <p className="text-xs text-muted-foreground truncate">
-                            {post.governorate}{post.district ? ` • ${post.district}` : ''}
+                            {t(post.governorate)}{post.district ? ` • ${t(post.district)}` : ''}
                           </p>
                         </div>
                         <ChevronRight className={`w-4 h-4 text-muted-foreground shrink-0 mt-1 ${isRtl ? 'rotate-180' : ''}`} />

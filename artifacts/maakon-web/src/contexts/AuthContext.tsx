@@ -1,7 +1,9 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { fetchCurrentUser, logout as apiLogout, supabaseLogin } from "@/lib/auth-api";
 import { supabase } from "@/lib/supabase";
+
 // Aligned with what the backend /api/auth/me returns
+// interface is a way to define the shape of an object. It is like a blueprint for an object.
 export interface AuthUser {
   id: number;
   email: string | null;
@@ -28,19 +30,47 @@ interface AuthContextType {
   updateUser: (updates: Partial<AuthUser>) => void;
 }
 
+// AuthContext is a context that is used to store the authentication state of the user.
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Broadcast channel for sync
+const authChannel = typeof window !== "undefined" ? new BroadcastChannel("maakon_auth") : null; // authChannel is a broadcast channel that is used to sync the authentication state of the user across different tabs.
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [user, setUser] = useState<AuthUser | null>(null); // user is the current user. It is null if the user is not logged in.
+  const [isLoading, setIsLoading] = useState(true); // isLoading is true if the user is loading.
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false); // isAuthModalOpen is true if the auth modal is open.
+
+  // Helper to update user and broadcast
+  const syncUser = (newUser: AuthUser | null, broadcast = true) => { // syncUser is a helper function that is used to update the user and broadcast the change to other tabs.
+    setUser(newUser); // setUser is a function that is used to update the user.
+    if (broadcast && authChannel) { // if broadcast is true and authChannel is not null
+      authChannel.postMessage({ type: "AUTH_CHANGE", user: newUser }); // postMessage is a function that is used to send a message to other tabs.
+    }
+  };
+
+  useEffect(() => {
+    if (!authChannel) return;
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data.type === "AUTH_CHANGE") {
+        // Update local state without broadcasting back
+        setUser(event.data.user);
+        setIsLoading(false);
+      }
+    };
+    authChannel.addEventListener("message", handleMessage);
+    return () => authChannel.removeEventListener("message", handleMessage);
+  }, []);
 
   useEffect(() => {
     async function initAuth() {
       try {
-        // 1. Check if Supabase session establishes (Magic Link callback) or Bypass
         const urlParams = new URLSearchParams(window.location.search);
         const bypassEmail = urlParams.get("bypassEmail");
+
+        // 1. Kick off both checks early and in parallel
+        const sessionPromise = supabase.auth.getSession();
+        const currentUserPromise = fetchCurrentUser().catch(() => null);
 
         if (bypassEmail) {
           try {
@@ -48,44 +78,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const accountType = (window.localStorage.getItem("accountTypeForSignIn") as "individual" | "ngo") || undefined;
 
             const result = await supabaseLogin({ idToken: bypassEmail, accountType, draftToken });
-            setUser(result.user);
+            syncUser(result.user);
             if (!result.user.onboardingComplete) {
               setIsAuthModalOpen(true);
             }
             window.localStorage.removeItem("accountTypeForSignIn");
             window.history.replaceState({}, document.title, window.location.pathname);
+
+            // In bypass mode, we already have the user, so we can stop here
+            setIsLoading(false);
+            return;
           } catch (err) {
             console.warn("Bypass login failed:", err);
           }
-        } else {
-          // Check for a Supabase session (e.g., after clicking an OTP magic link)
-          // The supabase client automatically handles the #access_token fragment in the URL
-          const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-          if (session) {
-            try {
-              const draftToken = urlParams.get("draftToken") || undefined;
-              const accountType = (window.localStorage.getItem("accountTypeForSignIn") as "individual" | "ngo") || undefined;
-              
-              // We pass the Supabase JWT to our custom backend to establish the HTTP-only secure cookie session
-              const result = await supabaseLogin({ idToken: session.access_token, accountType, draftToken });
-              setUser(result.user);
-              if (!result.user.onboardingComplete) {
-                setIsAuthModalOpen(true);
-              }
-              window.localStorage.removeItem("accountTypeForSignIn");
-              window.history.replaceState({}, document.title, window.location.pathname);
-            } catch (authError) {
-              console.error("Supabase login to backend failed:", authError);
-            }
-          }
         }
 
-        // 2. Check existing server session
-        const currentUser = await fetchCurrentUser();
+        // Wait for basic session and current user checks
+        const [{ data: { session } }, currentUser] = await Promise.all([
+          sessionPromise,
+          currentUserPromise
+        ]);
+
         if (currentUser) {
+          // Fast path: identified by backend cookie
           setUser(currentUser);
           if (!currentUser.onboardingComplete) {
             setIsAuthModalOpen(true);
+          }
+        } else if (session) {
+          // Slow path: identified by Supabase but needs backend sync
+          try {
+            const draftToken = urlParams.get("draftToken") || undefined;
+            const accountType = (window.localStorage.getItem("accountTypeForSignIn") as "individual" | "ngo") || undefined;
+
+            const result = await supabaseLogin({ idToken: session.access_token, accountType, draftToken });
+            syncUser(result.user);
+            if (!result.user.onboardingComplete) {
+              setIsAuthModalOpen(true);
+            }
+            window.localStorage.removeItem("accountTypeForSignIn");
+            window.history.replaceState({}, document.title, window.location.pathname);
+          } catch (authError) {
+            console.error("Supabase login to backend failed:", authError);
           }
         }
       } catch (error) {
@@ -98,7 +132,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = (newUser: AuthUser) => {
-    setUser(newUser);
+    syncUser(newUser);
   };
 
   const logout = async () => {
@@ -109,12 +143,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (e) {
       console.error("Logout error", e);
     } finally {
-      setUser(null);
+      syncUser(null);
     }
   };
 
   const updateUser = (updates: Partial<AuthUser>) => {
-    setUser((prev) => (prev ? { ...prev, ...updates } : null));
+    setUser((prev) => {
+      const updated = prev ? { ...prev, ...updates } : null;
+      if (authChannel) {
+        authChannel.postMessage({ type: "AUTH_CHANGE", user: updated });
+      }
+      return updated;
+    });
   };
 
   const openAuthModal = () => setIsAuthModalOpen(true);

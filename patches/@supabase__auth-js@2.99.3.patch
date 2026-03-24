@@ -1,0 +1,22 @@
+diff --git a/src/GoTrueClient.ts b/src/GoTrueClient.ts
+index 1a3c836110f733b2fee5ea53a1e72c0ef3d746e9..969238159bb478e75117243a59b6845045c6ad94 100644
+--- a/src/GoTrueClient.ts
++++ b/src/GoTrueClient.ts
+@@ -3044,7 +3044,7 @@ export default class GoTrueClient {
+       // `setInterval` is preventing the process from being marked as
+       // finished and tests run endlessly. This can be prevented by calling
+       // `unref()` on the returned object.
+-      ticker.unref()
++      ;(ticker as any).unref()
+       // @ts-expect-error TS has no context of Deno
+     } else if (typeof Deno !== 'undefined' && typeof Deno.unrefTimer === 'function') {
+       // similar like for NodeJS, but with the Deno API
+@@ -3063,7 +3063,7 @@ export default class GoTrueClient {
+     this.autoRefreshTickTimeout = timeout
+ 
+     if (timeout && typeof timeout === 'object' && typeof timeout.unref === 'function') {
+-      timeout.unref()
++      ;(timeout as any).unref()
+       // @ts-expect-error TS has no context of Deno
+     } else if (typeof Deno !== 'undefined' && typeof Deno.unrefTimer === 'function') {
+       // @ts-expect-error TS has no context of Deno

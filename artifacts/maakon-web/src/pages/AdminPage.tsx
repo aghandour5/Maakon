@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { AlertTriangle, RefreshCw, CheckCircle2, EyeOff, Clock, Trash2, Shield, ShieldOff, Loader2, ChevronDown, Activity, ClipboardList, Building2, LayoutDashboard, Globe, Plus, Edit2, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -285,7 +286,7 @@ function NgoActions({ ngo, onUpdate, onEdit }: { ngo: AdminNgo; onUpdate: () => 
         className="flex items-center justify-center gap-1.5 min-w-[70px] text-xs font-medium border border-red-200 text-red-600 rounded-lg px-3 py-1.5 hover:bg-red-50 transition-all disabled:opacity-50"
       >
         <Trash2 className="w-3.5 h-3.5" />
-        Del
+        Delete
       </button>
       <button
         onClick={() => onEdit(ngo)}
@@ -332,6 +333,11 @@ export default function AdminPage() {
   const [editingNgo, setEditingNgo] = useState<AdminNgo | null>(null);
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
+  const { i18n } = useTranslation();
+
+  const toggleLanguage = () => {
+    i18n.changeLanguage(i18n.language.startsWith("ar") ? "en" : "ar");
+  };
 
   const loadStats = useCallback(async () => {
     try {
@@ -493,6 +499,14 @@ export default function AdminPage() {
             </div>
           </div>
           <div className="flex items-center gap-4 md:gap-6">
+            <button
+              onClick={toggleLanguage}
+              className="flex items-center gap-1.5 px-3 h-8 rounded-xl text-slate-700 hover:text-slate-900 text-xs sm:text-sm font-semibold border border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition-all shrink-0"
+            >
+              <Globe className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline-block">{i18n.language.startsWith("ar") ? "English" : "عربي"}</span>
+              <span className="inline-block sm:hidden">{i18n.language.startsWith("ar") ? "EN" : "عربي"}</span>
+            </button>
             <Link href="/" className="text-sm font-semibold text-slate-500 hover:text-indigo-600 transition-colors hidden sm:block">
               Exit Console
             </Link>
