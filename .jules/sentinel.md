@@ -4,3 +4,7 @@
 **Vulnerability:** A one-off database script (`lib/db/rename.mjs`) contained a hardcoded PostgreSQL connection string, including a plain-text database password. Additionally, `supabase-admin.ts` and `supabase.ts` contained a hardcoded Supabase project URL and a placeholder Anon Key as fallbacks.
 **Learning:** Developers sometimes commit temporary scripts or use hardcoded values during active development without realizing they will be permanently stored in version control, exposing sensitive credentials and application identifiers to anyone with access to the repository.
 **Prevention:** Use environment variables exclusively for secrets, credentials, and API endpoints. Remove single-use scripts containing credentials before committing them. Fallback values in application code should be empty strings or fail loudly if the required environment variables are not provided.
+## 2024-05-24 - Rate Limiting /feedback
+**Vulnerability:** Missing rate limit on unauthenticated /feedback route
+**Learning:** This route writes to DB and calls an external webhook without authentication, making it a prime target for abuse.
+**Prevention:** Apply express-rate-limit middleware to vulnerable routes.

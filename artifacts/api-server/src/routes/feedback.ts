@@ -1,14 +1,24 @@
 import { Router, type IRouter } from "express";
+import rateLimit from "express-rate-limit";
 import { db } from "@workspace/db";
 import * as dbSchema from "@workspace/db/schema";
 
 const router: IRouter = Router();
+
+// Rate limit feedback submissions to prevent spam/abuse
+const feedbackRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // Limit each IP to 5 feedback requests per `window` (here, per 15 minutes)
+  message: { error: "Too many feedback submissions from this IP, please try again after 15 minutes." },
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+});
 const { feedbacksTable, insertFeedbackSchema } = dbSchema as unknown as {
   feedbacksTable: unknown;
   insertFeedbackSchema: { parse: (input: unknown) => unknown };
 };
 
-router.post("/feedback", async (req, res) => {
+router.post("/feedback", feedbackRateLimiter, async (req, res) => {
   try {
     const data = insertFeedbackSchema.parse(req.body) as Record<string, unknown>;
     await db.insert(feedbacksTable as never).values(data as never);
