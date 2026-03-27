@@ -10,6 +10,7 @@ import { db } from "@workspace/db";
 import { postsTable, reportsTable, ngosTable, adminActionsTable, usersTable } from "@workspace/db/schema";
 import { eq, desc, and, sql } from "drizzle-orm";
 import { supabaseAdmin } from "../lib/supabase-admin";
+import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
 
@@ -93,7 +94,7 @@ router.get("/admin/stats", async (_req, res) => {
       },
     });
   } catch (err) {
-    console.error(err);
+    logger.error({ err }, "Failed to fetch stats");
     res.status(500).json({ error: "Failed to fetch stats" });
   }
 });
@@ -105,7 +106,7 @@ router.get("/admin/posts", async (_req, res) => {
     const posts = await db.select().from(postsTable).orderBy(desc(postsTable.createdAt));
     res.json(posts.map(toAdminPost));
   } catch (err) {
-    console.error(err);
+    logger.error({ err }, "Failed to fetch posts");
     res.status(500).json({ error: "Failed to fetch posts" });
   }
 });
@@ -167,7 +168,7 @@ router.get("/admin/reports", async (_req, res) => {
       }))
     );
   } catch (err) {
-    console.error(err);
+    logger.error({ err }, "Failed to fetch reports");
     res.status(500).json({ error: "Failed to fetch reports" });
   }
 });
@@ -209,7 +210,7 @@ router.get("/admin/users", async (_req, res) => {
     const users = await db.select().from(usersTable).orderBy(desc(usersTable.createdAt));
     res.json(users);
   } catch (err) {
-    console.error(err);
+    logger.error({ err }, "Failed to fetch users");
     res.status(500).json({ error: "Failed to fetch users" });
   }
 });
@@ -236,14 +237,14 @@ router.delete("/admin/users/:id", async (req, res) => {
     if (supabaseUid && supabaseAdmin) {
       const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(supabaseUid);
       if (authError) {
-        console.error(`Failed to delete user from Supabase Auth [${supabaseUid}]:`, authError);
+        logger.error({ err: authError }, `Failed to delete user from Supabase Auth [${supabaseUid}]`);
       }
     }
 
     res.json(user);
   } catch (err: any) {
-    console.error(err);
-    res.status(500).json({ error: err.message || "Failed to delete user" });
+    logger.error({ err }, "Failed to delete user");
+    res.status(500).json({ error: "Failed to delete user" });
   }
 });
 
@@ -254,7 +255,7 @@ router.get("/admin/ngos", async (_req, res) => {
     const ngos = await db.select().from(ngosTable).orderBy(desc(ngosTable.createdAt));
     res.json(ngos);
   } catch (err) {
-    console.error(err);
+    logger.error({ err }, "Failed to fetch NGOs");
     res.status(500).json({ error: "Failed to fetch NGOs" });
   }
 });
@@ -351,8 +352,8 @@ router.delete("/admin/ngos/:id", async (req, res) => {
     }
     res.json(ngo);
   } catch (err: any) {
-    console.error(err);
-    res.status(500).json({ error: err.message || "Failed to delete NGO" });
+    logger.error({ err }, "Failed to delete NGO");
+    res.status(500).json({ error: "Failed to delete NGO" });
   }
 });
 
@@ -424,7 +425,7 @@ router.post("/admin/cleanup", async (_req, res) => {
       expiredIds: result.map((r) => r.id),
     });
   } catch (err) {
-    console.error(err);
+    logger.error({ err }, "Cleanup failed");
     res.status(500).json({ error: "Cleanup failed" });
   }
 });
