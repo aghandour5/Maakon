@@ -48,6 +48,7 @@ function isAllowedOrigin(req: Request, origin: string): boolean {
 
 const app: Express = express();
 
+app.set("trust proxy", 1); // Trust first proxy (e.g. reverse proxy/load balancer)
 app.disable("x-powered-by");
 
 app.use(
