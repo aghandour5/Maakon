@@ -22,6 +22,7 @@ import {
   getSessionClearCookieOptions,
 } from "../lib/session";
 import { requireAuth } from "../middlewares/auth";
+import { rateLimit } from "../middlewares/rateLimit";
 import { logger } from "../lib/logger";
 import { getPublicCoordinates } from "../lib/post-location";
 
@@ -35,7 +36,10 @@ const ngosTableWithUserId = ngosTable as typeof ngosTable & {
 
 // ── Firebase Email-Link Login ─────────────────────────────────────────────────
 
-router.post("/auth/supabase-login", async (req: Request, res: Response) => {
+// Rate limit logins (e.g. 10 requests per 15 minutes)
+const loginLimiter = rateLimit(15 * 60 * 1000, 10, "Too many login attempts, please try again later.");
+
+router.post("/auth/supabase-login", loginLimiter, async (req: Request, res: Response) => {
   const parsed = FirebaseLoginBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid request", details: String(parsed.error) });
@@ -205,7 +209,10 @@ router.post("/posts/draft", async (req: Request, res: Response) => {
 
 // ── WhatsApp OTP (NGO verification only) ──────────────────────────────────────
 
-router.post("/auth/send-whatsapp-otp", requireAuth, async (req: Request, res: Response) => {
+// Rate limit sending OTPs (e.g. 5 requests per 15 minutes)
+const sendOtpLimiter = rateLimit(15 * 60 * 1000, 5, "Too many OTP requests, please try again later.");
+
+router.post("/auth/send-whatsapp-otp", requireAuth, sendOtpLimiter, async (req: Request, res: Response) => {
   const user = req.user!;
 
   if (user.accountType !== "ngo") {
@@ -228,7 +235,10 @@ router.post("/auth/send-whatsapp-otp", requireAuth, async (req: Request, res: Re
   }
 });
 
-router.post("/auth/verify-whatsapp-otp", requireAuth, async (req: Request, res: Response) => {
+// Rate limit verifying OTPs (e.g. 10 requests per 15 minutes)
+const verifyOtpLimiter = rateLimit(15 * 60 * 1000, 10, "Too many verification attempts, please try again later.");
+
+router.post("/auth/verify-whatsapp-otp", requireAuth, verifyOtpLimiter, async (req: Request, res: Response) => {
   const user = req.user!;
 
   if (user.accountType !== "ngo") {
