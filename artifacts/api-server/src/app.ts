@@ -48,6 +48,9 @@ function isAllowedOrigin(req: Request, origin: string): boolean {
 
 const app: Express = express();
 
+// SECURITY: Ensure accurate client IP identification for features like rate limiting and audit logging
+// The Express API server is behind a reverse proxy/load balancer in production.
+app.set("trust proxy", 1);
 app.disable("x-powered-by");
 
 app.use(
