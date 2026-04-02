@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import * as dbSchema from "@workspace/db/schema";
+import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
 const { feedbacksTable, insertFeedbackSchema } = dbSchema as unknown as {
@@ -29,13 +30,13 @@ router.post("/feedback", async (req, res) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: slackText }),
       }).catch((err) => {
-        console.error("Failed to send Slack webhook:", err);
+        logger.error({ err }, "Failed to send Slack webhook");
       });
     }
 
     res.json({ success: true });
   } catch (error) {
-    console.error("Failed to submit feedback:", error);
+    logger.error({ err: error }, "Failed to submit feedback");
     res.status(400).json({ error: "Failed to submit feedback" });
   }
 });
