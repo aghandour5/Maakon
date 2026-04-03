@@ -4,3 +4,8 @@
 **Vulnerability:** A one-off database script (`lib/db/rename.mjs`) contained a hardcoded PostgreSQL connection string, including a plain-text database password. Additionally, `supabase-admin.ts` and `supabase.ts` contained a hardcoded Supabase project URL and a placeholder Anon Key as fallbacks.
 **Learning:** Developers sometimes commit temporary scripts or use hardcoded values during active development without realizing they will be permanently stored in version control, exposing sensitive credentials and application identifiers to anyone with access to the repository.
 **Prevention:** Use environment variables exclusively for secrets, credentials, and API endpoints. Remove single-use scripts containing credentials before committing them. Fallback values in application code should be empty strings or fail loudly if the required environment variables are not provided.
+
+## 2024-03-24 - Information Leakage via Error Messages
+**Vulnerability:** The `/admin/users/:id` and `/admin/ngos/:id` endpoints were returning raw error messages (`err.message`) in 500 status responses, potentially exposing internal system details or database structures.
+**Learning:** Returning unhandled or raw errors directly to the client violates the "Fail Securely" principle and can give attackers valuable intelligence about the backend implementation.
+**Prevention:** Always return generic error messages (e.g., "Internal server error") to the client. Use a structured internal logging system (`logger.error`) to record the full error details for debugging purposes.
