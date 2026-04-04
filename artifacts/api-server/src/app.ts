@@ -9,6 +9,7 @@ import cookieParser from "cookie-parser";
 import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
+import { securityHeaders } from "./middlewares/security";
 
 const configuredCorsOrigins = (process.env["CORS_ORIGINS"] ?? "")
   .split(",")
@@ -49,6 +50,8 @@ function isAllowedOrigin(req: Request, origin: string): boolean {
 const app: Express = express();
 
 app.disable("x-powered-by");
+
+app.use(securityHeaders);
 
 app.use(
   pinoHttp({
