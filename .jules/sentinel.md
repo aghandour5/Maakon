@@ -8,3 +8,8 @@
 **Vulnerability:** Missing rate limit on unauthenticated /feedback route
 **Learning:** This route writes to DB and calls an external webhook without authentication, making it a prime target for abuse.
 **Prevention:** Apply express-rate-limit middleware to vulnerable routes.
+
+## 2025-02-12 - Information Exposure in Admin Routes
+**Vulnerability:** The `/admin/users/:id` and `/admin/ngos/:id` delete routes exposed internal `err.message` in the 500 error response JSON to the client. Additionally, `console.error` was used in `admin.ts` and `feedback.ts` which is harder to aggregate securely.
+**Learning:** These endpoints were using generic catch blocks to send the `err.message` property, creating a risk of disclosing database schema details, sensitive system state, or module paths when operations fail.
+**Prevention:** Always sanitize API responses to return generic error messages (e.g., "Failed to delete user" instead of `err.message`). Route errors should only be fully serialized within server-side structured logging (e.g. `logger.error({ err })`).
