@@ -8,3 +8,7 @@
 **Vulnerability:** Missing rate limit on unauthenticated /feedback route
 **Learning:** This route writes to DB and calls an external webhook without authentication, making it a prime target for abuse.
 **Prevention:** Apply express-rate-limit middleware to vulnerable routes.
+## 2025-02-14 - Fix Information Disclosure in Admin Routes
+**Vulnerability:** Information Disclosure (CWE-209). The API server was exposing internal error details (`err.message`) to the client when a delete operation failed on user or NGO records, along with using un-structured `console.error` logs.
+**Learning:** Returning explicit catch errors to the client leaks database logic, query structures, or server states, which attackers can exploit to glean architectural hints.
+**Prevention:** Always use generic HTTP error responses for client-facing 500 status codes (e.g., "Internal server error", "Failed to delete user") while securely logging detailed exceptions (e.g., `logger.error({ err }, ... )`) internally on the server.
