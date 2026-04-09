@@ -237,7 +237,9 @@ export default function MapPage() {
 
   const isLoading = isLoadingPosts || isLoadingNgos;
   const isError = isErrorPosts || isErrorNgos;
-  const visibleNgos = (!filters.postType || filters.verifiedNgoOnly) ? (ngos ?? []) : [];
+  const visibleNgos = (!filters.postType || filters.verifiedNgoOnly) 
+    ? (ngos ?? []).filter(ngo => !filters.verifiedNgoOnly || !!ngo.verifiedAt) 
+    : [];
   const totalResults = (posts?.length ?? 0) + visibleNgos.length;
   const hasResults = totalResults > 0;
 
@@ -343,7 +345,7 @@ export default function MapPage() {
             })}
 
             {/* NGO markers */}
-            {(!filters.postType || filters.verifiedNgoOnly) && ngos?.map(ngo => {
+            {visibleNgos.map(ngo => {
               if (!ngo.lat || !ngo.lng) return null;
               const isVerified = !!ngo.verifiedAt;
               return (

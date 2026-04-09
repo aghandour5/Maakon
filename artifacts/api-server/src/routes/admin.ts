@@ -5,22 +5,32 @@
  * but NEVER exposes privateLat or privateLng.
  */
 import { Router, type IRouter } from "express";
-import { requireAuth, requireAdmin } from "../middlewares/auth";
+import { requireAuth, requireAdmin, requireMfa } from "../middlewares/auth";
 import { db } from "@workspace/db";
 import { postsTable, reportsTable, ngosTable, adminActionsTable, usersTable } from "@workspace/db/schema";
-import { eq, desc, and, sql } from "drizzle-orm";
+import { eq, desc, and, sql, inArray } from "drizzle-orm";
 import { supabaseAdmin } from "../lib/supabase-admin";
+import { logger } from "../lib/logger";
+import { rateLimit } from "express-rate-limit";
+import { adminSubdomainCheck, adminIpWhitelist } from "../middlewares/adminSecurity";
 
 const router: IRouter = Router();
-
-// Protect all /admin routes
-router.use("/admin", requireAuth, requireAdmin);
+const INTERNAL_SERVER_ERROR = { error: "Internal server error" };
 
 type PostStatus = "pending" | "active" | "hidden" | "resolved" | "expired" | "removed";
 type ReportStatus = "pending" | "reviewed" | "dismissed" | "actioned";
 
 const VALID_POST_STATUSES: PostStatus[] = ["pending", "active", "hidden", "resolved", "expired", "removed"];
 const VALID_REPORT_STATUSES: ReportStatus[] = ["pending", "reviewed", "dismissed", "actioned"];
+
+const adminLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: { error: "Too many admin requests from this IP, please try again later" },
+});
+
+// Protect all /admin routes with Subdomain, IP Whitelist, Rate Limiting, Auth, and MFA
+router.use("/admin", adminSubdomainCheck, adminIpWhitelist, adminLimiter, requireAuth, requireAdmin, requireMfa);
 
 function isPostStatus(v: unknown): v is PostStatus {
   return typeof v === "string" && (VALID_POST_STATUSES as string[]).includes(v);
@@ -93,8 +103,8 @@ router.get("/admin/stats", async (_req, res) => {
       },
     });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to fetch stats" });
+    logger.error({ err }, "Failed to fetch stats");
+    res.status(500).json(INTERNAL_SERVER_ERROR);
   }
 });
 
@@ -105,8 +115,8 @@ router.get("/admin/posts", async (_req, res) => {
     const posts = await db.select().from(postsTable).orderBy(desc(postsTable.createdAt));
     res.json(posts.map(toAdminPost));
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to fetch posts" });
+    logger.error({ err }, "Failed to fetch posts");
+    res.status(500).json(INTERNAL_SERVER_ERROR);
   }
 });
 
@@ -167,8 +177,8 @@ router.get("/admin/reports", async (_req, res) => {
       }))
     );
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to fetch reports" });
+    logger.error({ err }, "Failed to fetch reports");
+    res.status(500).json(INTERNAL_SERVER_ERROR);
   }
 });
 
@@ -209,8 +219,8 @@ router.get("/admin/users", async (_req, res) => {
     const users = await db.select().from(usersTable).orderBy(desc(usersTable.createdAt));
     res.json(users);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to fetch users" });
+    logger.error({ err }, "Failed to fetch users");
+    res.status(500).json(INTERNAL_SERVER_ERROR);
   }
 });
 
@@ -221,6 +231,25 @@ router.delete("/admin/users/:id", async (req, res) => {
     return;
   }
   try {
+    // 1. Find the user's posts so we can delete their reports first
+    const userPosts = await db
+      .select({ id: postsTable.id })
+      .from(postsTable)
+      .where(eq(postsTable.userId, id));
+
+    // 2. Delete reports on those posts
+    if (userPosts.length > 0) {
+      const postIds = userPosts.map((p) => p.id);
+      await db.delete(reportsTable).where(inArray(reportsTable.postId, postIds));
+    }
+
+    // 3. Delete the user's posts
+    await db.delete(postsTable).where(eq(postsTable.userId, id));
+
+    // 4. Delete admin actions by this user
+    await db.delete(adminActionsTable).where(eq(adminActionsTable.adminId, id));
+
+    // 5. Delete the user
     const [user] = await db
       .delete(usersTable)
       .where(eq(usersTable.id, id))
@@ -231,19 +260,19 @@ router.delete("/admin/users/:id", async (req, res) => {
       return;
     }
 
-    // Attempt to delete from Supabase Auth if a UID is present and the admin client is configured
+    // 6. Attempt to delete from Supabase Auth if a UID is present
     const supabaseUid = (user as { supabaseUid?: string | null }).supabaseUid;
     if (supabaseUid && supabaseAdmin) {
       const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(supabaseUid);
       if (authError) {
-        console.error(`Failed to delete user from Supabase Auth [${supabaseUid}]:`, authError);
+        logger.error({ err: authError, supabaseUid }, "Failed to delete user from Supabase Auth");
       }
     }
 
     res.json(user);
   } catch (err: any) {
-    console.error(err);
-    res.status(500).json({ error: err.message || "Failed to delete user" });
+    logger.error({ err, userId: id }, "Failed to delete user");
+    res.status(500).json(INTERNAL_SERVER_ERROR);
   }
 });
 
@@ -254,8 +283,8 @@ router.get("/admin/ngos", async (_req, res) => {
     const ngos = await db.select().from(ngosTable).orderBy(desc(ngosTable.createdAt));
     res.json(ngos);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to fetch NGOs" });
+    logger.error({ err }, "Failed to fetch NGOs");
+    res.status(500).json(INTERNAL_SERVER_ERROR);
   }
 });
 
@@ -351,8 +380,8 @@ router.delete("/admin/ngos/:id", async (req, res) => {
     }
     res.json(ngo);
   } catch (err: any) {
-    console.error(err);
-    res.status(500).json({ error: err.message || "Failed to delete NGO" });
+    logger.error({ err, ngoId: id }, "Failed to delete NGO");
+    res.status(500).json(INTERNAL_SERVER_ERROR);
   }
 });
 
@@ -369,11 +398,11 @@ router.patch("/admin/ngos/:id/verify", async (req, res) => {
     return;
   }
 
-  if (ngo.userId) {
+  if ((ngo as any).userId) {
     await db
       .update(postsTable)
       .set({ verifiedBadgeType: "ngo" })
-      .where(and(eq(postsTable.userId, ngo.userId), eq(postsTable.providerType, "ngo")));
+      .where(and(eq(postsTable.userId, (ngo as any).userId), eq(postsTable.providerType, "ngo")));
   }
 
   res.json(ngo);
@@ -392,11 +421,11 @@ router.delete("/admin/ngos/:id/verify", async (req, res) => {
     return;
   }
 
-  if (ngo.userId) {
+  if ((ngo as any).userId) {
     await db
       .update(postsTable)
       .set({ verifiedBadgeType: null })
-      .where(and(eq(postsTable.userId, ngo.userId), eq(postsTable.providerType, "ngo")));
+      .where(and(eq(postsTable.userId, (ngo as any).userId), eq(postsTable.providerType, "ngo")));
   }
 
   res.json(ngo);
@@ -424,8 +453,8 @@ router.post("/admin/cleanup", async (_req, res) => {
       expiredIds: result.map((r) => r.id),
     });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Cleanup failed" });
+    logger.error({ err }, "Cleanup failed");
+    res.status(500).json(INTERNAL_SERVER_ERROR);
   }
 });
 

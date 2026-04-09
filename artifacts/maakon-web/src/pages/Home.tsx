@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
-import { MapPin, HeartHandshake, AlertTriangle, ArrowLeft, ArrowRight, Globe, Menu, X, LogOut, ShieldAlert } from "lucide-react";
+import { MapPin, HeartHandshake, AlertTriangle, ArrowLeft, ArrowRight, Globe, Menu, X, LogOut, ShieldAlert, Heart } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAuthGate } from "@/hooks/useAuthGate";
+import Footer from "@/components/layout/Footer";
 
 // ── Minimal Animation Variants ──────────────────────────────────────────────
 const fadeUp = {
@@ -30,25 +31,35 @@ export default function Home() {
     ...(isAuthenticated ? [{ label: isRtl ? "منشوراتي" : "My Posts", href: "/my-posts" }] : []),
     { label: isRtl ? "حول" : "About", href: "/about" },
     { label: isRtl ? "تواصل معنا" : "Contact Us", href: "/contact" },
+    { label: isRtl ? "ادعمنا" : "Support Us", href: "/support", icon: <Heart className="w-3.5 h-3.5 mr-1 inline-block" /> },
   ];
 
   return (
     <div
-      className="h-dvh flex flex-col overflow-hidden relative home-bg-container"
+      className="min-h-dvh flex flex-col relative home-bg-container"
       style={{
         backgroundImage: `
-          linear-gradient(135deg, rgba(2,28,19,0.70) 0%, rgba(6,78,59,0.9) 70%, rgba(2,28,19,0.90) 100%),
+          linear-gradient(135deg, rgba(1,15,10,0.85) 0%, rgba(5,46,35,0.95) 50%, rgba(1,15,10,0.9) 100%),
           url('/Lebanon-Background.png')
         `,
         backgroundSize: "200% 200%, cover",
         backgroundRepeat: "no-repeat",
-        animation: "homeGradient 18s ease infinite",
+        animation: "homeGradient 20s ease infinite",
         backgroundBlendMode: "multiply",
       }}
     >
       <style>{`
         .home-bg-container {
           background-position: 0% 0%, center;
+          position: relative;
+        }
+        .home-bg-container::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background: radial-gradient(circle at 20% 30%, rgba(16, 185, 129, 0.15) 0%, transparent 60%);
+          pointer-events: none;
+          z-index: 1;
         }
         @media (max-width: 640px) {
           .home-bg-container {
@@ -60,17 +71,22 @@ export default function Home() {
           50%  { background-position: 100% 100%, center; }
           100% { background-position: 0% 0%, center; }
         }
-        @media (max-width: 640px) {
-          @keyframes homeGradient {
-            0%   { background-position: 0% 0%, 30% 0%; }
-            50%  { background-position: 100% 100%, 30% 8%; }
-            100% { background-position: 0% 0%, 30% 0%; }
-          }
+        @keyframes pulse-subtle {
+          0%, 100% { transform: scale(1); box-shadow: 0 8px 32px rgba(220, 38, 38, 0.3); }
+          50% { transform: scale(1.02); box-shadow: 0 12px 48px rgba(220, 38, 38, 0.5); }
+        }
+        .animate-pulse-subtle {
+          animation: pulse-subtle 3s ease-in-out infinite;
+        }
+        .glass-premium {
+          backdrop-filter: blur(16px);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
         }
       `}</style>
       {/* ── Top nav ──────────────────────────────────────────────────────────── */}
       <header className="relative z-50 shrink-0 px-4 pt-6 sm:pt-8">
-        <div className="flex items-center justify-between h-16 sm:h-20 px-5 sm:px-8 rounded-2xl mx-auto max-w-4xl border border-white/10 bg-white/5 shadow-sm">
+        <div className="flex items-center justify-between h-16 sm:h-20 px-5 sm:px-8 rounded-2xl mx-auto max-w-7xl border border-white/10 bg-white/5 shadow-sm">
           {/* Brand */}
           <Link href="/" className="shrink-0 flex items-center gap-2 sm:gap-4 group">
             <img src="/logo.svg" alt="Maakon" className="h-6 sm:h-10 w-auto drop-shadow-md group-hover:scale-105 transition-transform" style={{ filter: "brightness(0) invert(1)" }} />
@@ -82,13 +98,14 @@ export default function Home() {
 
           {/* Desktop Nav */}
           <nav className="hidden sm:flex items-center gap-1">
-            {navLinks.map(({ label, href }) => (
+            {navLinks.map((link) => (
               <Link
-                key={href}
-                href={href}
-                className="px-4 py-2 rounded-xl text-sm font-semibold text-emerald-50 hover:text-white hover:bg-white/10 transition-colors whitespace-nowrap"
+                key={link.href}
+                href={link.href}
+                className="px-4 py-2 rounded-xl text-sm font-semibold text-emerald-50 hover:text-white hover:bg-white/10 transition-colors whitespace-nowrap flex items-center gap-1.5"
               >
-                {label}
+                {link.icon}
+                {link.label}
               </Link>
             ))}
           </nav>
@@ -144,14 +161,15 @@ export default function Home() {
               className="absolute top-full left-4 right-4 mt-2 p-2 rounded-2xl sm:hidden z-50 border border-white/10 bg-emerald-950/95 shadow-xl"
             >
               <nav className="flex flex-col gap-1">
-                {navLinks.map(({ label, href }) => (
+                {navLinks.map((link) => (
                   <Link
-                    key={href}
-                    href={href}
+                    key={link.href}
+                    href={link.href}
                     onClick={() => setMobileMenuOpen(false)}
-                    className="px-4 py-3 rounded-xl text-sm font-bold text-emerald-100 hover:text-white hover:bg-white/10 transition-colors text-center"
+                    className="px-4 py-3 rounded-xl text-sm font-bold text-emerald-100 hover:text-white hover:bg-white/10 transition-colors text-center flex items-center justify-center gap-2"
                   >
-                    {label}
+                    {link.icon}
+                    {link.label}
                   </Link>
                 ))}
                 <div className="border-t border-white/10 mt-2 pt-2">
@@ -179,7 +197,7 @@ export default function Home() {
       </header>
 
       {/* ── Body ─────────────────────────────────────────────────────────────── */}
-      <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-5 pb-6 gap-6 overflow-y-auto">
+      <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-5 pb-16 pt-8 gap-6">
         {/* Logo Focus */}
         <motion.div
           variants={fadeUp}
@@ -211,7 +229,7 @@ export default function Home() {
           {/* I Need Help (Flag Red) */}
           <button
             onClick={requireAuth(() => setLocation('/need/new'))}
-            className="w-full relative overflow-hidden rounded-3xl p-4 sm:p-5 flex items-center gap-3 sm:gap-4 bg-red-600 hover:bg-red-700 transition-colors shadow-lg group"
+            className="w-full relative overflow-hidden rounded-3xl p-4 sm:p-5 flex items-center gap-3 sm:gap-4 bg-red-600 hover:bg-red-700 transition-all shadow-lg group animate-pulse-subtle"
           >
             <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shrink-0 bg-white/20 shadow-inner">
               <ShieldAlert className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
@@ -219,7 +237,7 @@ export default function Home() {
 
             <div className={`flex-1 min-w-0 ${isRtl ? "text-right" : "text-left"}`}>
               <div className="text-xl sm:text-2xl font-black text-white leading-tight">{t("i_need_help")}</div>
-              <div className="text-red-100 font-medium text-xs sm:text-sm mt-0.5">
+              <div className="text-red-100 font-medium text-xs sm:text-sm mt-0.5 opacity-90">
                 {isRtl ? "طلب طعام، مأوى، دواء..." : "Request food, shelter, meds..."}
               </div>
             </div>
@@ -232,7 +250,7 @@ export default function Home() {
           {/* I Want to Help (White/Green) */}
           <button
             onClick={requireAuth(() => setLocation('/offer/new'))}
-            className="w-full relative overflow-hidden rounded-3xl p-4 sm:p-5 flex items-center gap-3 sm:gap-4 bg-white hover:bg-gray-50 transition-colors shadow-lg group"
+            className="w-full relative overflow-hidden rounded-3xl p-4 sm:p-5 flex items-center gap-3 sm:gap-4 bg-white hover:bg-emerald-50 transition-all shadow-lg group hover:shadow-emerald-500/20"
           >
             <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shrink-0 bg-emerald-50 shadow-inner">
               <HeartHandshake className="w-6 h-6 sm:w-7 sm:h-7 text-emerald-600" />
@@ -240,12 +258,12 @@ export default function Home() {
 
             <div className={`flex-1 min-w-0 ${isRtl ? "text-right" : "text-left"}`}>
               <div className="text-xl sm:text-2xl font-black text-emerald-950 leading-tight">{t("i_want_to_help")}</div>
-              <div className="text-emerald-700 font-medium text-xs sm:text-sm mt-0.5">
+              <div className="text-emerald-700/80 font-medium text-xs sm:text-sm mt-0.5">
                 {isRtl ? "تقديم موارد أو خدمات مجانية" : "Offer resources or free services"}
               </div>
             </div>
 
-            <div className={`shrink-0 text-emerald-950 opacity-50 group-hover:opacity-100 group-hover:-translate-x-1 transition-all ${isRtl ? "rotate-180 group-hover:translate-x-1" : ""}`}>
+            <div className={`shrink-0 text-emerald-950 opacity-40 group-hover:opacity-100 group-hover:-translate-x-1 transition-all ${isRtl ? "rotate-180 group-hover:translate-x-1" : ""}`}>
               <ArrowRight className="w-6 h-6" />
             </div>
           </button>
@@ -268,7 +286,9 @@ export default function Home() {
         </motion.div>
       </main>
 
-      <div className="relative z-10 shrink-0 h-4" />
+      <div className="relative z-10 w-full mt-auto">
+        <Footer />
+      </div>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { TopNav } from "@/components/layout/TopNav";
 import { motion } from "framer-motion";
 import { Send, CheckCircle2, MessageSquare, Mail, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import Footer from "@/components/layout/Footer";
 
 const FEEDBACK_TYPES = ["general", "bug", "feature", "complaint", "other"] as const;
 type FeedbackType = (typeof FEEDBACK_TYPES)[number];
@@ -99,6 +100,7 @@ export default function Contact() {
             </button>
           </motion.div>
         </div>
+        <Footer />
       </div>
     );
   }
@@ -246,6 +248,7 @@ export default function Contact() {
           </motion.form>
         </div>
       </main>
+      <Footer />
     </div>
   );
 }

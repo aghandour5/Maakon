@@ -71,12 +71,11 @@ export async function validateSession(token: string) {
 
   // Check expiration
   if (session.expiresAt.getTime() < Date.now()) {
-    // Optionally clean up expired session async
     db.delete(sessionsTable).where(eq(sessionsTable.id, session.id)).execute().catch(() => {});
     return null;
   }
 
-  return user;
+  return { user, mfaVerified: session.mfaVerified };
 }
 
 /**

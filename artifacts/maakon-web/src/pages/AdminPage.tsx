@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { AlertTriangle, RefreshCw, CheckCircle2, EyeOff, Clock, Trash2, Shield, ShieldOff, Loader2, ChevronDown, Activity, ClipboardList, Building2, LayoutDashboard, Globe, Plus, Edit2, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "wouter";
 import { NgoModal } from "@/components/admin/NgoModal";
+
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -59,6 +61,17 @@ export interface AdminNgo {
   website: string | null;
   verifiedAt: string | null;
   status: string;
+  createdAt: string;
+}
+
+const VALID_POST_STATUSES: PostStatus[] = ["active", "hidden", "resolved", "expired", "pending", "removed"];
+const VALID_REPORT_STATUSES: ReportStatus[] = ["pending", "reviewed", "dismissed", "actioned"];
+
+function isPostStatus(v: unknown): v is PostStatus {
+  return typeof v === "string" && (VALID_POST_STATUSES as string[]).includes(v);
+}
+function isReportStatus(v: unknown): v is ReportStatus {
+  return typeof v === "string" && (VALID_REPORT_STATUSES as string[]).includes(v);
 }
 
 interface Stats {
@@ -76,7 +89,15 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
     headers: { "Content-Type": "application/json" },
     ...options,
   });
-  if (!res.ok) throw new Error(`API error ${res.status}`);
+  
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    const err = new Error(errorData.error || `API error ${res.status}`);
+    (err as any).status = res.status;
+    (err as any).code = errorData.error;
+    throw err;
+  }
+  
   return res.json();
 }
 
@@ -122,14 +143,39 @@ function Badge({ status }: { status: string }) {
 function PostActions({ post, onUpdate }: { post: AdminPost; onUpdate: () => void }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
+  // Close on any outside click
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent) => {
+      if (menuRef.current?.contains(e.target as Node)) return;
+      if (btnRef.current?.contains(e.target as Node)) return;
+      setOpen(false);
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [open]);
+
+  // Close on scroll so menu doesn't float in wrong spot
   useEffect(() => {
     if (!open) return;
     const close = () => setOpen(false);
-    document.addEventListener("click", close);
-    return () => document.removeEventListener("click", close);
+    window.addEventListener("scroll", close, true);
+    return () => window.removeEventListener("scroll", close, true);
   }, [open]);
+
+  const toggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!open && btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setMenuPos({ top: rect.bottom + 6, left: rect.right });
+    }
+    setOpen((v) => !v);
+  };
 
   const act = async (status: PostStatus) => {
     setOpen(false);
@@ -159,24 +205,28 @@ function PostActions({ post, onUpdate }: { post: AdminPost; onUpdate: () => void
   ).filter((o) => o.status !== post.status);
 
   return (
-    <div className="relative">
+    <>
       <button
-        onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
+        ref={btnRef}
+        onClick={toggle}
         disabled={loading}
         className="flex items-center gap-1.5 text-xs font-medium border border-slate-200 rounded-lg px-2.5 py-1.5 hover:bg-slate-50 hover:border-slate-300 transition-all disabled:opacity-50 text-slate-600"
       >
         {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <ChevronDown className="w-3.5 h-3.5" />}
         Manage
       </button>
-      
-      <AnimatePresence>
-        {open && (
+
+      {open && menuPos && createPortal(
+        <div
+          ref={menuRef}
+          style={{ position: "fixed", top: menuPos.top, left: menuPos.left, transform: "translateX(-100%)" }}
+          className="z-[9999]"
+        >
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 5 }}
+            initial={{ opacity: 0, scale: 0.95, y: -4 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 5 }}
-            transition={{ duration: 0.15 }}
-            className="absolute right-0 z-50 mt-2 bg-white border border-slate-100 rounded-xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] min-w-[160px] overflow-hidden"
+            transition={{ duration: 0.12 }}
+            className="bg-white border border-slate-200 rounded-xl shadow-xl min-w-[180px] overflow-hidden ring-1 ring-black/5"
           >
             {options.map((o) => (
               <button
@@ -189,9 +239,10 @@ function PostActions({ post, onUpdate }: { post: AdminPost; onUpdate: () => void
               </button>
             ))}
           </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+        </div>,
+        document.body
+      )}
+    </>
   );
 }
 
@@ -331,7 +382,7 @@ export default function AdminPage() {
   const [cleanupResult, setCleanupResult] = useState<string | null>(null);
   const [ngoModalOpen, setNgoModalOpen] = useState(false);
   const [editingNgo, setEditingNgo] = useState<AdminNgo | null>(null);
-  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading, mfaStatus, setMfaStatus, openAuthModal } = useAuth();
   const { toast } = useToast();
   const { i18n } = useTranslation();
 
@@ -339,15 +390,25 @@ export default function AdminPage() {
     i18n.changeLanguage(i18n.language.startsWith("ar") ? "en" : "ar");
   };
 
+  const handleMfaRequired = useCallback(() => {
+    if (!user) return;
+    // Step-up transition: Determine step based on user object if we had it, 
+    // or just assume mfa_challenge if enabled.
+    // Actually, we'll let the modal handle the detail.
+    setMfaStatus(user.mfaEnabled ? "mfa_challenge" : "mfa_setup_required");
+    openAuthModal();
+  }, [user, setMfaStatus, openAuthModal]);
+
   const loadStats = useCallback(async () => {
     try {
       const s = await apiFetch<Stats>("/admin/stats");
       setStats(s);
       setError(null);
-    } catch {
-      // Stats fail silently
+    } catch (e: any) {
+      if (e.code === "MFA_REQUIRED") handleMfaRequired();
+      // Stats fail silently for others
     }
-  }, []);
+  }, [handleMfaRequired]);
 
   const loadPosts = useCallback(async () => {
     setLoading(true);
@@ -355,12 +416,13 @@ export default function AdminPage() {
     try {
       const p = await apiFetch<AdminPost[]>("/admin/posts");
       setPosts(p);
-    } catch (e) {
+    } catch (e: any) {
+      if (e.code === "MFA_REQUIRED") handleMfaRequired();
       setError(e instanceof Error ? e.message : "Failed to load posts");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [handleMfaRequired]);
 
   const loadReports = useCallback(async () => {
     setLoading(true);
@@ -368,12 +430,13 @@ export default function AdminPage() {
     try {
       const r = await apiFetch<AdminReport[]>("/admin/reports");
       setReports(r);
-    } catch (e) {
+    } catch (e: any) {
+      if (e.code === "MFA_REQUIRED") handleMfaRequired();
       setError(e instanceof Error ? e.message : "Failed to load reports");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [handleMfaRequired]);
 
   const loadNgos = useCallback(async () => {
     setLoading(true);
@@ -381,12 +444,13 @@ export default function AdminPage() {
     try {
       const n = await apiFetch<AdminNgo[]>("/admin/ngos");
       setNgos(n);
-    } catch (e) {
+    } catch (e: any) {
+      if (e.code === "MFA_REQUIRED") handleMfaRequired();
       setError(e instanceof Error ? e.message : "Failed to load NGOs");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [handleMfaRequired]);
 
   const loadUsers = useCallback(async () => {
     setLoading(true);
@@ -394,12 +458,13 @@ export default function AdminPage() {
     try {
       const u = await apiFetch<AdminUser[]>("/admin/users");
       setUsersList(u);
-    } catch (e) {
+    } catch (e: any) {
+      if (e.code === "MFA_REQUIRED") handleMfaRequired();
       setError(e instanceof Error ? e.message : "Failed to load users");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [handleMfaRequired]);
 
   const refresh = useCallback((showToastMessage = false) => {
     loadStats();
@@ -413,8 +478,11 @@ export default function AdminPage() {
   }, [tab, loadStats, loadPosts, loadReports, loadNgos, loadUsers, toast]);
 
   useEffect(() => {
-    refresh(false);
-  }, [tab]);
+    if (isAuthenticated && !mfaStatus) {
+      setError(null);
+      refresh(false);
+    }
+  }, [tab, isAuthenticated, mfaStatus, refresh]);
 
   const handleSaveNgo = async (data: any) => {
     try {
@@ -456,10 +524,10 @@ export default function AdminPage() {
     );
   }
 
-  if (!isAuthenticated || user?.role !== "admin") {
+  if (!isAuthenticated || user?.role !== "admin" || (error?.includes("403") && error?.includes("MFA_REQUIRED"))) {
+    const isMfaError = error?.includes("MFA_REQUIRED");
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 text-center p-4 relative overflow-hidden">
-        {/* Decorative blobs */}
         <div className="absolute top-10 left-10 w-64 h-64 bg-red-400/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-10 right-10 w-96 h-96 bg-red-600/5 rounded-full blur-3xl pointer-events-none" />
         
@@ -469,16 +537,40 @@ export default function AdminPage() {
           className="relative z-10 bg-white p-8 md:p-12 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 max-w-md w-full"
         >
           <div className="w-20 h-20 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-6 transform rotate-3">
-            <AlertTriangle className="w-10 h-10 text-red-500" />
+            <Shield className="w-10 h-10 text-red-500" />
           </div>
-          <h1 className="text-3xl font-black text-slate-800 mb-3 tracking-tight">Access Denied</h1>
+          <h1 className="text-3xl font-black text-slate-800 mb-3 tracking-tight">Security Check</h1>
           <p className="text-slate-500 mb-8 font-medium">
-            You must be an administrator to access the moderation panel.
+            {isMfaError 
+              ? "To keep the platform safe, please complete Multi-Factor Authentication (MFA) to access the console."
+              : "You must be an administrator to access the moderation panel."}
           </p>
-          <Link href="/" className="inline-block w-full px-6 py-3.5 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-all hover:shadow-lg hover:-translate-y-0.5">
-            Return to application
-          </Link>
+
+          {isMfaError ? (
+            <Button 
+              onClick={handleMfaRequired}
+              className="w-full h-14 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-all shadow-lg text-lg"
+            >
+              Verify Identity
+            </Button>
+          ) : (
+            <Link href="/" className="inline-block w-full px-6 py-3.5 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-all hover:shadow-lg">
+              Return to application
+            </Link>
+          )}
         </motion.div>
+      </div>
+    );
+  }
+
+  // Final check for generic 403 (IP whitelist etc)
+  if (error?.includes("403")) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 text-center p-4">
+          <AlertTriangle className="w-12 h-12 text-red-500 mb-4" />
+          <h1 className="text-2xl font-bold mb-2">Access Denied</h1>
+          <p className="text-slate-500 mb-6 font-medium">Your network or IP address is not authorized to access this secure zone.</p>
+          <Link href="/" className="px-6 py-2 bg-slate-900 text-white rounded-lg font-bold">Return Home</Link>
       </div>
     );
   }
@@ -620,7 +712,7 @@ export default function AdminPage() {
         </div>
 
         {/* Loading / Error states */}
-        {error && !loading && (
+        {error && !error.includes("403") && !loading && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-3 text-sm font-medium text-red-600 mb-6 bg-red-50 p-4 rounded-2xl border border-red-100 shadow-sm">
             <AlertTriangle className="w-5 h-5" />
             Error fetching {tab}: {error}. Is the database running?
@@ -651,7 +743,7 @@ export default function AdminPage() {
                 <tbody className="divide-y divide-slate-100">
                   {loading && posts.length === 0 ? (
                       <tr><td colSpan={6} className="px-6 py-12 text-center text-slate-400"><Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />Loading...</td></tr>
-                  ) : posts.map((post) => (
+                  ) : posts.map((post, index) => (
                     <tr key={post.id} className={`hover:bg-slate-50/80 transition-colors ${post.status !== "active" ? "opacity-75" : ""}`}>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <Badge status={post.status} />
@@ -885,6 +977,7 @@ export default function AdminPage() {
         ngo={editingNgo}
         onSave={handleSaveNgo} 
       />
+
     </div>
   );
 }
@@ -910,3 +1003,4 @@ function StatCard({ label, value, note, icon, gradient, shadowColor }: { label: 
     </div>
   );
 }
+

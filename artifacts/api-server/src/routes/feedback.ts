@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import rateLimit from "express-rate-limit";
 import { db } from "@workspace/db";
 import * as dbSchema from "@workspace/db/schema";
+import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
 
@@ -15,12 +16,29 @@ const feedbackRateLimiter = rateLimit({
 });
 const { feedbacksTable, insertFeedbackSchema } = dbSchema as unknown as {
   feedbacksTable: unknown;
-  insertFeedbackSchema: { parse: (input: unknown) => unknown };
+  insertFeedbackSchema:
+    | {
+        safeParse: (
+          input: unknown,
+        ) => { success: true; data: unknown } | { success: false };
+      }
+    | {
+        parse: (input: unknown) => unknown;
+      };
 };
 
 router.post("/feedback", feedbackRateLimiter, async (req, res) => {
+  const parsed =
+    "safeParse" in insertFeedbackSchema
+      ? insertFeedbackSchema.safeParse(req.body)
+      : { success: true as const, data: insertFeedbackSchema.parse(req.body) };
+
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid feedback payload" });
+    return;
+  }
   try {
-    const data = insertFeedbackSchema.parse(req.body) as Record<string, unknown>;
+    const data = parsed.data as Record<string, unknown>;
     await db.insert(feedbacksTable as never).values(data as never);
 
     // Send to Slack if webhook URL is configured
@@ -39,14 +57,14 @@ router.post("/feedback", feedbackRateLimiter, async (req, res) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: slackText }),
       }).catch((err) => {
-        console.error("Failed to send Slack webhook:", err);
+        logger.error({ err }, "Failed to send Slack webhook");
       });
     }
 
     res.json({ success: true });
   } catch (error) {
-    console.error("Failed to submit feedback:", error);
-    res.status(400).json({ error: "Failed to submit feedback" });
+    logger.error({ err: error }, "Failed to submit feedback");
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 

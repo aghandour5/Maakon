@@ -16,6 +16,7 @@ export interface AuthUser {
   emailVerified: boolean;
   whatsappVerified: boolean;
   ngoVerificationStatus: string | null;
+  mfaEnabled: boolean;
 }
 
 interface AuthContextType {
@@ -23,6 +24,8 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   isAuthModalOpen: boolean;
+  mfaStatus: "mfa_setup_required" | "mfa_challenge" | null;
+  setMfaStatus: (status: "mfa_setup_required" | "mfa_challenge" | null) => void;
   openAuthModal: () => void;
   closeAuthModal: () => void;
   login: (user: AuthUser) => void;
@@ -38,8 +41,9 @@ const authChannel = typeof window !== "undefined" ? new BroadcastChannel("maakon
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null); // user is the current user. It is null if the user is not logged in.
-  const [isLoading, setIsLoading] = useState(true); // isLoading is true if the user is loading.
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false); // isAuthModalOpen is true if the auth modal is open.
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [mfaStatus, setMfaStatus] = useState<"mfa_setup_required" | "mfa_challenge" | null>(null);
 
   // Helper to update user and broadcast
   const syncUser = (newUser: AuthUser | null, broadcast = true) => { // syncUser is a helper function that is used to update the user and broadcast the change to other tabs.
@@ -78,6 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const accountType = (window.localStorage.getItem("accountTypeForSignIn") as "individual" | "ngo") || undefined;
 
             const result = await supabaseLogin({ idToken: bypassEmail, accountType, draftToken });
+            
             syncUser(result.user);
             if (!result.user.onboardingComplete) {
               setIsAuthModalOpen(true);
@@ -112,6 +117,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const accountType = (window.localStorage.getItem("accountTypeForSignIn") as "individual" | "ngo") || undefined;
 
             const result = await supabaseLogin({ idToken: session.access_token, accountType, draftToken });
+            
             syncUser(result.user);
             if (!result.user.onboardingComplete) {
               setIsAuthModalOpen(true);
@@ -167,6 +173,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading,
         isAuthenticated: !!user,
         isAuthModalOpen,
+        mfaStatus,
+        setMfaStatus,
         openAuthModal,
         closeAuthModal,
         login,

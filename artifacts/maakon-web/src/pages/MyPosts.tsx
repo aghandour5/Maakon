@@ -9,6 +9,7 @@ import {
   Loader2, Trash2, Eye, EyeOff, CheckCircle2, Clock,
   MapPin, AlertTriangle, Edit2, Plus, ClipboardList,
 } from "lucide-react";
+import Footer from "@/components/layout/Footer";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -60,12 +61,12 @@ function timeAgo(dateStr: string, t: any): string {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-  active:   { label: "Active",   color: "bg-emerald-50 text-emerald-700 border-emerald-200", icon: <Eye className="w-3.5 h-3.5" /> },
-  hidden:   { label: "Hidden",   color: "bg-orange-50 text-orange-700 border-orange-200",   icon: <EyeOff className="w-3.5 h-3.5" /> },
-  resolved: { label: "Resolved", color: "bg-blue-50 text-blue-700 border-blue-200",         icon: <CheckCircle2 className="w-3.5 h-3.5" /> },
-  expired:  { label: "Expired",  color: "bg-slate-100 text-slate-500 border-slate-200",     icon: <Clock className="w-3.5 h-3.5" /> },
-  pending:  { label: "Pending",  color: "bg-amber-50 text-amber-700 border-amber-200",      icon: <Clock className="w-3.5 h-3.5" /> },
-  removed:  { label: "Removed",  color: "bg-red-50 text-red-600 border-red-200",            icon: <AlertTriangle className="w-3.5 h-3.5" /> },
+  active: { label: "Active", color: "bg-emerald-50 text-emerald-700 border-emerald-200", icon: <Eye className="w-3.5 h-3.5" /> },
+  hidden: { label: "Hidden", color: "bg-orange-50 text-orange-700 border-orange-200", icon: <EyeOff className="w-3.5 h-3.5" /> },
+  resolved: { label: "Resolved", color: "bg-blue-50 text-blue-700 border-blue-200", icon: <CheckCircle2 className="w-3.5 h-3.5" /> },
+  expired: { label: "Expired", color: "bg-slate-100 text-slate-500 border-slate-200", icon: <Clock className="w-3.5 h-3.5" /> },
+  pending: { label: "Pending", color: "bg-amber-50 text-amber-700 border-amber-200", icon: <Clock className="w-3.5 h-3.5" /> },
+  removed: { label: "Removed", color: "bg-red-50 text-red-600 border-red-200", icon: <AlertTriangle className="w-3.5 h-3.5" /> },
 };
 
 // ── Component ──────────────────────────────────────────────────────────────────
@@ -179,6 +180,7 @@ export default function MyPosts() {
             </button>
           </div>
         </main>
+        <Footer />
       </>
     );
   }
@@ -246,7 +248,7 @@ export default function MyPosts() {
                   href="/offer/new"
                   className="px-6 py-3 rounded-2xl font-bold text-white bg-gradient-to-r from-emerald-500 to-green-500 shadow-lg hover:opacity-90 transition-opacity no-underline"
                 >
-                  {t("offer_help")}
+                  {t("Offer Help")}
                 </Link>
               </div>
             </motion.div>
@@ -274,11 +276,10 @@ export default function MyPosts() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                               <span
-                                className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold uppercase ${
-                                  post.postType === "need"
+                                className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold uppercase ${post.postType === "need"
                                     ? "bg-red-50 text-red-600"
                                     : "bg-emerald-50 text-emerald-600"
-                                }`}
+                                  }`}
                               >
                                 {t(post.postType)}
                               </span>
@@ -362,6 +363,7 @@ export default function MyPosts() {
           )}
         </div>
       </main>
+      <Footer />
 
       {/* Edit modal */}
       <AnimatePresence>

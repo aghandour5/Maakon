@@ -152,6 +152,7 @@ const resources = {
       legal: "قانوني",
       financial: "مالي",
       logistics: "لوجستي",
+      volunteers: "متطوعون",
       other: "أخرى",
 
       // Auth UI
@@ -285,6 +286,7 @@ const resources = {
       myposts_description_label: "الوصف",
       myposts_cancel_btn: "إلغاء",
       myposts_save_changes: "حفظ التغييرات",
+      "Offer Help": "تقديم مساعدة",
 
       // Toasts
       toast_failed_load: "فشل تحميل المنشورات",
@@ -493,6 +495,7 @@ const resources = {
       legal: "Legal",
       financial: "Financial",
       logistics: "Logistics",
+      volunteers: "Volunteers",
       other: "Other",
 
       // Auth UI
@@ -626,6 +629,7 @@ const resources = {
       myposts_description_label: "Description",
       myposts_cancel_btn: "Cancel",
       myposts_save_changes: "Save Changes",
+      "Offer Help": "Offer Help",
 
       // Toasts
       toast_failed_load: "Failed to load posts",

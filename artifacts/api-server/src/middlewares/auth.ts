@@ -11,6 +11,7 @@ declare global {
     interface Request {
       user?: User;
       sessionId?: string;
+      mfaVerified?: boolean;
     }
   }
 }
@@ -28,16 +29,17 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
   }
 
   try {
-    const user = await validateSession(token);
-    if (!user) {
+    const result = await validateSession(token);
+    if (!result) {
       // Clear invalid cookie
       res.clearCookie(SESSION_COOKIE_NAME, getSessionClearCookieOptions());
       res.status(401).json({ error: "Session invalid or expired" });
       return;
     }
 
-    req.user = user;
+    req.user = result.user;
     req.sessionId = token;
+    req.mfaVerified = result.mfaVerified;
     next();
   } catch (error) {
     next(error);
@@ -57,10 +59,11 @@ export const optionalAuth = async (req: Request, res: Response, next: NextFuncti
   }
 
   try {
-    const user = await validateSession(token);
-    if (user) {
-      req.user = user;
+    const result = await validateSession(token);
+    if (result) {
+      req.user = result.user;
       req.sessionId = token;
+      req.mfaVerified = result.mfaVerified;
     } else {
       res.clearCookie(SESSION_COOKIE_NAME, getSessionClearCookieOptions());
     }
@@ -78,6 +81,21 @@ export const optionalAuth = async (req: Request, res: Response, next: NextFuncti
 export const requireAdmin = (req: Request, res: Response, next: NextFunction) => {
   if (req.user?.role !== "admin") {
     res.status(403).json({ error: "Admin access required" });
+    return;
+  }
+  next();
+};
+
+/**
+ * Middleware that requires admins to have completed an MFA challenge.
+ * Must be used AFTER requireAuth and requireAdmin.
+ */
+export const requireMfa = (req: Request, res: Response, next: NextFunction) => {
+  if (req.user?.role === "admin" && !req.mfaVerified) {
+    res.status(403).json({ 
+      error: "MFA_REQUIRED",
+      message: "This area requires an additional security check (MFA)."
+    });
     return;
   }
   next();

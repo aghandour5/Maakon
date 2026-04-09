@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { TopNav } from "@/components/layout/TopNav";
 import { motion } from "framer-motion";
 import { Heart, Shield, MapPin, Users, Globe, ArrowRight } from "lucide-react";
+import Footer from "@/components/layout/Footer";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -210,6 +211,7 @@ export default function About() {
           </div>
         </section>
       </main>
+      <Footer />
     </div>
   );
 }

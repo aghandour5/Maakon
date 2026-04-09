@@ -7,17 +7,22 @@ import NgoProfileStep from "./NgoProfileStep";
 import EmailStep from "./EmailStep";
 import WhatsAppOtpStep from "./WhatsAppOtpStep";
 import { useTranslation } from "react-i18next";
+import { setupMfa, verifyMfa, challengeMfa, fetchCurrentUser } from "@/lib/auth-api";
 
-export type AuthStep = "email" | "accountType" | "checkEmail" | "individualProfile" | "ngoProfile" | "whatsappOtp";
+export type AuthStep = "email" | "accountType" | "checkEmail" | "individualProfile" | "ngoProfile" | "whatsappOtp" | "mfaSetup" | "mfaChallenge";
 export type AccountType = "individual" | "ngo";
 
 export default function AuthModal() {
-  const { isAuthModalOpen, closeAuthModal, user } = useAuth();
+  const { isAuthModalOpen, closeAuthModal, user, mfaStatus, setMfaStatus, login } = useAuth();
   const { t } = useTranslation();
 
   const [step, setStep] = useState<AuthStep>("email");
   const [email, setEmail] = useState("");
   const [accountType, setAccountType] = useState<AccountType>("individual");
+  const [mfaQrCode, setMfaQrCode] = useState<string | null>(null);
+  const [mfaCode, setMfaCode] = useState("");
+  const [mfaError, setMfaError] = useState("");
+  const [mfaLoading, setMfaLoading] = useState(false);
 
   // If the user is logged in but onboarding is not complete, force the modal open
   // and set the correct step — regardless of isAuthModalOpen.
@@ -27,12 +32,50 @@ export default function AuthModal() {
   useEffect(() => {
     if (needsOnboarding) {
       const targetStep = user!.accountType === "ngo" ? "ngoProfile" : "individualProfile";
-      // Only switch if we are not already on the right step or finishing whatsapp
       if (step !== targetStep && step !== "whatsappOtp") {
         setStep(targetStep);
       }
     }
   }, [needsOnboarding, user]);
+
+  // When the auth context signals an MFA requirement, transition to the correct step
+  useEffect(() => {
+    if (mfaStatus === "mfa_setup_required") {
+      setMfaLoading(true);
+      setupMfa()
+        .then((data) => {
+          setMfaQrCode(data.qrCodeDataUrl);
+          setStep("mfaSetup");
+        })
+        .catch(() => setMfaError("Failed to load QR code. Please try again."))
+        .finally(() => setMfaLoading(false));
+    } else if (mfaStatus === "mfa_challenge") {
+      setStep("mfaChallenge");
+    }
+  }, [mfaStatus]);
+
+  const handleMfaSubmit = async () => {
+    if (mfaCode.length !== 6) return;
+    setMfaLoading(true);
+    setMfaError("");
+    try {
+      if (mfaStatus === "mfa_setup_required") {
+        await verifyMfa(mfaCode);
+      } else {
+        await challengeMfa(mfaCode);
+      }
+      // MFA passed — fetch real user and complete login
+      const userData = await fetchCurrentUser();
+      if (userData) login(userData);
+      setMfaStatus(null);
+      closeAuthModal();
+    } catch (err) {
+      setMfaError(err instanceof Error ? err.message : "Invalid code. Try again.");
+    } finally {
+      setMfaLoading(false);
+      setMfaCode("");
+    }
+  };
 
   // Reset state when closing
   const handleOpenChange = (open: boolean) => {
@@ -54,6 +97,8 @@ export default function AuthModal() {
       case "individualProfile": return t("auth_title_profile");
       case "ngoProfile": return t("auth_title_ngo");
       case "whatsappOtp": return t("auth_title_whatsapp", "Verify WhatsApp");
+      case "mfaSetup": return "Set Up Two-Factor Authentication";
+      case "mfaChallenge": return "Two-Factor Authentication";
       default: return "";
     }
   };
@@ -129,6 +174,74 @@ export default function AuthModal() {
             <WhatsAppOtpStep
               onComplete={closeAuthModal}
             />
+          )}
+
+          {/* MFA Setup — Admin scans QR code then enters first code to activate */}
+          {step === "mfaSetup" && (
+            <div className="flex flex-col items-center gap-5 py-4">
+              <div className="text-center">
+                <p className="text-sm text-slate-500 mb-1">Scan this QR code with</p>
+                <p className="text-sm font-semibold text-slate-700">Google Authenticator or Authy</p>
+              </div>
+              {mfaLoading && !mfaQrCode && (
+                <div className="w-48 h-48 bg-slate-100 rounded-xl animate-pulse" />
+              )}
+              {mfaQrCode && (
+                <img src={mfaQrCode} alt="MFA QR Code" className="w-48 h-48 rounded-xl border border-slate-200 shadow-sm" />
+              )}
+              <p className="text-xs text-slate-400 text-center max-w-xs">
+                After scanning, enter the 6-digit code from the app to activate 2FA on your account.
+              </p>
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                placeholder="000000"
+                value={mfaCode}
+                onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                className="w-full text-center text-2xl font-mono tracking-[0.5em] border border-slate-200 rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+              {mfaError && <p className="text-sm text-red-500">{mfaError}</p>}
+              <button
+                onClick={handleMfaSubmit}
+                disabled={mfaCode.length !== 6 || mfaLoading}
+                className="w-full py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {mfaLoading ? "Verifying..." : "Activate 2FA"}
+              </button>
+            </div>
+          )}
+
+          {/* MFA Challenge — Admin types code from their authenticator app */}
+          {step === "mfaChallenge" && (
+            <div className="flex flex-col items-center gap-5 py-4">
+              <div className="w-16 h-16 rounded-2xl bg-indigo-50 flex items-center justify-center">
+                <span className="text-3xl">🔐</span>
+              </div>
+              <div className="text-center">
+                <p className="text-sm text-slate-500">Open your authenticator app and enter the</p>
+                <p className="text-sm font-semibold text-slate-700">6-digit code for Maakon Admin</p>
+              </div>
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                placeholder="000000"
+                value={mfaCode}
+                onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                onKeyDown={(e) => e.key === "Enter" && handleMfaSubmit()}
+                className="w-full text-center text-2xl font-mono tracking-[0.5em] border border-slate-200 rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                autoFocus
+              />
+              {mfaError && <p className="text-sm text-red-500">{mfaError}</p>}
+              <button
+                onClick={handleMfaSubmit}
+                disabled={mfaCode.length !== 6 || mfaLoading}
+                className="w-full py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {mfaLoading ? "Verifying..." : "Continue"}
+              </button>
+            </div>
           )}
         </div>
       </DialogContent>

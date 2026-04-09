@@ -36,6 +36,10 @@ export const usersTable = pgTable("users", {
   emailVerified: boolean("email_verified").default(false).notNull(),
   whatsappVerified: boolean("whatsapp_verified").default(false).notNull(),
   ngoVerificationStatus: userNgoVerificationStatusEnum("ngo_verification_status").default("pending"),
+  
+  // Multi-Factor Authentication (Admins)
+  mfaSecret: text("mfa_secret"),
+  mfaEnabled: boolean("mfa_enabled").default(false).notNull(),
 
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),

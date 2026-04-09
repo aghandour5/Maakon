@@ -1,7 +1,7 @@
 import { Router, type Request, type Response } from "express";
 import crypto from "node:crypto";
 import { db } from "@workspace/db";
-import { usersTable, postsTable, ngosTable } from "@workspace/db/schema";
+import { usersTable, postsTable, ngosTable, sessionsTable } from "@workspace/db/schema";
 import { eq, and } from "drizzle-orm";
 import {
   FirebaseLoginBody,
@@ -22,8 +22,15 @@ import {
   getSessionClearCookieOptions,
 } from "../lib/session";
 import { requireAuth } from "../middlewares/auth";
+import { rateLimit as customRateLimit } from "../middlewares/rateLimit";
+import { rateLimit as expressRateLimit } from "express-rate-limit";
 import { logger } from "../lib/logger";
 import { getPublicCoordinates } from "../lib/post-location";
+import jwt from "jsonwebtoken";
+import { generateSecret, generateURI, verify as verifyTotp } from "otplib";
+import qrcode from "qrcode";
+
+const MFA_JWT_SECRET = process.env.MFA_JWT_SECRET || "default_dev_mfa_secret_do_not_use_in_prod_1234";
 
 const router = Router();
 const usersTableWithSupabase = usersTable as typeof usersTable & {
@@ -32,10 +39,25 @@ const usersTableWithSupabase = usersTable as typeof usersTable & {
 const ngosTableWithUserId = ngosTable as typeof ngosTable & {
   userId: unknown;
 };
+const loginLimiter = expressRateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: { error: "Too many login attempts, please try again later." },
+});
+const sendOtpLimiter = customRateLimit(
+  15 * 60 * 1000,
+  5,
+  "Too many OTP requests, please try again later.",
+);
+const verifyOtpLimiter = customRateLimit(
+  15 * 60 * 1000,
+  10,
+  "Too many verification attempts, please try again later.",
+);
 
 // ── Firebase Email-Link Login ─────────────────────────────────────────────────
 
-router.post("/auth/supabase-login", async (req: Request, res: Response) => {
+router.post("/auth/supabase-login", loginLimiter, async (req: Request, res: Response) => {
   const parsed = FirebaseLoginBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid request", details: String(parsed.error) });
@@ -127,12 +149,13 @@ router.post("/auth/supabase-login", async (req: Request, res: Response) => {
     logger.info({ userId: user.id }, "Draft post claimed after email-link sign-in");
   }
 
-  // 3. Create session
+  // 3. Create session (Always, even for admins)
   const token = await createSession(user.id, req.ip, req.headers["user-agent"]);
 
   res.cookie(SESSION_COOKIE_NAME, token, getSessionCookieOptions());
 
   res.json({
+    status: "success",
     user: {
       id: user.id,
       email: user.email,
@@ -143,9 +166,109 @@ router.post("/auth/supabase-login", async (req: Request, res: Response) => {
       emailVerified: user.emailVerified,
       whatsappVerified: user.whatsappVerified,
       ngoVerificationStatus: user.ngoVerificationStatus,
+      mfaEnabled: user.mfaEnabled,
     },
     isNew,
   });
+});
+
+// ── Admin MFA Flow ────────────────────────────────────────────────────────────
+
+router.get("/auth/mfa-setup", requireAuth, async (req: Request, res: Response) => {
+  const user = req.user!;
+
+  if (user.role !== "admin") {
+    res.status(403).json({ error: "Reserved for admins" });
+    return;
+  }
+
+  if (user.mfaEnabled) {
+    res.status(400).json({ error: "MFA is already set up" });
+    return;
+  }
+
+  try {
+    const secret = generateSecret();
+    const otpauth = generateURI({ issuer: "Maakon Admin", label: user.email || "admin", secret });
+    
+    // Save secret
+    await db.update(usersTable).set({ mfaSecret: secret }).where(eq(usersTable.id, user.id));
+
+    const qrCodeDataUrl = await qrcode.toDataURL(otpauth);
+    res.json({ qrCodeDataUrl });
+  } catch (err) {
+    logger.error({ err }, "MFA setup failed");
+    res.status(500).json({ error: "Failed to generate QR code" });
+  }
+});
+
+router.post("/auth/mfa-verify", requireAuth, async (req: Request, res: Response) => {
+  const user = req.user!;
+  const sessionId = req.sessionId;
+
+  const { code } = req.body;
+  if (!code || typeof code !== "string" || code.length !== 6) {
+    res.status(400).json({ error: "Invalid code format" });
+    return;
+  }
+
+  if (!user.mfaSecret) {
+    res.status(400).json({ error: "Setup not initiated" });
+    return;
+  }
+
+  try {
+    const verifyResult = await verifyTotp({ secret: user.mfaSecret, token: code });
+    if (!verifyResult.valid) {
+      res.status(400).json({ error: "Incorrect or expired code" });
+      return;
+    }
+
+    // Enable MFA for user
+    await db.update(usersTable).set({ mfaEnabled: true }).where(eq(usersTable.id, user.id));
+
+    // Mark current session as verified
+    await db.update(sessionsTable)
+      .set({ mfaVerified: true })
+      .where(eq(sessionsTable.token, sessionId!));
+
+    res.json({ status: "success" });
+  } catch (err) {
+    res.status(500).json({ error: "Verification error" });
+  }
+});
+
+router.post("/auth/mfa-challenge", requireAuth, async (req: Request, res: Response) => {
+  const user = req.user!;
+  const sessionId = req.sessionId;
+
+  const { code } = req.body;
+  if (!code || typeof code !== "string" || code.length !== 6) {
+    res.status(400).json({ error: "Invalid code format" });
+    return;
+  }
+
+  if (!user.mfaSecret || !user.mfaEnabled) {
+    res.status(400).json({ error: "MFA not established" });
+    return;
+  }
+
+  try {
+    const verifyResult = await verifyTotp({ secret: user.mfaSecret, token: code });
+    if (!verifyResult.valid) {
+      res.status(400).json({ error: "Incorrect or expired code" });
+      return;
+    }
+
+    // Mark current session as verified
+    await db.update(sessionsTable)
+      .set({ mfaVerified: true })
+      .where(eq(sessionsTable.token, sessionId!));
+
+    res.json({ status: "success" });
+  } catch (err) {
+    res.status(500).json({ error: "Verification error" });
+  }
 });
 
 // ── Draft Post Creation (unauthenticated) ─────────────────────────────────────
@@ -205,7 +328,7 @@ router.post("/posts/draft", async (req: Request, res: Response) => {
 
 // ── WhatsApp OTP (NGO verification only) ──────────────────────────────────────
 
-router.post("/auth/send-whatsapp-otp", requireAuth, async (req: Request, res: Response) => {
+router.post("/auth/send-whatsapp-otp", requireAuth, sendOtpLimiter, async (req: Request, res: Response) => {
   const user = req.user!;
 
   if (user.accountType !== "ngo") {
@@ -228,7 +351,7 @@ router.post("/auth/send-whatsapp-otp", requireAuth, async (req: Request, res: Re
   }
 });
 
-router.post("/auth/verify-whatsapp-otp", requireAuth, async (req: Request, res: Response) => {
+router.post("/auth/verify-whatsapp-otp", requireAuth, verifyOtpLimiter, async (req: Request, res: Response) => {
   const user = req.user!;
 
   if (user.accountType !== "ngo") {
@@ -356,6 +479,7 @@ router.get("/auth/me", requireAuth, async (req: Request, res: Response) => {
       emailVerified: user.emailVerified,
       whatsappVerified: user.whatsappVerified,
       ngoVerificationStatus: user.ngoVerificationStatus,
+      mfaEnabled: user.mfaEnabled,
     }
   });
 });

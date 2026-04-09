@@ -9,6 +9,7 @@ import cookieParser from "cookie-parser";
 import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
+import { securityHeaders } from "./middlewares/security";
 
 const configuredCorsOrigins = (process.env["CORS_ORIGINS"] ?? "")
   .split(",")
@@ -48,7 +49,11 @@ function isAllowedOrigin(req: Request, origin: string): boolean {
 
 const app: Express = express();
 
+// SECURITY: Ensure accurate client IP identification for rate limiting and audit logging.
+// The API server is behind a reverse proxy/load balancer in production.
+app.set("trust proxy", 1);
 app.disable("x-powered-by");
+app.use(securityHeaders);
 
 app.use(
   pinoHttp({

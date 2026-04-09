@@ -65,7 +65,7 @@ router.get("/ngos", async (req, res) => {
   const allNgos = await db
     .select()
     .from(ngosTable)
-    .where(and(isNotNull(ngosTable.verifiedAt), eq(ngosTable.status, "active")));
+    .where(eq(ngosTable.status, "active"));
 
   const filtered = governorate
     ? allNgos.filter((n) => n.governorate === governorate)

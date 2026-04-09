@@ -28,6 +28,8 @@ const queryClient = new QueryClient({
 
 import AuthCallback from "@/pages/auth/AuthCallback";
 
+import Support from "@/pages/Support";
+
 function Router() {
   return (
     <Switch>
@@ -40,6 +42,7 @@ function Router() {
       <Route path="/admin" component={AdminPage} />
       <Route path="/about" component={About} />
       <Route path="/contact" component={Contact} />
+      <Route path="/support" component={Support} />
       <Route component={NotFound} />
     </Switch>
   );

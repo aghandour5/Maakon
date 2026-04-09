@@ -22,6 +22,38 @@ export async function supabaseLogin(body: FirebaseLoginBodyParams) {
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Login failed");
+  return data; // Could return { status: 'success' | 'mfa_setup_required' | 'mfa_challenge', user: ... }
+}
+
+export async function setupMfa() {
+  const res = await fetch("/api/auth/mfa-setup", {
+    method: "GET",
+    headers: baseHeaders,
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to setup MFA");
+  return data as { qrCodeDataUrl: string };
+}
+
+export async function verifyMfa(code: string) {
+  const res = await fetch("/api/auth/mfa-verify", {
+    method: "POST",
+    headers: baseHeaders,
+    body: JSON.stringify({ code }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to verify MFA");
+  return data;
+}
+
+export async function challengeMfa(code: string) {
+  const res = await fetch("/api/auth/mfa-challenge", {
+    method: "POST",
+    headers: baseHeaders,
+    body: JSON.stringify({ code }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to verify MFA code");
   return data;
 }
 
