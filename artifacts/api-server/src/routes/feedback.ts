@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import rateLimit from "express-rate-limit";
 import { db } from "@workspace/db";
+import { logger } from "../lib/logger";
 import * as dbSchema from "@workspace/db/schema";
 
 const router: IRouter = Router();
@@ -39,13 +40,13 @@ router.post("/feedback", feedbackRateLimiter, async (req, res) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: slackText }),
       }).catch((err) => {
-        console.error("Failed to send Slack webhook:", err);
+        logger.error({ err }, "Failed to send Slack webhook");
       });
     }
 
     res.json({ success: true });
   } catch (error) {
-    console.error("Failed to submit feedback:", error);
+    logger.error({ err: error }, "Failed to submit feedback");
     res.status(400).json({ error: "Failed to submit feedback" });
   }
 });

@@ -8,3 +8,7 @@
 **Vulnerability:** Missing rate limit on unauthenticated /feedback route
 **Learning:** This route writes to DB and calls an external webhook without authentication, making it a prime target for abuse.
 **Prevention:** Apply express-rate-limit middleware to vulnerable routes.
+## 2026-04-09 - Prevent Information Disclosure in Error Responses
+**Vulnerability:** Internal error messages (`err.message`) were being exposed to clients in 500 HTTP responses, and logs were using unformatted `console.error`.
+**Learning:** Developers sometimes fall back on passing error details straight to the client for debugging, but this can inadvertently leak sensitive infrastructure information.
+**Prevention:** Always catch and log the detailed error internally using structured logging (e.g., `logger.error({err}, '...')`), and send only a generic error message (like 'Internal Server Error' or a safe default) back to the client.
