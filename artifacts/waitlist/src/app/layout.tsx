@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Cairo } from "next/font/google";
 import "./globals.css";
-
+import { SpeedInsights } from "@vercel/speed-insights/next";
 const cairo = Cairo({
   subsets: ["arabic"],
   variable: "--font-cairo",
@@ -22,6 +22,7 @@ export default function RootLayout({
     <html lang="ar" dir="rtl" suppressHydrationWarning className={`${cairo.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col font-cairo bg-slate-50 text-slate-900 selection:bg-green-100" suppressHydrationWarning>
         {children}
+        <SpeedInsights />
       </body>
     </html>
   );
