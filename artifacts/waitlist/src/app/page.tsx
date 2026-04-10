@@ -42,7 +42,7 @@ const content = {
       items: [
         { q: "ما هي منصة معكن؟", a: "معكن هي مبادرة تقنية تهدف إلى الربط ما بين المحتاجين والجهات المانحة أو الأفراد الراغبين بالمساعدة بشكل منظم يراعي الخصوصية." },
         { q: "متى سيتم إطلاق المنصة؟", a: "نحن نعمل على إنهاء الاختبارات النهائية لضمان أمان المنصة للمستخدمين، وسيتم الإعلان عن الإطلاق للمنضمين إلى قائمة الانتظار قريباً." },
-        { q: "كيف سيتم استخدام معلوماتي؟", a: "لن يتم مشاركة أرقام الهواتف أو معلوماتك مع أي جهات خارجية. سيتم استخدامها فقط لإعلامك فور جهوزية المنصة." },
+        { q: "كيف سيتم استخدام معلوماتي؟", a: "لن يتم مشاركة معلوماتك مع أي جهات خارجية. سيتم استخدامها فقط لإعلامك فور جهوزية المنصة." },
       ],
     },
   },
@@ -184,10 +184,9 @@ export default function Home() {
         <section className="px-4 py-16 md:py-24 text-white" style={{ backgroundColor: "#1a2e1a" }}>
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-12 items-center">
             <div className="flex-1 space-y-6 text-center md:text-start">
-              <h2 className="text-3xl md:text-4xl font-bold leading-tight">
-                {t.trust.title1}
-                <br />
-                <span style={{ color: "#00a651" }}>{t.trust.title2}</span>
+              <h2 className="text-3xl md:text-4xl font-bold">
+                <span className="block">{t.trust.title1}</span>
+                <span className="block mt-4" style={{ color: "#00a651" }}>{t.trust.title2}</span>
               </h2>
               <p className="text-slate-300 text-lg leading-relaxed max-w-lg mx-auto md:mx-0">
                 {t.trust.sub}
