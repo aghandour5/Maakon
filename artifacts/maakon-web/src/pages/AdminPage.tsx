@@ -211,8 +211,10 @@ function PostActions({ post, onUpdate }: { post: AdminPost; onUpdate: () => void
         onClick={toggle}
         disabled={loading}
         className="flex items-center gap-1.5 text-xs font-medium border border-slate-200 rounded-lg px-2.5 py-1.5 hover:bg-slate-50 hover:border-slate-300 transition-all disabled:opacity-50 text-slate-600"
+        aria-haspopup="true"
+        aria-expanded={open}
       >
-        {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <ChevronDown className="w-3.5 h-3.5" />}
+        {loading ? <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" /> : <ChevronDown className="w-3.5 h-3.5" aria-hidden="true" />}
         Manage
       </button>
 
@@ -336,14 +338,14 @@ function NgoActions({ ngo, onUpdate, onEdit }: { ngo: AdminNgo; onUpdate: () => 
         disabled={loading}
         className="flex items-center justify-center gap-1.5 min-w-[70px] text-xs font-medium border border-red-200 text-red-600 rounded-lg px-3 py-1.5 hover:bg-red-50 transition-all disabled:opacity-50"
       >
-        <Trash2 className="w-3.5 h-3.5" />
+        <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
         Delete
       </button>
       <button
         onClick={() => onEdit(ngo)}
         className="flex items-center justify-center gap-1.5 min-w-[70px] text-xs font-medium border border-slate-200 text-slate-600 rounded-lg px-3 py-1.5 hover:bg-slate-50 transition-all"
       >
-        <Edit2 className="w-3.5 h-3.5" />
+        <Edit2 className="w-3.5 h-3.5" aria-hidden="true" />
         Edit
       </button>
       <button
@@ -356,11 +358,11 @@ function NgoActions({ ngo, onUpdate, onEdit }: { ngo: AdminNgo; onUpdate: () => 
         }`}
       >
         {loading ? (
-          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
         ) : ngo.verifiedAt ? (
-          <ShieldOff className="w-3.5 h-3.5" />
+          <ShieldOff className="w-3.5 h-3.5" aria-hidden="true" />
         ) : (
-          <Shield className="w-3.5 h-3.5" />
+          <Shield className="w-3.5 h-3.5" aria-hidden="true" />
         )}
         {ngo.verifiedAt ? "Unverify" : "Verify Logo"}
       </button>
@@ -594,8 +596,9 @@ export default function AdminPage() {
             <button
               onClick={toggleLanguage}
               className="flex items-center gap-1.5 px-3 h-8 rounded-xl text-slate-700 hover:text-slate-900 text-xs sm:text-sm font-semibold border border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition-all shrink-0"
+              aria-label={i18n.language.startsWith("ar") ? "Switch to English" : "تغيير اللغة إلى العربية"}
             >
-              <Globe className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <Globe className="w-3.5 h-3.5 sm:w-4 sm:h-4" aria-hidden="true" />
               <span className="hidden sm:inline-block">{i18n.language.startsWith("ar") ? "English" : "عربي"}</span>
               <span className="inline-block sm:hidden">{i18n.language.startsWith("ar") ? "EN" : "عربي"}</span>
             </button>
@@ -693,7 +696,7 @@ export default function AdminPage() {
               onClick={() => refresh(true)} 
               className="text-sm font-semibold gap-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl shadow-md"
             >
-              <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+              <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} aria-hidden="true" />
               Refresh
             </Button>
             <AnimatePresence>

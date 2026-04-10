@@ -19,6 +19,24 @@ import {
   ArrowLeft,
   Mail,
   Loader2,
+  Utensils,
+  Home,
+  Shirt,
+  HeartPulse,
+  Droplets,
+  Car,
+  Brain,
+  Scale,
+  GraduationCap,
+  HeartHandshake,
+  Coins,
+  Truck,
+  Package,
+  User,
+  Building2,
+  AlertTriangle,
+  Clock,
+  ClipboardList
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { createDraftPost } from "@/lib/auth-api";
@@ -35,32 +53,35 @@ const EXPIRY_PRESETS = [
 
 const PROVIDERS = ["individual", "ngo"] as const;
 
-const PROVIDER_CONFIG = {
-  individual: { emoji: "🙋", label: "Individual", desc: "I am a person needing help" },
-  ngo:        { emoji: "🏛️", label: "NGO / Organization", desc: "We are an org needing volunteers" },
+const PROVIDER_CONFIG: Record<string, { icon: any; label: string; desc: string }> = {
+  individual: { icon: User, label: "Individual", desc: "I am a person needing help" },
+  ngo:        { icon: Building2, label: "NGO / Organization", desc: "We are an org needing volunteers" },
 };
 
 const URGENCIES = ["critical", "high", "medium", "low"] as const;
 
-const URGENCY_CONFIG = {
-  critical: { color: "#ef4444", bg: "#fef2f2", border: "#fca5a5", label: "🚨" },
-  high:     { color: "#f97316", bg: "#fff7ed", border: "#fdba74", label: "⚠️" },
-  medium:   { color: "#3b82f6", bg: "#eff6ff", border: "#93c5fd", label: "📋" },
-  low:      { color: "#6b7280", bg: "#f9fafb", border: "#d1d5db", label: "🕐" },
+const URGENCY_CONFIG: Record<string, { color: string; bg: string; border: string; icon: any }> = {
+  critical: { color: "#ef4444", bg: "#fef2f2", border: "#fca5a5", icon: AlertTriangle },
+  high:     { color: "#f97316", bg: "#fff7ed", border: "#fdba74", icon: AlertCircle },
+  medium:   { color: "#3b82f6", bg: "#eff6ff", border: "#93c5fd", icon: ClipboardList },
+  low:      { color: "#6b7280", bg: "#f9fafb", border: "#d1d5db", icon: Clock },
 };
 
-const CATEGORY_ICONS: Record<string, string> = {
-  food: "🍞",
-  shelter: "🏠",
-  clothing: "👕",
-  medical: "💊",
-  water: "💧",
-  transportation: "🚗",
-  psychological: "🧠",
-  legal: "⚖️",
-  education: "📚",
-  volunteers: "🤝",
-  other: "📦",
+const CATEGORY_ICONS: Record<string, any> = {
+  food: Utensils,
+  shelter: Home,
+  clothing: Shirt,
+  medical: HeartPulse,
+  water: Droplets,
+  transportation: Car,
+  psychological: Brain,
+  psychosocial: Brain,
+  legal: Scale,
+  financial: Coins,
+  education: GraduationCap,
+  volunteers: HeartHandshake,
+  logistics: Truck,
+  other: Package,
 };
 
 const fadeVariants = {
@@ -410,7 +431,12 @@ export default function PostNeed() {
                                   }
                             }
                           >
-                            <span className="text-3xl leading-none">{PROVIDER_CONFIG[prov as keyof typeof PROVIDER_CONFIG].emoji}</span>
+                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${selected ? 'bg-white/20' : 'bg-red-50'}`}>
+                              {(() => {
+                                const Icon = PROVIDER_CONFIG[prov as keyof typeof PROVIDER_CONFIG].icon;
+                                return <Icon className={selected ? "text-white" : "text-red-600"} />;
+                              })()}
+                            </div>
                             <div className="flex flex-col text-start">
                               <span className="font-bold text-lg">
                                 {t(prov === "individual" ? "account_individual" : "account_ngo")}
@@ -445,7 +471,7 @@ export default function PostNeed() {
                               key={cat}
                               type="button"
                               onClick={() => patch({ category: cat })}
-                              className="py-3 px-2 rounded-2xl font-semibold text-sm flex items-center gap-2 transition-all duration-150 active:scale-95 border-2"
+                              className="py-3 px-3 rounded-2xl font-semibold text-sm flex items-center gap-3 transition-all duration-150 active:scale-95 border-2"
                               style={
                                 selected
                                   ? {
@@ -461,7 +487,12 @@ export default function PostNeed() {
                                     }
                               }
                             >
-                              <span className="text-lg leading-none">{CATEGORY_ICONS[cat] ?? "📦"}</span>
+                              <div className={`p-1.5 rounded-lg ${selected ? 'bg-white/20' : 'bg-red-50 text-red-600'}`}>
+                                {(() => {
+                                  const Icon = CATEGORY_ICONS[cat] || Package;
+                                  return <Icon className="w-4 h-4" />;
+                                })()}
+                              </div>
                               <span className="truncate">{t(cat)}</span>
                             </button>
                           );
@@ -481,20 +512,25 @@ export default function PostNeed() {
                               key={urg}
                               type="button"
                               onClick={() => patch({ urgency: urg })}
-                              className="py-3 px-2 rounded-2xl font-semibold text-sm flex items-center gap-1.5 transition-all duration-150 active:scale-95 border-2"
+                              className="py-3 px-3 rounded-2xl font-semibold text-sm flex flex-col items-center gap-2 transition-all duration-150 active:scale-95 border-2"
                               style={
                                 selected
                                   ? {
                                       background: cfg.color,
                                       borderColor: "transparent",
                                       color: "white",
-                                      boxShadow: `0 4px 12px ${cfg.color}55`,
+                                      boxShadow: `0 4px 12px ${cfg.color}40`,
                                     }
                                   : { background: cfg.bg, borderColor: cfg.border, color: cfg.color }
                               }
                             >
-                              <span className="text-base leading-none">{cfg.label}</span>
-                              <span>{t(urg)}</span>
+                              <div className={`p-1.5 rounded-lg ${selected ? 'bg-white/20' : 'bg-white/40'}`}>
+                                {(() => {
+                                  const Icon = cfg.icon;
+                                  return <Icon className="w-4 h-4" />;
+                                })()}
+                              </div>
+                              <span className="text-xs font-bold uppercase tracking-wider">{t(urg)}</span>
                             </button>
                           );
                         })}

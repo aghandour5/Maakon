@@ -21,10 +21,11 @@ const METHODS = [
     accent: "#E61C38", // Whish Money Red
     descEn: "A licensed Lebanese mobile payment app. The fastest and easiest option for residents in Lebanon.",
     descAr: "تطبيق دفع لبناني مرخّص. الأسرع والأسهل للمقيمين في لبنان.",
-    detailEn: "Details coming soon.",
-    detailAr: "سيتم إضافة التفاصيل قريباً.",
-    noteEn: "Phone number and account details will be published here.",
-    noteAr: "رقم الهاتف وتفاصيل الحساب ستُنشر هنا.",
+    isReady: true,
+    details: {
+      name: "Ali Ghandour",
+      phone: "+961 79 30 79 04"
+    }
   },
   {
     name: "Taptap Send",
@@ -140,24 +141,43 @@ export default function Support() {
                     {isRtl ? method.descAr : method.descEn}
                   </p>
 
-                  {/* Placeholder box */}
-                  <div
-                    className="rounded-xl p-4 border border-dashed flex flex-col items-center justify-center gap-2 mt-auto"
-                    style={{
-                      backgroundColor: "#f8fafc",
-                      borderColor: "#cbd5e1",
-                    }}
-                  >
-                    <div className="flex flex-col items-center gap-1.5 justify-center">
-                      <Clock className="w-5 h-5 text-slate-400" />
-                      <span className="text-[13px] font-bold text-slate-500">
-                        {isRtl ? method.detailAr : method.detailEn}
-                      </span>
+                  {/* Payment Details Box */}
+                  {method.isReady ? (
+                    <div
+                      className="rounded-xl p-4 border flex flex-col gap-3 mt-auto"
+                      style={{
+                        backgroundColor: `${method.accent}0A`,
+                        borderColor: `${method.accent}30`,
+                      }}
+                    >
+                      <div className="flex justify-between items-center w-full">
+                        <span className="text-[12px] text-slate-500 font-medium">{isRtl ? "الاسم" : "Name"}</span>
+                        <span className="text-[13px] font-bold text-slate-800" dir="ltr">{method.details?.name}</span>
+                      </div>
+                      <div className="flex justify-between items-center w-full">
+                        <span className="text-[12px] text-slate-500 font-medium">{isRtl ? "الهاتف" : "Phone"}</span>
+                        <span className="text-[13px] font-bold text-slate-800 font-mono tracking-tight" dir="ltr">{method.details?.phone}</span>
+                      </div>
                     </div>
-                    <p className="text-[11px] text-slate-400 text-center font-medium mt-1">
-                      {isRtl ? method.noteAr : method.noteEn}
-                    </p>
-                  </div>
+                  ) : (
+                    <div
+                      className="rounded-xl p-4 border border-dashed flex flex-col items-center justify-center gap-2 mt-auto"
+                      style={{
+                        backgroundColor: "#f8fafc",
+                        borderColor: "#cbd5e1",
+                      }}
+                    >
+                      <div className="flex flex-col items-center gap-1.5 justify-center">
+                        <Clock className="w-5 h-5 text-slate-400" />
+                        <span className="text-[13px] font-bold text-slate-500">
+                          {isRtl ? method.detailAr : method.detailEn}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 text-center font-medium mt-1">
+                        {isRtl ? method.noteAr : method.noteEn}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </motion.div>
             ))}

@@ -54,8 +54,13 @@ const verifyOtpLimiter = customRateLimit(
   10,
   "Too many verification attempts, please try again later.",
 );
+const mfaLimiter = customRateLimit(
+  15 * 60 * 1000,
+  10,
+  "Too many MFA attempts, please try again later.",
+);
 
-// ── Firebase Email-Link Login ─────────────────────────────────────────────────
+// ── Supabase Email-Link Login ─────────────────────────────────────────────────
 
 router.post("/auth/supabase-login", loginLimiter, async (req: Request, res: Response) => {
   const parsed = FirebaseLoginBody.safeParse(req.body);
@@ -190,7 +195,7 @@ router.get("/auth/mfa-setup", requireAuth, async (req: Request, res: Response) =
   try {
     const secret = generateSecret();
     const otpauth = generateURI({ issuer: "Maakon Admin", label: user.email || "admin", secret });
-    
+
     // Save secret
     await db.update(usersTable).set({ mfaSecret: secret }).where(eq(usersTable.id, user.id));
 
@@ -202,7 +207,7 @@ router.get("/auth/mfa-setup", requireAuth, async (req: Request, res: Response) =
   }
 });
 
-router.post("/auth/mfa-verify", requireAuth, async (req: Request, res: Response) => {
+router.post("/auth/mfa-verify", requireAuth, mfaLimiter, async (req: Request, res: Response) => {
   const user = req.user!;
   const sessionId = req.sessionId;
 
@@ -238,7 +243,7 @@ router.post("/auth/mfa-verify", requireAuth, async (req: Request, res: Response)
   }
 });
 
-router.post("/auth/mfa-challenge", requireAuth, async (req: Request, res: Response) => {
+router.post("/auth/mfa-challenge", requireAuth, mfaLimiter, async (req: Request, res: Response) => {
   const user = req.user!;
   const sessionId = req.sessionId;
 

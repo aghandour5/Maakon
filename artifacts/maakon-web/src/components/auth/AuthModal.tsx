@@ -110,7 +110,7 @@ export default function AuthModal() {
         handleOpenChange(open);
       }
     }}>
-      <DialogContent className="sm:max-w-[425px]" onInteractOutside={(e) => {
+      <DialogContent className="!translate-y-0 !top-[10%] sm:!translate-y-[-50%] sm:!top-[50%] sm:max-w-[425px] max-h-[85vh] overflow-y-auto overflow-x-hidden" onInteractOutside={(e) => {
         // Prevent closing by clicking outside during onboarding
         if (needsOnboarding) e.preventDefault();
       }}>

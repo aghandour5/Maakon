@@ -157,6 +157,7 @@ export default function Contact() {
                         key={type}
                         type="button"
                         onClick={() => setFeedbackType(type)}
+                        aria-pressed={selected}
                         className="px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all duration-150 active:scale-95 border-2"
                         style={
                           selected
@@ -173,7 +174,7 @@ export default function Contact() {
                               }
                         }
                       >
-                        <span className="text-base leading-none">{LABELS[type].emoji}</span>
+                        <span className="text-base leading-none" aria-hidden="true">{LABELS[type].emoji}</span>
                         {t(`feedback_${type}`)}
                       </button>
                     );
@@ -184,7 +185,7 @@ export default function Contact() {
               {/* Name */}
               <div>
                 <label className="flex items-center text-start text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-                  <User className="w-3.5 h-3.5 inline-block me-1 -mt-0.5" />
+                  <User className="w-3.5 h-3.5 inline-block me-1 -mt-0.5" aria-hidden="true" />
                   {t("name_optional")}
                 </label>
                 <input
@@ -199,7 +200,7 @@ export default function Contact() {
               {/* Email */}
               <div>
                 <label className="flex items-center text-start text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-                  <Mail className="w-3.5 h-3.5 inline-block me-1 -mt-0.5" />
+                  <Mail className="w-3.5 h-3.5 inline-block me-1 -mt-0.5" aria-hidden="true" />
                   {t("email_optional")}
                 </label>
                 <input
@@ -215,7 +216,7 @@ export default function Contact() {
               {/* Message */}
               <div>
                 <label className="flex items-center text-start text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-                  <MessageSquare className="w-3.5 h-3.5 inline-block me-1 -mt-0.5" />
+                  <MessageSquare className="w-3.5 h-3.5 inline-block me-1 -mt-0.5" aria-hidden="true" />
                   {t("your_message")}
                 </label>
                 <textarea
@@ -238,11 +239,11 @@ export default function Contact() {
                 }}
               >
                 {sending ? (
-                  <span className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                  <span className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" aria-hidden="true" />
                 ) : (
-                  <Send className="w-4 h-4" />
+                  <Send className="w-4 h-4" aria-hidden="true" />
                 )}
-                {t("submit_feedback")}
+                <span aria-live="polite">{sending ? t("sending_feedback", "Sending...") : t("submit_feedback")}</span>
               </button>
             </div>
           </motion.form>

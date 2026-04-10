@@ -212,7 +212,7 @@ export default function MyPosts() {
                 href="/offer/new"
                 className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-bold text-sm bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-all no-underline"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-4 h-4" aria-hidden="true" />
                 <span className="hidden sm:inline">{t("create_offer")}</span>
               </Link>
             </div>
@@ -312,7 +312,7 @@ export default function MyPosts() {
                           disabled={isBeingActioned}
                           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-200/60 transition-colors disabled:opacity-40"
                         >
-                          <Edit2 className="w-3.5 h-3.5" />
+                          <Edit2 className="w-3.5 h-3.5" aria-hidden="true" />
                           {t("myposts_edit")}
                         </button>
                         {post.status === "active" && (
@@ -321,7 +321,7 @@ export default function MyPosts() {
                             disabled={isBeingActioned}
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-orange-600 hover:bg-orange-50 transition-colors disabled:opacity-40"
                           >
-                            {isBeingActioned ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <EyeOff className="w-3.5 h-3.5" />}
+                            {isBeingActioned ? <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" /> : <EyeOff className="w-3.5 h-3.5" aria-hidden="true" />}
                             {t("myposts_hide")}
                           </button>
                         )}
@@ -331,7 +331,7 @@ export default function MyPosts() {
                             disabled={isBeingActioned}
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-emerald-600 hover:bg-emerald-50 transition-colors disabled:opacity-40"
                           >
-                            {isBeingActioned ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Eye className="w-3.5 h-3.5" />}
+                            {isBeingActioned ? <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" /> : <Eye className="w-3.5 h-3.5" aria-hidden="true" />}
                             {t("myposts_show")}
                           </button>
                         )}
@@ -341,7 +341,7 @@ export default function MyPosts() {
                             disabled={isBeingActioned}
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-blue-600 hover:bg-blue-50 transition-colors disabled:opacity-40"
                           >
-                            {isBeingActioned ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                            {isBeingActioned ? <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" /> : <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />}
                             {t("myposts_status_resolved")}
                           </button>
                         )}
@@ -351,7 +351,7 @@ export default function MyPosts() {
                           disabled={isBeingActioned}
                           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-red-500 hover:bg-red-50 transition-colors disabled:opacity-40"
                         >
-                          {isBeingActioned ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                          {isBeingActioned ? <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" /> : <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />}
                           {t("myposts_delete")}
                         </button>
                       </div>

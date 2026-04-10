@@ -26,7 +26,7 @@ export function TopNav({ title, showBack = false }: TopNavProps) {
     ...(isAuthenticated ? [{ label: isRtl ? "منشوراتي" : "My Posts", href: "/my-posts" }] : []),
     { label: isRtl ? "حول" : "About", href: "/about" },
     { label: isRtl ? "تواصل معنا" : "Contact Us", href: "/contact" },
-    { label: isRtl ? "ادعمنا" : "Support Us", href: "/support", icon: <Heart className="w-3.5 h-3.5 mr-1 inline-block" /> },
+    { label: isRtl ? "ادعمنا" : "Support Us", href: "/support", icon: <Heart className="w-3.5 h-3.5 mr-1 inline-block" aria-hidden="true" /> },
   ];
 
   return (
@@ -40,7 +40,7 @@ export function TopNav({ title, showBack = false }: TopNavProps) {
               className="w-8 h-8 rounded-xl flex items-center justify-center text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-all shrink-0"
               aria-label="Back"
             >
-              {isRtl ? <ArrowRight className="h-4 w-4" /> : <ArrowLeft className="h-4 w-4" />}
+              {isRtl ? <ArrowRight className="h-4 w-4" aria-hidden="true" /> : <ArrowLeft className="h-4 w-4" aria-hidden="true" />}
             </button>
           )}
           <Link href="/" className="shrink-0 no-underline mr-2 sm:mr-4 flex items-center gap-2 sm:gap-3 group">
@@ -84,8 +84,9 @@ export function TopNav({ title, showBack = false }: TopNavProps) {
               onClick={logout}
               className="hidden sm:flex items-center gap-1.5 px-3 h-8 rounded-xl font-bold text-xs bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
               title="Logout"
+              aria-label="Logout"
             >
-              <LogOut className="w-3.5 h-3.5" />
+              <LogOut className="w-3.5 h-3.5" aria-hidden="true" />
               <span className="hidden sm:inline-block">{user?.displayName || (user?.accountType === "ngo" ? "NGO" : t("account_individual"))}</span>
               <span className="inline-block sm:hidden">{t("logout")}</span>
             </button>
@@ -95,8 +96,9 @@ export function TopNav({ title, showBack = false }: TopNavProps) {
           <button
             onClick={toggleLanguage}
             className="flex items-center gap-1.5 px-3 h-8 rounded-xl text-slate-700 hover:text-slate-900 text-xs sm:text-sm font-semibold border border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition-all shrink-0"
+            aria-label={isRtl ? "Switch to English" : "تغيير اللغة إلى العربية"}
           >
-            <Globe className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <Globe className="w-3.5 h-3.5 sm:w-4 sm:h-4" aria-hidden="true" />
             <span className="hidden sm:inline-block">{i18n.language.startsWith("ar") ? "English" : "عربي"}</span>
             <span className="inline-block sm:hidden">{i18n.language.startsWith("ar") ? "EN" : "عربي"}</span>
           </button>
@@ -105,8 +107,10 @@ export function TopNav({ title, showBack = false }: TopNavProps) {
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="sm:hidden flex items-center justify-center w-8 h-8 rounded-xl text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-all"
+            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={mobileMenuOpen}
           >
-            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            {mobileMenuOpen ? <X className="w-5 h-5" aria-hidden="true" /> : <Menu className="w-5 h-5" aria-hidden="true" />}
           </button>
         </div>
       </div>
@@ -155,8 +159,9 @@ export function TopNav({ title, showBack = false }: TopNavProps) {
                       logout();
                     }}
                     className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold text-destructive bg-destructive/10 text-center"
+                    aria-label="Logout"
                   >
-                    <LogOut className="w-4 h-4" />
+                    <LogOut className="w-4 h-4" aria-hidden="true" />
                     {t("logout")}
                   </button>
                 )}

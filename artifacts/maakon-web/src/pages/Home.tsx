@@ -31,7 +31,7 @@ export default function Home() {
     ...(isAuthenticated ? [{ label: isRtl ? "منشوراتي" : "My Posts", href: "/my-posts" }] : []),
     { label: isRtl ? "حول" : "About", href: "/about" },
     { label: isRtl ? "تواصل معنا" : "Contact Us", href: "/contact" },
-    { label: isRtl ? "ادعمنا" : "Support Us", href: "/support", icon: <Heart className="w-3.5 h-3.5 mr-1 inline-block" /> },
+    { label: isRtl ? "ادعمنا" : "Support Us", href: "/support", icon: <Heart className="w-3.5 h-3.5 mr-1 inline-block" aria-hidden="true" /> },
   ];
 
   return (
@@ -133,9 +133,10 @@ export default function Home() {
             {/* Language toggle */}
             <button
               onClick={toggleLanguage}
-              className="flex items-center gap-1.5 px-3 h-9 rounded-xl text-emerald-50 hover:text-white text-sm font-semibold hover:bg-white/10 transition-colors"
+              className="flex items-center gap-1.5 px-3 h-9 rounded-xl text-white sm:text-emerald-50 hover:text-white text-sm font-semibold bg-black/20 backdrop-blur-md sm:bg-transparent sm:backdrop-blur-none sm:hover:bg-white/10 transition-colors"
+              aria-label={isRtl ? "Switch to English" : "تغيير اللغة إلى العربية"}
             >
-              <Globe className="w-4 h-4" />
+              <Globe className="w-4 h-4" aria-hidden="true" />
               <span className="hidden sm:inline-block">{isRtl ? "English" : "عربي"}</span>
               <span className="inline-block sm:hidden">{isRtl ? "EN" : "عربي"}</span>
             </button>
@@ -143,9 +144,11 @@ export default function Home() {
             {/* Mobile menu toggle */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="sm:hidden flex items-center justify-center w-9 h-9 rounded-xl text-emerald-100 hover:text-white hover:bg-white/10 transition-colors"
+              className="sm:hidden flex items-center justify-center w-9 h-9 rounded-xl text-white hover:text-white bg-black/20 backdrop-blur-md hover:bg-black/30 transition-colors"
+              aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+              aria-expanded={mobileMenuOpen}
             >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {mobileMenuOpen ? <X className="w-5 h-5" aria-hidden="true" /> : <Menu className="w-5 h-5" aria-hidden="true" />}
             </button>
           </div>
         </div>
@@ -158,15 +161,15 @@ export default function Home() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.15 }}
-              className="absolute top-full left-4 right-4 mt-2 p-2 rounded-2xl sm:hidden z-50 border border-white/10 bg-emerald-950/95 shadow-xl"
+              className="absolute top-full left-4 right-4 mt-2 p-3 rounded-2xl sm:hidden z-50 border border-white/10 bg-emerald-950/95 backdrop-blur-2xl shadow-2xl"
             >
-              <nav className="flex flex-col gap-1">
+              <nav className="flex flex-col gap-2">
                 {navLinks.map((link) => (
                   <Link
                     key={link.href}
                     href={link.href}
                     onClick={() => setMobileMenuOpen(false)}
-                    className="px-4 py-3 rounded-xl text-sm font-bold text-emerald-100 hover:text-white hover:bg-white/10 transition-colors text-center flex items-center justify-center gap-2"
+                    className="px-4 py-3 rounded-xl text-sm font-bold text-emerald-50 bg-white/5 hover:text-white hover:bg-white/20 transition-all text-center flex items-center justify-center gap-2"
                   >
                     {link.icon}
                     {link.label}
@@ -176,14 +179,14 @@ export default function Home() {
                   {!isAuthenticated ? (
                     <button
                       onClick={() => { setMobileMenuOpen(false); openAuthModal(); }}
-                      className="w-full px-4 py-3 rounded-xl text-sm font-bold text-white transition-opacity hover:opacity-90 text-center shadow-md bg-red-600"
+                      className="w-full px-4 py-3 shadow-lg rounded-xl text-sm font-bold bg-white text-emerald-900 hover:bg-emerald-50 transition-colors text-center"
                     >
                       {t("sign_in")}
                     </button>
                   ) : (
                     <button
                       onClick={() => { setMobileMenuOpen(false); logout(); }}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold text-red-300 bg-red-500/10 hover:bg-red-500/20 transition-colors"
+                      className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold text-red-100 bg-red-500/20 hover:bg-red-500/30 transition-colors text-center"
                     >
                       <LogOut className="w-4 h-4" />
                       Logout
@@ -231,7 +234,7 @@ export default function Home() {
             onClick={requireAuth(() => setLocation('/need/new'))}
             className="w-full relative overflow-hidden rounded-3xl p-4 sm:p-5 flex items-center gap-3 sm:gap-4 bg-red-600 hover:bg-red-700 transition-all shadow-lg group animate-pulse-subtle"
           >
-            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shrink-0 bg-white/20 shadow-inner">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shrink-0 bg-white/20 shadow-inner" aria-hidden="true">
               <ShieldAlert className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
             </div>
 
@@ -242,7 +245,7 @@ export default function Home() {
               </div>
             </div>
 
-            <div className={`shrink-0 text-white opacity-80 group-hover:opacity-100 group-hover:-translate-x-1 transition-all ${isRtl ? "rotate-180 group-hover:translate-x-1" : ""}`}>
+            <div className={`shrink-0 text-white opacity-80 group-hover:opacity-100 group-hover:-translate-x-1 transition-all ${isRtl ? "rotate-180 group-hover:translate-x-1" : ""}`} aria-hidden="true">
               <ArrowRight className="w-6 h-6" />
             </div>
           </button>
@@ -252,7 +255,7 @@ export default function Home() {
             onClick={requireAuth(() => setLocation('/offer/new'))}
             className="w-full relative overflow-hidden rounded-3xl p-4 sm:p-5 flex items-center gap-3 sm:gap-4 bg-white hover:bg-emerald-50 transition-all shadow-lg group hover:shadow-emerald-500/20"
           >
-            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shrink-0 bg-emerald-50 shadow-inner">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shrink-0 bg-emerald-50 shadow-inner" aria-hidden="true">
               <HeartHandshake className="w-6 h-6 sm:w-7 sm:h-7 text-emerald-600" />
             </div>
 
@@ -263,7 +266,7 @@ export default function Home() {
               </div>
             </div>
 
-            <div className={`shrink-0 text-emerald-950 opacity-40 group-hover:opacity-100 group-hover:-translate-x-1 transition-all ${isRtl ? "rotate-180 group-hover:translate-x-1" : ""}`}>
+            <div className={`shrink-0 text-emerald-950 opacity-40 group-hover:opacity-100 group-hover:-translate-x-1 transition-all ${isRtl ? "rotate-180 group-hover:translate-x-1" : ""}`} aria-hidden="true">
               <ArrowRight className="w-6 h-6" />
             </div>
           </button>

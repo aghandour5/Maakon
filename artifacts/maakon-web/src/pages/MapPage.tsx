@@ -96,37 +96,40 @@ function ModernMapControls() {
   };
 
   return (
-    <div ref={ref} className={`absolute top-20 sm:top-24 ${isRtl ? 'right-4 sm:right-6' : 'left-4 sm:left-6'} z-[1000] flex flex-col gap-2`}>
+    <div ref={ref} className={`absolute top-4 sm:top-6 ${isRtl ? 'right-4 sm:right-6' : 'left-4 sm:left-6'} z-[1000] flex flex-col gap-2`}>
       <button
         onClick={() => map.zoomIn()}
         className="w-10 h-10 bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.12)] border border-slate-200/50 flex flex-col items-center justify-center text-slate-700 hover:bg-white hover:text-emerald-600 transition-all hover:scale-105 active:scale-95"
+        aria-label={t("zoom_in", "Zoom in")}
       >
-        <Plus className="w-5 h-5" />
+        <Plus className="w-5 h-5" aria-hidden="true" />
       </button>
       <button
         onClick={() => map.zoomOut()}
         className="w-10 h-10 bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.12)] border border-slate-200/50 flex flex-col items-center justify-center text-slate-700 hover:bg-white hover:text-emerald-600 transition-all hover:scale-105 active:scale-95"
+        aria-label={t("zoom_out", "Zoom out")}
       >
-        <Minus className="w-5 h-5" />
+        <Minus className="w-5 h-5" aria-hidden="true" />
       </button>
       <button
         onClick={() => map.flyToBounds([[33.05, 35.1], [34.70, 36.65]], { duration: 1.2 })}
         className="w-10 h-10 bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.12)] border border-slate-200/50 flex items-center justify-center text-slate-700 hover:bg-white hover:text-emerald-600 transition-all hover:scale-105 active:scale-95 mt-1 sm:mt-2"
         title={t('fit_to_screen') || "Fit to Screen"}
+        aria-label={t("fit_to_screen", "Fit to Screen")}
       >
-        <Maximize className="w-4 h-4 sm:w-5 sm:h-5" />
+        <Maximize className="w-4 h-4 sm:w-5 sm:h-5" aria-hidden="true" />
       </button>
-      {/* Locate me */}
       <button
         onClick={handleLocate}
         disabled={locating}
         title={t('locate_me') || "My Location"}
+        aria-label={t("locate_me", "My Location")}
         className={`w-10 h-10 backdrop-blur-md rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.12)] border flex items-center justify-center transition-all hover:scale-105 active:scale-95 ${locateError
           ? 'bg-red-50 border-red-200 text-red-500'
           : 'bg-white/90 border-slate-200/50 text-slate-700 hover:bg-white hover:text-blue-600'
           } ${locating ? 'opacity-60 cursor-wait' : ''}`}
       >
-        <LocateFixed className={`w-4 h-4 sm:w-5 sm:h-5 ${locating ? 'animate-pulse text-blue-500' : ''}`} />
+        <LocateFixed className={`w-4 h-4 sm:w-5 sm:h-5 ${locating ? 'animate-pulse text-blue-500' : ''}`} aria-hidden="true" />
       </button>
     </div>
   );
@@ -152,6 +155,7 @@ export default function MapPage() {
   const [filters, setFilters] = useState<ListPostsParams>({ activeOnly: true });
   const [showFilters, setShowFilters] = useState(false);
   const [showFab, setShowFab] = useState(false);
+  const [legendMinimized, setLegendMinimized] = useState(false);
   const [selectedItem, setSelectedItem] = useState<SelectedItem | null>(null);
   const [selectedPostId, setSelectedPostId] = useState<number | null>(null);
   const [mapCenter, setMapCenter] = useState<[number, number] | null>(null);
@@ -397,7 +401,7 @@ export default function MapPage() {
 
         {/* Map Legend */}
         <div
-          className={`absolute bottom-4 sm:bottom-6 ${isRtl ? 'right-4 sm:right-6' : 'left-4 sm:left-6'} z-[400] px-2.5 py-2 sm:px-3.5 sm:py-3 rounded-xl sm:rounded-2xl flex flex-col gap-1.5 sm:gap-2`}
+          className={`absolute bottom-4 sm:bottom-6 ${isRtl ? 'right-4 sm:right-6' : 'left-4 sm:left-6'} z-[400] rounded-xl sm:rounded-2xl transition-all ${legendMinimized ? 'w-10 h-10 flex items-center justify-center p-0 cursor-pointer shadow-md' : 'px-2.5 py-2 sm:px-3.5 sm:py-3 flex flex-col gap-1.5 sm:gap-2'} overflow-hidden cursor-pointer sm:cursor-auto`}
           style={{
             background: 'rgba(255,255,255,0.92)',
             backdropFilter: 'blur(16px)',
@@ -405,28 +409,45 @@ export default function MapPage() {
             boxShadow: '0 8px 24px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.08)',
             border: '1px solid rgba(255,255,255,0.7)',
           }}
+          onClick={() => legendMinimized && setLegendMinimized(false)}
         >
-          <div className="font-black text-gray-600 text-[10px] uppercase tracking-widest mb-0.5">{t('map_legend')}</div>
-          {[
-            { color: '#ef4444', label: t('needs') },
-            { color: '#10b981', label: t('offers') },
-            { color: '#3b82f6', label: t('ngos') },
-          ].map(({ color, label }) => (
-            <div key={label} className="flex items-center gap-2.5">
-              <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full shadow-sm shrink-0" style={{ backgroundColor: color, boxShadow: `0 1px 4px ${color}88` }} />
-              <span className="text-[10px] sm:text-xs font-semibold text-gray-600 leading-none">{label}</span>
+          {legendMinimized ? (
+            <div className="flex items-center justify-center w-full h-full bg-slate-50 hover:bg-slate-100 transition-colors">
+              <MapPin className="w-5 h-5 text-slate-700" aria-hidden="true" />
             </div>
-          ))}
-          <div className="mt-1.5 pt-1.5 border-t border-slate-200/60">
-            <p className="text-[9px] font-semibold text-slate-500 leading-tight">
-              {t('location_privacy_note')}
-            </p>
-          </div>
+          ) : (
+            <>
+              <div className="flex justify-between items-center w-full mb-0.5">
+                <span className="font-black text-gray-600 text-[10px] uppercase tracking-widest">{t('map_legend')}</span>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); setLegendMinimized(true); }}
+                  className="sm:hidden p-1 hover:bg-slate-200/50 rounded-md text-slate-500 transition-colors"
+                  aria-label={t("close", "Close")}
+                >
+                  <Minus className="w-3 h-3" aria-hidden="true" />
+                </button>
+              </div>
+              {[
+                { color: '#ef4444', label: t('needs') },
+                { color: '#10b981', label: t('offers') },
+                { color: '#3b82f6', label: t('ngos') },
+              ].map(({ color, label }) => (
+                <div key={label} className="flex items-center gap-2.5">
+                  <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full shadow-sm shrink-0" style={{ backgroundColor: color, boxShadow: `0 1px 4px ${color}88` }} />
+                  <span className="text-[10px] sm:text-xs font-semibold text-gray-600 leading-none">{label}</span>
+                </div>
+              ))}
+              <div className="mt-1.5 pt-1.5 border-t border-slate-200/60">
+                <p className="text-[9px] font-semibold text-slate-500 leading-tight">
+                  {t('location_privacy_note')}
+                </p>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Speed-dial FAB — bottom corner opposite the legend, higher up to avoid zoom controls */}
         <div className={`absolute bottom-20 sm:bottom-15 ${isRtl ? 'left-4 sm:left-6' : 'right-4 sm:right-6'} z-[400] flex flex-col-reverse items-end gap-2.5`}>
-          {/* Main "+" toggle button */}
           <button
             onClick={() => setShowFab(prev => !prev)}
             className="w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95"
@@ -437,9 +458,10 @@ export default function MapPage() {
               boxShadow: '0 8px 24px rgba(5,150,105,0.45), 0 2px 8px rgba(0,0,0,0.2)',
               transform: showFab ? 'rotate(45deg)' : 'rotate(0deg)',
             }}
-            aria-label={t('create_need')}
+            aria-expanded={showFab}
+            aria-label={showFab ? t("close_menu", "Close menu") : t("create_action", "Create action")}
           >
-            <Plus className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+            <Plus className="w-6 h-6 sm:w-7 sm:h-7 text-white" aria-hidden="true" />
           </button>
 
           {/* Expanded options */}
@@ -453,8 +475,8 @@ export default function MapPage() {
                   boxShadow: '0 6px 16px rgba(5,150,105,0.45)',
                 }}
               >
-                <span className="text-base leading-none">🤝</span>
-                {t('create_offer')}
+                <HeartHandshake className="w-5 h-5" />
+                {t('create_offer', 'Create Offer')}
               </button>
               <button
                 onClick={requireAuth(() => setLocation('/need/new'))}
@@ -471,10 +493,9 @@ export default function MapPage() {
           )}
         </div>
 
-        {/* Filter Toggle Button */}
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className={`absolute top-20 sm:top-24 ${isRtl ? 'left-4' : 'right-4'} z-[400] flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 h-9 sm:h-10 rounded-full font-semibold text-[13px] sm:text-sm transition-all active:scale-95`}
+          className={`absolute top-4 sm:top-6 ${isRtl ? 'left-4' : 'right-4'} z-[400] flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 h-9 sm:h-10 rounded-full font-semibold text-[13px] sm:text-sm transition-all active:scale-95`}
           style={{
             background: showFilters
               ? 'linear-gradient(135deg, #059669, #10b981)'
@@ -485,8 +506,9 @@ export default function MapPage() {
             border: showFilters ? '1px solid rgba(255,255,255,0.3)' : '1px solid rgba(255,255,255,0.8)',
             color: showFilters ? 'white' : '#1e293b',
           }}
+          aria-expanded={showFilters}
         >
-          <Filter className="w-4 h-4" />
+          <Filter className="w-4 h-4" aria-hidden="true" />
           {t('filters')}
           {activeFilterCount > 0 && (
             <span className="text-xs rounded-full w-5 h-5 flex items-center justify-center font-black"
@@ -522,8 +544,9 @@ export default function MapPage() {
                 <button
                   className="w-8 h-8 rounded-xl flex items-center justify-center text-foreground/60 hover:text-foreground hover:bg-black/5 transition-all"
                   onClick={() => setShowFilters(false)}
+                  aria-label={t("close", "Close")}
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-4 h-4" aria-hidden="true" />
                 </button>
               </div>
             </div>

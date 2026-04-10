@@ -18,6 +18,22 @@ import {
   ArrowLeft,
   Mail,
   Loader2,
+  Utensils,
+  Home,
+  Shirt,
+  HeartPulse,
+  Droplets,
+  Car,
+  Brain,
+  Scale,
+  GraduationCap,
+  HeartHandshake,
+  Coins,
+  Truck,
+  Package,
+  User,
+  Building2,
+  Briefcase
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { createDraftPost } from "@/lib/auth-api";
@@ -36,25 +52,28 @@ const EXPIRY_PRESETS = [
 
 const PROVIDERS = ["individual", "ngo"] as const;
 
-const PROVIDER_CONFIG = {
-  individual: { emoji: "🙋" },
-  ngo:        { emoji: "🏛️" },
-  business:   { emoji: "🏢" },
-  government: { emoji: "🏛️" },
+const PROVIDER_CONFIG: Record<string, { icon: any }> = {
+  individual: { icon: User },
+  ngo:        { icon: Building2 },
+  business:   { icon: Briefcase },
+  government: { icon: Building2 },
 };
 
-const CATEGORY_ICONS: Record<string, string> = {
-  food: "🍞",
-  shelter: "🏠",
-  clothing: "👕",
-  medical: "💊",
-  water: "💧",
-  transportation: "🚗",
-  psychological: "🧠",
-  legal: "⚖️",
-  education: "📚",
-  volunteers: "🤝",
-  other: "📦",
+const CATEGORY_ICONS: Record<string, any> = {
+  food: Utensils,
+  shelter: Home,
+  clothing: Shirt,
+  medical: HeartPulse,
+  water: Droplets,
+  transportation: Car,
+  psychological: Brain,
+  psychosocial: Brain,
+  legal: Scale,
+  financial: Coins,
+  education: GraduationCap,
+  volunteers: HeartHandshake,
+  logistics: Truck,
+  other: Package,
 };
 
 const fadeVariants = {
@@ -373,7 +392,7 @@ export default function PostOffer() {
                             key={cat}
                             type="button"
                             onClick={() => patch({ category: cat })}
-                            className="py-3.5 px-3 rounded-2xl font-semibold text-sm flex items-center gap-2.5 transition-all duration-150 active:scale-95 border-2"
+                            className="py-3.5 px-3 rounded-2xl font-semibold text-sm flex items-center gap-3 transition-all duration-150 active:scale-95 border-2"
                             style={
                               selected
                                 ? {
@@ -389,7 +408,12 @@ export default function PostOffer() {
                                   }
                             }
                           >
-                            <span className="text-lg leading-none">{CATEGORY_ICONS[cat] ?? "📦"}</span>
+                            <div className={`p-1.5 rounded-lg ${selected ? 'bg-white/20' : 'bg-emerald-50 text-emerald-600'}`}>
+                              {(() => {
+                                const Icon = CATEGORY_ICONS[cat] || Package;
+                                return <Icon className="w-4 h-4" />;
+                              })()}
+                            </div>
                             <span className="truncate">{t(cat)}</span>
                           </button>
                         );
@@ -416,7 +440,12 @@ export default function PostOffer() {
                                   : { background: "#f0fdf4", borderColor: "#bbf7d0", color: "#065f46" }),
                               }}
                             >
-                              <span className="text-3xl leading-none">{PROVIDER_CONFIG[prov].emoji}</span>
+                              <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${selected ? 'bg-white/20' : 'bg-emerald-50'}`}>
+                                {(() => {
+                                  const Icon = PROVIDER_CONFIG[prov as keyof typeof PROVIDER_CONFIG].icon;
+                                  return <Icon className={`w-6 h-6 ${selected ? 'text-white' : 'text-emerald-600'}`} />;
+                                })()}
+                              </div>
                               <div className="flex flex-col">
                                 <span className="font-bold text-lg">{t(`account_${prov}`)}</span>
                                 <span className={`text-xs font-medium ${selected ? "text-emerald-100" : "text-slate-400"}`}>
