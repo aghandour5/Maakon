@@ -147,14 +147,7 @@ export default function WaitlistForm({ lang = "ar" }: WaitlistFormProps) {
 
   // ── Shared input styles ──────────────────────────────────────────────────
   const inputCls =
-    "w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none transition-colors text-slate-900 placeholder:text-slate-400";
-
-  const focusGreen = {
-    onFocus: (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) =>
-      (e.target.style.boxShadow = `0 0 0 2px ${GREEN}`),
-    onBlur: (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) =>
-      (e.target.style.boxShadow = "none"),
-  };
+    "w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#00a651] focus:border-transparent transition-colors text-slate-900 placeholder:text-slate-400";
 
   // ── Success state ────────────────────────────────────────────────────────
   if (status === "success") {
@@ -212,7 +205,6 @@ export default function WaitlistForm({ lang = "ar" }: WaitlistFormProps) {
             className={inputCls}
             placeholder={t.fullNamePlaceholder}
             {...register("full_name")}
-            {...focusGreen}
           />
           {errors.full_name && (
             <p className="text-xs font-medium" style={{ color: RED }}>
@@ -230,7 +222,6 @@ export default function WaitlistForm({ lang = "ar" }: WaitlistFormProps) {
             className={`${inputCls} text-left`}
             placeholder={t.emailPlaceholder}
             {...register("email")}
-            {...focusGreen}
           />
           {errors.email && (
             <p className="text-xs font-medium" style={{ color: RED }}>
@@ -246,7 +237,6 @@ export default function WaitlistForm({ lang = "ar" }: WaitlistFormProps) {
             className={inputCls}
             defaultValue=""
             {...register("role")}
-            {...(focusGreen as any)}
           >
             <option value="" disabled>
               {t.rolePlaceholder}
@@ -271,7 +261,6 @@ export default function WaitlistForm({ lang = "ar" }: WaitlistFormProps) {
             className={inputCls}
             defaultValue="العربية"
             {...register("preferred_language")}
-            {...(focusGreen as any)}
           >
             <option value="العربية">{t.langAr}</option>
             <option value="English">{t.langEn}</option>
@@ -287,14 +276,8 @@ export default function WaitlistForm({ lang = "ar" }: WaitlistFormProps) {
         <button
           type="submit"
           disabled={status === "submitting"}
-          className="w-full py-4 mt-2 px-6 rounded-xl text-white font-bold text-lg transition-all disabled:opacity-70 flex justify-center items-center h-[56px]"
-          style={{ backgroundColor: GREEN, boxShadow: "0 4px 16px rgba(0,166,81,0.25)" }}
-          onMouseEnter={(e) => {
-            if (status !== "submitting") e.currentTarget.style.backgroundColor = "#008a44";
-          }}
-          onMouseLeave={(e) => {
-            if (status !== "submitting") e.currentTarget.style.backgroundColor = GREEN;
-          }}
+          className="w-full py-4 mt-2 px-6 rounded-xl text-white font-bold text-lg transition-all disabled:opacity-70 flex justify-center items-center h-[56px] bg-[#00a651] hover:bg-[#008a44]"
+          style={{ boxShadow: "0 4px 16px rgba(0,166,81,0.25)" }}
         >
           {status === "submitting" ? <Loader2 className="w-5 h-5 animate-spin" /> : t.submit}
         </button>

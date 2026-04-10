@@ -7,7 +7,7 @@ import { MapContainer, TileLayer, Marker, Popup, ZoomControl, useMap } from "rea
 import MarkerClusterGroup from "react-leaflet-cluster";
 import L from "leaflet";
 import { PostDetailsModal } from "@/components/map/PostDetailsModal";
-import { Filter, X, MapPin, ChevronRight, SearchX, Plus, Minus, Maximize, AlertTriangle, LocateFixed } from "lucide-react";
+import { Filter, X, MapPin, ChevronRight, SearchX, Plus, Minus, Maximize, AlertTriangle, LocateFixed, HeartHandshake } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ar, enUS } from "date-fns/locale";
 import { useLocation } from "wouter";
@@ -241,8 +241,8 @@ export default function MapPage() {
 
   const isLoading = isLoadingPosts || isLoadingNgos;
   const isError = isErrorPosts || isErrorNgos;
-  const visibleNgos = (!filters.postType || filters.verifiedNgoOnly) 
-    ? (ngos ?? []).filter(ngo => !filters.verifiedNgoOnly || !!ngo.verifiedAt) 
+  const visibleNgos = (!filters.postType || filters.verifiedNgoOnly)
+    ? (ngos ?? []).filter(ngo => !filters.verifiedNgoOnly || !!ngo.verifiedAt)
     : [];
   const totalResults = (posts?.length ?? 0) + visibleNgos.length;
   const hasResults = totalResults > 0;
@@ -279,7 +279,7 @@ export default function MapPage() {
             {posts?.map(post => {
               if (!post.publicLat || !post.publicLng) return null;
               const isSelected = post.id === selectedPostId;
-              
+
               let icon = isSelected
                 ? (post.postType === 'need' ? icons.selectedNeed : icons.selectedOffer)
                 : (post.postType === 'need' ? icons.need : icons.offer);
@@ -361,9 +361,8 @@ export default function MapPage() {
                 >
                   <Popup className="leaflet-popup-custom">
                     <div className={`p-2 min-w-[160px] ${isRtl ? 'text-right' : 'text-left'}`}>
-                      <span className={`text-[10px] uppercase font-bold mb-1 block ${
-                        isVerified ? 'text-blue-600' : 'text-orange-500'
-                      }`}>
+                      <span className={`text-[10px] uppercase font-bold mb-1 block ${isVerified ? 'text-blue-600' : 'text-orange-500'
+                        }`}>
                         {isVerified ? `✓ ${t('verified_ngo')}` : `● ${t('unverified_ngo', 'Unverified NGO')}`}
                       </span>
                       <strong className="text-sm block mb-1 leading-tight text-foreground">
@@ -377,9 +376,8 @@ export default function MapPage() {
                       )}
                       <button
                         onClick={() => openNgo(ngo)}
-                        className={`w-full text-center py-1.5 rounded-lg text-white text-xs font-semibold ${
-                          isVerified ? 'bg-blue-600' : 'bg-orange-500'
-                        }`}
+                        className={`w-full text-center py-1.5 rounded-lg text-white text-xs font-semibold ${isVerified ? 'bg-blue-600' : 'bg-orange-500'
+                          }`}
                       >
                         {t('view_details')}
                       </button>
@@ -419,7 +417,7 @@ export default function MapPage() {
             <>
               <div className="flex justify-between items-center w-full mb-0.5">
                 <span className="font-black text-gray-600 text-[10px] uppercase tracking-widest">{t('map_legend')}</span>
-                <button 
+                <button
                   onClick={(e) => { e.stopPropagation(); setLegendMinimized(true); }}
                   className="sm:hidden p-1 hover:bg-slate-200/50 rounded-md text-slate-500 transition-colors"
                   aria-label={t("close", "Close")}
@@ -715,25 +713,25 @@ export default function MapPage() {
                     {visibleNgos.map(ngo => {
                       const isVerified = !!ngo.verifiedAt;
                       return (
-                      <button
-                        key={`list-ngo-${ngo.id}`}
-                        className={`flex items-start gap-3 px-4 py-3 hover:bg-secondary/50 text-start transition-colors ${(selectedItem?.type === 'ngo' && selectedItem.item.id === ngo.id) ? 'bg-secondary/60' : ''
-                          }`}
-                        onClick={() => {
-                          openNgo(ngo);
-                          setShowFilters(false);
-                        }}
-                      >
-                        <div className={`w-2.5 h-2.5 rounded-full mt-1.5 shrink-0 ${isVerified ? 'bg-blue-600' : 'bg-orange-500'}`} />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-foreground truncate">{ngo.name}</p>
-                          <p className="text-xs text-muted-foreground truncate">
-                            {t(ngo.governorate)}{ngo.district ? ` • ${t(ngo.district)}` : ''}
-                            {" • "}{isVerified ? t('verified_ngo') : t('unverified_ngo', 'Unverified')}
-                          </p>
-                        </div>
-                        <ChevronRight className={`w-4 h-4 text-muted-foreground shrink-0 mt-1 ${isRtl ? 'rotate-180' : ''}`} />
-                      </button>
+                        <button
+                          key={`list-ngo-${ngo.id}`}
+                          className={`flex items-start gap-3 px-4 py-3 hover:bg-secondary/50 text-start transition-colors ${(selectedItem?.type === 'ngo' && selectedItem.item.id === ngo.id) ? 'bg-secondary/60' : ''
+                            }`}
+                          onClick={() => {
+                            openNgo(ngo);
+                            setShowFilters(false);
+                          }}
+                        >
+                          <div className={`w-2.5 h-2.5 rounded-full mt-1.5 shrink-0 ${isVerified ? 'bg-blue-600' : 'bg-orange-500'}`} />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-foreground truncate">{ngo.name}</p>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {t(ngo.governorate)}{ngo.district ? ` • ${t(ngo.district)}` : ''}
+                              {" • "}{isVerified ? t('verified_ngo') : t('unverified_ngo', 'Unverified')}
+                            </p>
+                          </div>
+                          <ChevronRight className={`w-4 h-4 text-muted-foreground shrink-0 mt-1 ${isRtl ? 'rotate-180' : ''}`} />
+                        </button>
                       );
                     })}
                     {posts?.map(post => (

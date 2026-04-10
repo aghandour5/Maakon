@@ -139,10 +139,8 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row gap-4 items-center justify-center w-full sm:w-auto">
             <a
               href="#waitlist"
-              className="w-full sm:w-auto px-8 py-4 text-white rounded-full font-bold text-lg transition-all"
-              style={{ backgroundColor: "#00a651", boxShadow: "0 8px 24px rgba(0,166,81,0.25)" }}
-              onMouseEnter={e => (e.currentTarget.style.backgroundColor = "#008a44")}
-              onMouseLeave={e => (e.currentTarget.style.backgroundColor = "#00a651")}
+              className="w-full sm:w-auto px-8 py-4 text-white rounded-full font-bold text-lg transition-all bg-[#00a651] hover:bg-[#008a44]"
+              style={{ boxShadow: "0 8px 24px rgba(0,166,81,0.25)" }}
             >
               {t.hero.cta}
             </a>
