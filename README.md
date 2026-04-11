@@ -1,6 +1,6 @@
 # Maakon — معكن
 
-Mobile-first, Arabic-first crisis-response web app for Lebanon.
+Maakon is a mobile-first, Arabic-first crisis-response web application designed to help connect people in need with offers of support during crises in Lebanon. It features mapping, clustering, and bilingual support (Arabic default/RTL, English secondary).
 
 ## Stack
 
@@ -31,15 +31,16 @@ pnpm install
 
 ### 2. Configure environment
 
-Copy and edit the env files:
+Copy the `.env.example` file to create your local `.env` files. The project uses a root-level `.env.example` as a template.
 
-```
-artifacts/api-server/.env   → set DATABASE_URL + PORT
-artifacts/maakon-web/.env   → PORT + BASE_PATH (defaults fine)
-lib/db/.env                 → set DATABASE_URL for drizzle-kit CLI
-```
+Create `.env` files in the following locations and adjust the values as needed:
 
-See `.env.example` at the root for all variables.
+- `artifacts/api-server/.env` → set `DATABASE_URL`, `PORT`, and Supabase keys
+- `artifacts/maakon-web/.env` → set `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `PORT`, `BASE_PATH`, `API_URL`
+- `lib/db/.env` → set `DATABASE_URL` (required for drizzle-kit CLI)
+- `artifacts/waitlist/.env` → set `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+
+> **Note:** Supabase environment variables are required for authentication and storage functionality. You can use placeholder values for local development if you are bypassing auth (`DEV_FIREBASE_BYPASS="true"`).
 
 ### 3. Push DB schema
 
@@ -60,7 +61,7 @@ pnpm --filter @workspace/scripts run seed
 pnpm dev
 ```
 
-Or individually:
+Or run them individually:
 
 ```bash
 pnpm dev:api   # Express API → http://localhost:3001
@@ -69,25 +70,26 @@ pnpm dev:web   # Vite frontend → http://localhost:5173
 
 ## Project Structure
 
-```
+```text
 Maakon/
 ├── artifacts/
-│   ├── api-server/      # Express 5 API
-│   └── maakon-web/      # React + Vite frontend
+│   ├── api-server/       # Express 5 API
+│   ├── maakon-web/       # React + Vite frontend
+│   └── waitlist/         # Next.js Waitlist page
 ├── lib/
 │   ├── api-client-react/ # Generated React Query hooks (from OpenAPI)
 │   ├── api-spec/         # OpenAPI spec + Orval codegen config
 │   ├── api-zod/          # Generated Zod schemas
-│   └── db/              # Drizzle ORM schema + DB connection
-├── scripts/             # DB migrate + seed scripts
-├── .env.example         # All required env variables documented
+│   └── db/               # Drizzle ORM schema + DB connection
+├── scripts/              # DB migrate + seed scripts
+├── .env.example          # All required env variables documented
 ├── pnpm-workspace.yaml
 └── tsconfig.base.json
 ```
 
 ## API Routes
 
-All under `/api`:
+All user-facing routes are under `/api`:
 
 | Method | Path | Description |
 |--------|------|-------------|
@@ -99,7 +101,7 @@ All under `/api`:
 | POST | `/api/reports` | Report a post |
 | GET | `/api/metadata` | Filter options |
 
-Admin (Requires `admin` role and active session):
+**Admin Routes** (Requires `admin` role and active session):
 
 | Method | Path |
 |--------|------|
@@ -118,7 +120,7 @@ pnpm --filter @workspace/scripts run seed     # seed sample data
 
 ## PostgreSQL via Docker (optional)
 
-If you don't have PostgreSQL installed:
+If you don't have PostgreSQL installed, you can quickly spin one up using Docker:
 
 ```bash
 docker run -d \
@@ -130,11 +132,11 @@ docker run -d \
   postgres:16-alpine
 ```
 
-Then use `postgresql://postgres:postgres@localhost:5432/maakon` as `DATABASE_URL`.
+Then use `postgresql://postgres:postgres@localhost:5432/maakon` as your `DATABASE_URL`.
 
 ## Codegen (API client)
 
-After changing the OpenAPI spec:
+After making changes to the OpenAPI spec, regenerate the API client:
 
 ```bash
 pnpm --filter @workspace/api-spec run codegen
