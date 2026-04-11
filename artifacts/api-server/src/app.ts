@@ -48,6 +48,8 @@ function isAllowedOrigin(req: Request, origin: string): boolean {
 }
 
 const app: Express = express();
+const jsonBodyLimit = process.env["JSON_BODY_LIMIT"] ?? "100kb";
+const urlencodedBodyLimit = process.env["URLENCODED_BODY_LIMIT"] ?? "100kb";
 
 // SECURITY: Ensure accurate client IP identification for rate limiting and audit logging.
 // The API server is behind a reverse proxy/load balancer in production.
@@ -89,8 +91,8 @@ app.use(
     });
   }),
 );
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: jsonBodyLimit }));
+app.use(express.urlencoded({ extended: true, limit: urlencodedBodyLimit, parameterLimit: 1000 }));
 app.use(cookieParser());
 
 app.use("/api", router);
@@ -99,11 +101,19 @@ app.use((err: unknown, req: Request, res: Response, _next: NextFunction) => {
   const parseError = err as SyntaxError & {
     status?: number;
     body?: unknown;
+    type?: string;
   };
   const isJsonParseError =
     err instanceof SyntaxError &&
     parseError.status === 400 &&
     "body" in parseError;
+  const isPayloadTooLarge =
+    parseError.status === 413 || parseError.type === "entity.too.large";
+
+  if (isPayloadTooLarge) {
+    res.status(413).json({ error: "Request body too large" });
+    return;
+  }
 
   if (isJsonParseError) {
     res.status(400).json({ error: "Invalid JSON body" });

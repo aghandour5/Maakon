@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Nav from "@/components/Nav";
 import WaitlistForm from "@/components/WaitlistForm";
-import { HandHeart, ShieldCheck, Smartphone, Users, HelpCircle, HeartHandshake, Shield } from "lucide-react";
+import { HandHeart, ShieldCheck, Smartphone, Users, HelpCircle, HeartHandshake, KeyRound } from "lucide-react"; // These imports are used to include various icons from the Lucide icon library, which are used in the UI to visually represent different features and sections of the application.
 
 const content = {
   ar: {
@@ -160,8 +160,8 @@ export default function Home() {
               <h2 className="text-3xl md:text-4xl font-bold text-slate-900">{t.features.title}</h2>
               <p className="text-slate-500 mt-4 max-w-2xl mx-auto">{t.features.sub}</p>
             </div>
-            <div className="grid md:grid-cols-3 gap-8">
-              {t.features.cards.map((card, i) => {
+            <div className="grid md:grid-cols-3 gap-8"> // This div creates a grid layout for the feature cards. On medium screens and above, it will display three columns, while on smaller screens it will stack the cards vertically. The gap-8 class adds spacing between the grid items.
+              {t.features.cards.map((card, i) => { // i is the index of the current card in the features array. It is used to select the corresponding icon from the featureIcons array and to set a unique key for each card component.
                 const Icon = featureIcons[i];
                 return (
                   <div key={i} className="bg-slate-50 rounded-3xl p-8 border border-slate-100 flex flex-col items-center text-center">
@@ -192,7 +192,7 @@ export default function Home() {
                 {t.trust.sub}
               </p>
               <ul className="space-y-4 pt-4">
-                {[ShieldCheck, Shield, Smartphone].map((Icon, i) => (
+                {[ShieldCheck, KeyRound, Smartphone].map((Icon, i) => (
                   <li key={i} className="flex gap-4 items-center">
                     <div
                       className="p-2 rounded-full flex-shrink-0"

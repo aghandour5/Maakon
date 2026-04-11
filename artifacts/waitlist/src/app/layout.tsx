@@ -1,8 +1,8 @@
-import type { Metadata } from "next";
+import type { Metadata } from "next"; // next 13.4+ supports metadata export for better SEO and performance. This import is used to define the metadata for the page, such as title and description.
 import { Cairo } from "next/font/google";
 import "./globals.css";
-import { SpeedInsights } from "@vercel/speed-insights/next";
-import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next"; // This import is used to include Vercel's Speed Insights component, which helps analyze and optimize the performance of the application.
+import { Analytics } from "@vercel/analytics/next"; // This import is used to include Vercel's Analytics component, which helps track user interactions and gather insights about the application's usage.
 
 const cairo = Cairo({
   subsets: ["arabic"],
@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   description: "معكن تساعد الناس في الوصول إلى الدعم بشكل أسرع. انضم إلى قائمة الانتظار الآن.",
 };
 
-export default function RootLayout({
+export default function RootLayout({ // This is the root layout component for the Next.js application. It defines the overall structure of the HTML document, including the language, direction, and styling. It also includes the Speed Insights and Analytics components to enhance performance and track user interactions.
   children,
 }: Readonly<{
   children: React.ReactNode;

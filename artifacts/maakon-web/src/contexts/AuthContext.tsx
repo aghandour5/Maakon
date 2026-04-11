@@ -7,14 +7,12 @@ import { supabase } from "@/lib/supabase";
 export interface AuthUser {
   id: number;
   email: string | null;
-  phone: string | null;
   displayName: string | null;
   accountType: "individual" | "ngo";
   role: "user" | "admin" | "moderator";
   avatarUrl: string | null;
   onboardingComplete: boolean;
   emailVerified: boolean;
-  whatsappVerified: boolean;
   ngoVerificationStatus: string | null;
   mfaEnabled: boolean;
 }

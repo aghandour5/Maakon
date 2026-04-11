@@ -19,9 +19,6 @@ export const usersTable = pgTable("users", {
   // Email is now the primary auth identifier
   email: text("email").unique(),
 
-  // Phone is optional — collected during NGO WhatsApp verification
-  phone: text("phone").unique(),
-
   // Profile fields
   displayName: text("display_name"),
   avatarUrl: text("avatar_url"),
@@ -34,7 +31,6 @@ export const usersTable = pgTable("users", {
 
   // 3-layer trust model
   emailVerified: boolean("email_verified").default(false).notNull(),
-  whatsappVerified: boolean("whatsapp_verified").default(false).notNull(),
   ngoVerificationStatus: userNgoVerificationStatusEnum("ngo_verification_status").default("pending"),
   
   // Multi-Factor Authentication (Admins)

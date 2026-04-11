@@ -1,4 +1,4 @@
-"use client";
+"use client"; // This directive indicates that the component should be rendered on the client side, allowing for interactivity and state management using hooks like useState.
 
 interface NavProps {
   lang: "ar" | "en";

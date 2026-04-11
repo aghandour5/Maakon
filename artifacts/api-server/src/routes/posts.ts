@@ -12,9 +12,6 @@ import * as apiZod from "@workspace/api-zod";
 import { getPublicCoordinates } from "../lib/post-location";
 
 const router: IRouter = Router();
-const ngosTableWithUserId = ngosTable as typeof ngosTable & {
-  userId: unknown;
-};
 const UpdatePostBody = (apiZod as unknown as {
   UpdatePostBody: { safeParse: (input: unknown) => { success: boolean; data?: any } };
 }).UpdatePostBody;
@@ -134,10 +131,10 @@ router.get("/posts", async (req, res) => {
   const rows = await db
     .select({
       post: postsTable,
-      ngoId: ngosTableWithUserId.id,
+      ngoId: ngosTable.id,
     })
     .from(postsTable)
-    .leftJoin(ngosTableWithUserId, eq(postsTable.userId, ngosTableWithUserId.userId as any))
+    .leftJoin(ngosTable, eq(postsTable.userId, ngosTable.userId))
     .where(filters.length > 0 ? and(...filters) : undefined)
     .orderBy(postsTable.createdAt);
 
@@ -189,7 +186,7 @@ router.post("/posts", requireAuth, async (req, res) => {
     let [ngo] = await db
       .select()
       .from(ngosTable)
-      .where(eq(ngosTableWithUserId.userId as never, req.user!.id))
+      .where(eq(ngosTable.userId, req.user!.id))
       .limit(1);
 
     if (!ngo) {
@@ -208,10 +205,10 @@ router.post("/posts", requireAuth, async (req, res) => {
         } as any) // Cast required due to inference limits
         .returning();
       
-      // Link userId using the locally defined type
+      // Link the new NGO to the current user
       await db
-        .update(ngosTableWithUserId)
-        .set({ userId: req.user!.id } as any)
+        .update(ngosTable)
+        .set({ userId: req.user!.id })
         .where(eq(ngosTable.id, newNgo.id));
       ngo = newNgo;
     }
@@ -263,10 +260,10 @@ router.get("/posts/me", requireAuth, async (req, res) => {
   const rows = await db
     .select({
       post: postsTable,
-      ngoId: ngosTableWithUserId.id,
+      ngoId: ngosTable.id,
     })
     .from(postsTable)
-    .leftJoin(ngosTableWithUserId, eq(postsTable.userId, ngosTableWithUserId.userId as any))
+    .leftJoin(ngosTable, eq(postsTable.userId, ngosTable.userId))
     .where(eq(postsTable.userId, req.user!.id))
     .orderBy(desc(postsTable.createdAt));
 
@@ -336,10 +333,10 @@ router.get("/posts/:id", async (req, res) => {
   const [row] = await db
     .select({
       post: postsTable,
-      ngoId: ngosTableWithUserId.id,
+      ngoId: ngosTable.id,
     })
     .from(postsTable)
-    .leftJoin(ngosTableWithUserId, eq(postsTable.userId, ngosTableWithUserId.userId as any))
+    .leftJoin(ngosTable, eq(postsTable.userId, ngosTable.userId))
     .where(eq(postsTable.id, params.data.id))
     .limit(1);
 

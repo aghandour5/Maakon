@@ -2,8 +2,6 @@ import type {
   FirebaseLoginBodyParams,
   CompleteProfileBodyParams,
   CompleteNgoProfileBodyParams,
-  SendWhatsAppOtpBodyParams,
-  VerifyWhatsAppOtpBodyParams,
   CreateDraftPostBodyParams,
 } from "@workspace/api-zod";
 
@@ -67,30 +65,6 @@ export async function createDraftPost(body: CreateDraftPostBodyParams) {
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Failed to create draft post");
   return data as { draftToken: string; postId: number };
-}
-
-/** Send WhatsApp OTP for NGO verification */
-export async function sendWhatsAppOtp(body: SendWhatsAppOtpBodyParams) {
-  const res = await fetch("/api/auth/send-whatsapp-otp", {
-    method: "POST",
-    headers: baseHeaders,
-    body: JSON.stringify(body),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Failed to send WhatsApp OTP");
-  return data;
-}
-
-/** Verify WhatsApp OTP for NGO verification */
-export async function verifyWhatsAppOtp(body: VerifyWhatsAppOtpBodyParams) {
-  const res = await fetch("/api/auth/verify-whatsapp-otp", {
-    method: "POST",
-    headers: baseHeaders,
-    body: JSON.stringify(body),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Failed to verify WhatsApp OTP");
-  return data;
 }
 
 export async function completeProfile(body: CompleteProfileBodyParams) {

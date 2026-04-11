@@ -5,15 +5,13 @@ import { usersTable, postsTable, ngosTable, sessionsTable } from "@workspace/db/
 import { eq, and } from "drizzle-orm";
 import {
   FirebaseLoginBody,
-  SendWhatsAppOtpBody,
-  VerifyWhatsAppOtpBody,
   CompleteProfileBody,
   CompleteNgoProfileBody,
   CreateDraftPostBody,
 } from "@workspace/api-zod";
 
 import { verifySupabaseToken } from "../lib/supabase-admin";
-import { sendWhatsAppOtp, verifyWhatsAppOtp } from "../lib/whatsapp-otp";
+
 import {
   createSession,
   destroySession,
@@ -26,38 +24,28 @@ import { rateLimit as customRateLimit } from "../middlewares/rateLimit";
 import { rateLimit as expressRateLimit } from "express-rate-limit";
 import { logger } from "../lib/logger";
 import { getPublicCoordinates } from "../lib/post-location";
-import jwt from "jsonwebtoken";
 import { generateSecret, generateURI, verify as verifyTotp } from "otplib";
 import qrcode from "qrcode";
-
-const MFA_JWT_SECRET = process.env.MFA_JWT_SECRET || "default_dev_mfa_secret_do_not_use_in_prod_1234";
 
 const router = Router();
 const usersTableWithSupabase = usersTable as typeof usersTable & {
   supabaseUid: unknown;
-};
-const ngosTableWithUserId = ngosTable as typeof ngosTable & {
-  userId: unknown;
 };
 const loginLimiter = expressRateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
   message: { error: "Too many login attempts, please try again later." },
 });
-const sendOtpLimiter = customRateLimit(
-  15 * 60 * 1000,
-  5,
-  "Too many OTP requests, please try again later.",
-);
-const verifyOtpLimiter = customRateLimit(
-  15 * 60 * 1000,
-  10,
-  "Too many verification attempts, please try again later.",
-);
+
 const mfaLimiter = customRateLimit(
   15 * 60 * 1000,
   10,
   "Too many MFA attempts, please try again later.",
+);
+const draftPostLimiter = customRateLimit(
+  10 * 60 * 1000,
+  20,
+  "Too many draft post submissions, please try again later.",
 );
 
 // ── Supabase Email-Link Login ─────────────────────────────────────────────────
@@ -169,7 +157,6 @@ router.post("/auth/supabase-login", loginLimiter, async (req: Request, res: Resp
       role: user.role,
       onboardingComplete: user.onboardingComplete,
       emailVerified: user.emailVerified,
-      whatsappVerified: user.whatsappVerified,
       ngoVerificationStatus: user.ngoVerificationStatus,
       mfaEnabled: user.mfaEnabled,
     },
@@ -278,7 +265,7 @@ router.post("/auth/mfa-challenge", requireAuth, mfaLimiter, async (req: Request,
 
 // ── Draft Post Creation (unauthenticated) ─────────────────────────────────────
 
-router.post("/posts/draft", async (req: Request, res: Response) => {
+router.post("/posts/draft", draftPostLimiter, async (req: Request, res: Response) => {
   const parsed = CreateDraftPostBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Validation failed", details: String(parsed.error) });
@@ -331,66 +318,6 @@ router.post("/posts/draft", async (req: Request, res: Response) => {
   res.status(201).json({ draftToken, postId: post.id });
 });
 
-// ── WhatsApp OTP (NGO verification only) ──────────────────────────────────────
-
-router.post("/auth/send-whatsapp-otp", requireAuth, sendOtpLimiter, async (req: Request, res: Response) => {
-  const user = req.user!;
-
-  if (user.accountType !== "ngo") {
-    res.status(403).json({ error: "WhatsApp verification is only available for NGO accounts" });
-    return;
-  }
-
-  const parsed = SendWhatsAppOtpBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: "Invalid phone number" });
-    return;
-  }
-
-  try {
-    await sendWhatsAppOtp(parsed.data.phone);
-    res.json({ success: true });
-  } catch (err) {
-    logger.error({ err }, "Failed to send WhatsApp OTP");
-    res.status(500).json({ error: "Failed to send WhatsApp verification" });
-  }
-});
-
-router.post("/auth/verify-whatsapp-otp", requireAuth, verifyOtpLimiter, async (req: Request, res: Response) => {
-  const user = req.user!;
-
-  if (user.accountType !== "ngo") {
-    res.status(403).json({ error: "WhatsApp verification is only available for NGO accounts" });
-    return;
-  }
-
-  const parsed = VerifyWhatsAppOtpBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: "Invalid parameters" });
-    return;
-  }
-
-  try {
-    const isValid = await verifyWhatsAppOtp(parsed.data.phone, parsed.data.code);
-    if (!isValid) {
-      res.status(401).json({ error: "Invalid verification code" });
-      return;
-    }
-
-    // Mark user as WhatsApp-verified and store their phone
-    await db.update(usersTable).set({
-      phone: parsed.data.phone,
-      whatsappVerified: true,
-      updatedAt: new Date(),
-    }).where(eq(usersTable.id, user.id));
-
-    res.json({ success: true, whatsappVerified: true });
-  } catch (err) {
-    logger.error({ err }, "WhatsApp verification check failed");
-    res.status(500).json({ error: "Verification check failed" });
-  }
-});
-
 // ── Profile Completion ────────────────────────────────────────────────────────
 
 router.post("/auth/complete-profile", requireAuth, async (req: Request, res: Response) => {
@@ -426,7 +353,7 @@ router.post("/auth/complete-ngo-profile", requireAuth, async (req: Request, res:
 
   // Ensure the user hasn't already created an NGO profile
   const existing = await db.select().from(ngosTable).where(
-    eq(ngosTableWithUserId.userId as never, user.id)
+    eq(ngosTable.userId, user.id)
   ).limit(1);
 
   if (existing.length > 0) {
@@ -475,14 +402,12 @@ router.get("/auth/me", requireAuth, async (req: Request, res: Response) => {
     user: {
       id: user.id,
       email: user.email,
-      phone: user.phone,
       displayName: user.displayName,
       accountType: user.accountType,
       role: user.role,
       avatarUrl: user.avatarUrl,
       onboardingComplete: user.onboardingComplete,
       emailVerified: user.emailVerified,
-      whatsappVerified: user.whatsappVerified,
       ngoVerificationStatus: user.ngoVerificationStatus,
       mfaEnabled: user.mfaEnabled,
     }

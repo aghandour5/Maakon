@@ -5,11 +5,11 @@ import AccountTypeStep from "./AccountTypeStep";
 import IndividualProfileStep from "./IndividualProfileStep";
 import NgoProfileStep from "./NgoProfileStep";
 import EmailStep from "./EmailStep";
-import WhatsAppOtpStep from "./WhatsAppOtpStep";
+
 import { useTranslation } from "react-i18next";
 import { setupMfa, verifyMfa, challengeMfa, fetchCurrentUser } from "@/lib/auth-api";
 
-export type AuthStep = "email" | "accountType" | "checkEmail" | "individualProfile" | "ngoProfile" | "whatsappOtp" | "mfaSetup" | "mfaChallenge";
+export type AuthStep = "email" | "accountType" | "checkEmail" | "individualProfile" | "ngoProfile" | "mfaSetup" | "mfaChallenge";
 export type AccountType = "individual" | "ngo";
 
 export default function AuthModal() {
@@ -32,7 +32,7 @@ export default function AuthModal() {
   useEffect(() => {
     if (needsOnboarding) {
       const targetStep = user!.accountType === "ngo" ? "ngoProfile" : "individualProfile";
-      if (step !== targetStep && step !== "whatsappOtp") {
+      if (step !== targetStep) {
         setStep(targetStep);
       }
     }
@@ -96,7 +96,6 @@ export default function AuthModal() {
       case "checkEmail": return t("auth_title_check_email", "Check Your Email");
       case "individualProfile": return t("auth_title_profile");
       case "ngoProfile": return t("auth_title_ngo");
-      case "whatsappOtp": return t("auth_title_whatsapp", "Verify WhatsApp");
       case "mfaSetup": return "Set Up Two-Factor Authentication";
       case "mfaChallenge": return "Two-Factor Authentication";
       default: return "";
@@ -166,15 +165,10 @@ export default function AuthModal() {
 
           {step === "ngoProfile" && (
             <NgoProfileStep
-              onComplete={() => setStep("whatsappOtp")}
-            />
-          )}
-
-          {step === "whatsappOtp" && (
-            <WhatsAppOtpStep
               onComplete={closeAuthModal}
             />
           )}
+
 
           {/* MFA Setup — Admin scans QR code then enters first code to activate */}
           {step === "mfaSetup" && (

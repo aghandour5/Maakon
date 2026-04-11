@@ -40,6 +40,11 @@ function isReportStatus(v: unknown): v is ReportStatus {
   return typeof v === "string" && (VALID_REPORT_STATUSES as string[]).includes(v);
 }
 
+function normalizeCount(value: unknown): number {
+  const count = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(count) ? count : 0;
+}
+
 // Admin post view — adds exactAddressPrivate for moderation context
 // privateLat / privateLng are NEVER exposed
 function toAdminPost(post: typeof postsTable.$inferSelect) {
@@ -72,34 +77,81 @@ function toAdminPost(post: typeof postsTable.$inferSelect) {
 
 router.get("/admin/stats", async (_req, res) => {
   try {
-    const postRows = await db.select({ status: postsTable.status }).from(postsTable);
-    const reportRows = await db.select({ status: reportsTable.status }).from(reportsTable);
-    const ngoRows = await db.select({ verifiedAt: ngosTable.verifiedAt }).from(ngosTable);
+    const [postRowsByStatus, reportRowsByStatus, ngoAggregates] = await Promise.all([
+      db
+        .select({
+          status: postsTable.status,
+          count: sql<number>`count(*)::int`,
+        })
+        .from(postsTable)
+        .groupBy(postsTable.status),
+      db
+        .select({
+          status: reportsTable.status,
+          count: sql<number>`count(*)::int`,
+        })
+        .from(reportsTable)
+        .groupBy(reportsTable.status),
+      db
+        .select({
+          total: sql<number>`count(*)::int`,
+          verified: sql<number>`count(*) FILTER (WHERE ${ngosTable.verifiedAt} IS NOT NULL)::int`,
+          unverified: sql<number>`count(*) FILTER (WHERE ${ngosTable.verifiedAt} IS NULL)::int`,
+        })
+        .from(ngosTable),
+    ]);
 
-    const cnt = <T extends { status: string }>(rows: T[], val: string) =>
-      rows.filter((r) => r.status === val).length;
+    const postStatusCounts: Record<PostStatus, number> = {
+      pending: 0,
+      active: 0,
+      hidden: 0,
+      resolved: 0,
+      expired: 0,
+      removed: 0,
+    };
+    for (const row of postRowsByStatus) {
+      if (isPostStatus(row.status)) {
+        postStatusCounts[row.status] = normalizeCount(row.count);
+      }
+    }
+
+    const reportStatusCounts: Record<ReportStatus, number> = {
+      pending: 0,
+      reviewed: 0,
+      dismissed: 0,
+      actioned: 0,
+    };
+    for (const row of reportRowsByStatus) {
+      if (isReportStatus(row.status)) {
+        reportStatusCounts[row.status] = normalizeCount(row.count);
+      }
+    }
+
+    const ngoCounts = ngoAggregates[0] ?? { total: 0, verified: 0, unverified: 0 };
+    const totalPosts = Object.values(postStatusCounts).reduce((sum, value) => sum + value, 0);
+    const totalReports = Object.values(reportStatusCounts).reduce((sum, value) => sum + value, 0);
 
     res.json({
       posts: {
-        total: postRows.length,
-        active: cnt(postRows, "active"),
-        hidden: cnt(postRows, "hidden"),
-        resolved: cnt(postRows, "resolved"),
-        expired: cnt(postRows, "expired"),
-        pending: cnt(postRows, "pending"),
-        removed: cnt(postRows, "removed"),
+        total: totalPosts,
+        active: postStatusCounts.active,
+        hidden: postStatusCounts.hidden,
+        resolved: postStatusCounts.resolved,
+        expired: postStatusCounts.expired,
+        pending: postStatusCounts.pending,
+        removed: postStatusCounts.removed,
       },
       reports: {
-        total: reportRows.length,
-        open: cnt(reportRows, "pending"),
-        reviewed: cnt(reportRows, "reviewed"),
-        dismissed: cnt(reportRows, "dismissed"),
-        actioned: cnt(reportRows, "actioned"),
+        total: totalReports,
+        open: reportStatusCounts.pending,
+        reviewed: reportStatusCounts.reviewed,
+        dismissed: reportStatusCounts.dismissed,
+        actioned: reportStatusCounts.actioned,
       },
       ngos: {
-        total: ngoRows.length,
-        verified: ngoRows.filter((n) => n.verifiedAt !== null).length,
-        unverified: ngoRows.filter((n) => n.verifiedAt === null).length,
+        total: normalizeCount(ngoCounts.total),
+        verified: normalizeCount(ngoCounts.verified),
+        unverified: normalizeCount(ngoCounts.unverified),
       },
     });
   } catch (err) {
