@@ -160,7 +160,7 @@ export default function Home() {
               <h2 className="text-3xl md:text-4xl font-bold text-slate-900">{t.features.title}</h2>
               <p className="text-slate-500 mt-4 max-w-2xl mx-auto">{t.features.sub}</p>
             </div>
-            <div className="grid md:grid-cols-3 gap-8"> // This div creates a grid layout for the feature cards. On medium screens and above, it will display three columns, while on smaller screens it will stack the cards vertically. The gap-8 class adds spacing between the grid items.
+            <div className="grid md:grid-cols-3 gap-8">
               {t.features.cards.map((card, i) => { // i is the index of the current card in the features array. It is used to select the corresponding icon from the featureIcons array and to set a unique key for each card component.
                 const Icon = featureIcons[i];
                 return (
