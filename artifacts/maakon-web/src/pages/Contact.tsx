@@ -184,11 +184,12 @@ export default function Contact() {
 
               {/* Name */}
               <div>
-                <label className="flex items-center text-start text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                <label htmlFor="name" className="flex items-center text-start text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
                   <User className="w-3.5 h-3.5 inline-block me-1 -mt-0.5" aria-hidden="true" />
                   {t("name_optional")}
                 </label>
                 <input
+                  id="name"
                   type="text"
                   className="w-full px-4 py-3.5 rounded-2xl bg-slate-50 border-2 border-slate-200 focus:border-red-400 focus:ring-4 focus:ring-red-400/10 transition-all outline-none text-sm font-medium placeholder:text-gray-400 text-start"
                   placeholder={t("your_name")}
@@ -199,11 +200,12 @@ export default function Contact() {
 
               {/* Email */}
               <div>
-                <label className="flex items-center text-start text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                <label htmlFor="email" className="flex items-center text-start text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
                   <Mail className="w-3.5 h-3.5 inline-block me-1 -mt-0.5" aria-hidden="true" />
                   {t("email_optional")}
                 </label>
                 <input
+                  id="email"
                   type="email"
                   dir="ltr"
                   className="w-full text-start px-4 py-3.5 rounded-2xl bg-slate-50 border-2 border-slate-200 focus:border-blue-400 focus:ring-4 focus:ring-blue-400/10 transition-all outline-none text-sm font-medium placeholder:text-gray-400"
@@ -215,11 +217,12 @@ export default function Contact() {
 
               {/* Message */}
               <div>
-                <label className="flex items-center text-start text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                <label htmlFor="message" className="flex items-center text-start text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
                   <MessageSquare className="w-3.5 h-3.5 inline-block me-1 -mt-0.5" aria-hidden="true" />
                   {t("your_message")}
                 </label>
                 <textarea
+                  id="message"
                   rows={5}
                   className="w-full px-4 py-3.5 rounded-2xl bg-slate-50 border-2 border-slate-200 focus:border-blue-400 focus:ring-4 focus:ring-blue-400/10 transition-all outline-none resize-none text-sm font-medium placeholder:text-gray-400 text-start"
                   placeholder={t("write_feedback_here")}
