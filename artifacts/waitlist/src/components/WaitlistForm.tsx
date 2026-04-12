@@ -25,7 +25,7 @@ const labels = {
     rolePlaceholder: "اختر صفتك...",
     roleOptions: [
       { value: "أبحث عن مساعدة", label: "أبحث عن مساعدة" },
-      { value: "أريد المساعدة", label: "أريد المساعدة" },
+      { value: "أريد أن أساعد", label: "أريد أن أساعد" },
       { value: "جمعية / منظمة", label: "جمعية / منظمة" },
       { value: "متطوع", label: "متطوع" },
     ],
