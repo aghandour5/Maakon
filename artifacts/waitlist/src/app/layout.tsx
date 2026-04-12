@@ -13,6 +13,11 @@ const cairo = Cairo({
 export const metadata: Metadata = {
   title: "معكن - قريبًا",
   description: "معكن تساعد الناس في الوصول إلى الدعم بشكل أسرع. انضم إلى قائمة الانتظار الآن.",
+  icons: {
+    icon: "/logo.svg",
+    shortcut: "/logo.svg",
+    apple: "/logo.svg",
+  },
 };
 
 export default function RootLayout({ // This is the root layout component for the Next.js application. It defines the overall structure of the HTML document, including the language, direction, and styling. It also includes the Speed Insights and Analytics components to enhance performance and track user interactions.
