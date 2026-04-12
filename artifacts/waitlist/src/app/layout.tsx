@@ -7,7 +7,7 @@ import { Analytics } from "@vercel/analytics/next"; // This import is used to in
 const cairo = Cairo({
   subsets: ["arabic"],
   variable: "--font-cairo",
-  weight: ["300", "400", "500", "600", "700"],
+  weight: ["300", "400", "500", "600", "700", "800", "900"],
 });
 
 export const metadata: Metadata = {
