@@ -19,6 +19,12 @@ import {
   getSessionCookieOptions,
   getSessionClearCookieOptions,
 } from "../lib/session";
+import {
+  CSRF_COOKIE_NAME,
+  createCsrfToken,
+  getCsrfClearCookieOptions,
+  getCsrfCookieOptions,
+} from "../lib/csrf";
 import { requireAuth } from "../middlewares/auth";
 import { rateLimit as customRateLimit } from "../middlewares/rateLimit";
 import { rateLimit as expressRateLimit } from "express-rate-limit";
@@ -144,8 +150,10 @@ router.post("/auth/supabase-login", loginLimiter, async (req: Request, res: Resp
 
   // 3. Create session (Always, even for admins)
   const token = await createSession(user.id, req.ip, req.headers["user-agent"]);
+  const csrfToken = createCsrfToken();
 
   res.cookie(SESSION_COOKIE_NAME, token, getSessionCookieOptions());
+  res.cookie(CSRF_COOKIE_NAME, csrfToken, getCsrfCookieOptions());
 
   res.json({
     status: "success",
@@ -393,6 +401,7 @@ router.post("/auth/logout", requireAuth, async (req: Request, res: Response) => 
     await destroySession(token);
   }
   res.clearCookie(SESSION_COOKIE_NAME, getSessionClearCookieOptions());
+  res.clearCookie(CSRF_COOKIE_NAME, getCsrfClearCookieOptions());
   res.json({ success: true });
 });
 

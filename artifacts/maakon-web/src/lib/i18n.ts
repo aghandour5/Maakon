@@ -1,15 +1,15 @@
 import i18n from "i18next";
-import { initReactI18next } from "react-i18next";
-import LanguageDetector from "i18next-browser-languagedetector";
+import { initReactI18next } from "react-i18next"; // we use react-i18next to manage translations in our React app. It provides hooks and components to easily translate text and handle language changes.
+import LanguageDetector from "i18next-browser-languagedetector"; // we use i18next-browser-languagedetector to automatically detect the user's language based on their browser settings. This allows us to serve the appropriate translations without requiring the user to manually select their language.
 
 const resources = {
   ar: {
     translation: {
       app_name: "معكن",
       home_subtitle: "تطبيق الاستجابة للأزمات في لبنان",
-      home_tagline: "<strong>ابحث</strong> عن مساعدة. <strong>قدّم</strong> مساعدة. <span class=\"block mt-1 sm:mt-2 pb-2 text-3xl sm:text-4xl lg:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-emerald-200\">ادعم لبنان.</span>",
+      home_tagline: "<strong>ابحث</strong> عن مساعدة. <strong>قدّم</strong> مساعدة. <span class=\"block mt-0.5 sm:mt-1 pb-2 text-3xl sm:text-4xl lg:text-5xl font-black font-arabic\" style=\"color: #00A651; text-shadow: 0 1px 4px rgba(0,0,0,0.15)\">ادعم لبنان.</span>",
       i_need_help: "أحتاج مساعدة",
-      i_want_to_help: "أريد المساعدة",
+      i_want_to_help: "أريد أن أساعد",
       view_map: "عرض الخريطة",
       
       // Navigation
@@ -300,7 +300,7 @@ const resources = {
       error: "خطأ",
       feedback_error: "حدث خطأ أثناء إرسال الملاحظات. يرجى المحاولة مرة أخرى.",
       
-      // Regions (Exact Match mapping from English response)
+      // Regions
       "Beirut": "بيروت",
       "Mount Lebanon": "جبل لبنان",
       "North Lebanon": "لبنان الشمالي",
@@ -343,7 +343,7 @@ const resources = {
     translation: {
       app_name: "Maakon",
       home_subtitle: "Lebanon Crisis Response App",
-      home_tagline: "<strong>Find</strong> help. <strong>Offer</strong> help. <span class=\"block mt-1 sm:mt-2 pb-2 text-3xl sm:text-4xl lg:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-emerald-200\">Support Lebanon.</span>",
+      home_tagline: "<strong>Find</strong> help. <strong>Offer</strong> help. <span class=\"block mt-0.5 sm:mt-1 pb-2 text-3xl sm:text-4xl lg:text-5xl font-black font-arabic\" style=\"color: #00A651; text-shadow: 0 1px 4px rgba(0,0,0,0.15)\">Support Lebanon.</span>",
       i_need_help: "I Need Help",
       i_want_to_help: "I Want to Help",
       view_map: "View Map",
@@ -647,8 +647,8 @@ i18n
     }
   });
 
-document.documentElement.dir = i18n.dir();
-document.documentElement.lang = i18n.language;
+document.documentElement.dir = i18n.dir(); // Set the initial text direction based on the detected language
+document.documentElement.lang = i18n.language; // Set the initial language attribute on the HTML element
 
 i18n.on('languageChanged', (lng) => {
   document.documentElement.dir = i18n.dir(lng);

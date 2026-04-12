@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useToast } from "@/hooks/use-toast";
 import { TopNav } from "@/components/layout/TopNav";
 import { Link } from "wouter";
+import { withCsrfHeader } from "@/lib/csrf";
 import {
   Loader2, Trash2, Eye, EyeOff, CheckCircle2, Clock,
   MapPin, AlertTriangle, Edit2, Plus, ClipboardList,
@@ -36,9 +37,13 @@ interface MyPost {
 const API = "/api";
 
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
+  const method = options?.method ?? "GET";
   const res = await fetch(`${API}${path}`, {
-    headers: { "Content-Type": "application/json" },
     ...options,
+    headers: withCsrfHeader(method, {
+      "Content-Type": "application/json",
+      ...(options?.headers ?? {}),
+    }),
   });
   if (!res.ok) throw new Error(`API error ${res.status}`);
   if (res.status === 204) return undefined as unknown as T;

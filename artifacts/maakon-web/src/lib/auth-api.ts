@@ -4,6 +4,7 @@ import type {
   CompleteNgoProfileBodyParams,
   CreateDraftPostBodyParams,
 } from "@workspace/api-zod";
+import { withCsrfHeader } from "./csrf";
 
 // Isolated fetch calls for auth — always include credentials for cookies.
 
@@ -11,11 +12,24 @@ const baseHeaders = {
   "Content-Type": "application/json",
 };
 
+function buildHeaders(options?: RequestInit): Headers {
+  return withCsrfHeader(options?.method, {
+    ...baseHeaders,
+    ...(options?.headers ?? {}),
+  });
+}
+
+async function apiRequest(path: string, options: RequestInit = {}): Promise<Response> {
+  return fetch(path, {
+    ...options,
+    headers: buildHeaders(options),
+  });
+}
+
 /** Exchange a Supabase ID token for a server session */
 export async function supabaseLogin(body: FirebaseLoginBodyParams) {
-  const res = await fetch("/api/auth/supabase-login", {
+  const res = await apiRequest("/api/auth/supabase-login", {
     method: "POST",
-    headers: baseHeaders,
     body: JSON.stringify(body),
   });
   const data = await res.json();
@@ -24,9 +38,8 @@ export async function supabaseLogin(body: FirebaseLoginBodyParams) {
 }
 
 export async function setupMfa() {
-  const res = await fetch("/api/auth/mfa-setup", {
+  const res = await apiRequest("/api/auth/mfa-setup", {
     method: "GET",
-    headers: baseHeaders,
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Failed to setup MFA");
@@ -34,9 +47,8 @@ export async function setupMfa() {
 }
 
 export async function verifyMfa(code: string) {
-  const res = await fetch("/api/auth/mfa-verify", {
+  const res = await apiRequest("/api/auth/mfa-verify", {
     method: "POST",
-    headers: baseHeaders,
     body: JSON.stringify({ code }),
   });
   const data = await res.json();
@@ -45,9 +57,8 @@ export async function verifyMfa(code: string) {
 }
 
 export async function challengeMfa(code: string) {
-  const res = await fetch("/api/auth/mfa-challenge", {
+  const res = await apiRequest("/api/auth/mfa-challenge", {
     method: "POST",
-    headers: baseHeaders,
     body: JSON.stringify({ code }),
   });
   const data = await res.json();
@@ -57,9 +68,8 @@ export async function challengeMfa(code: string) {
 
 /** Create a draft post (no auth required) */
 export async function createDraftPost(body: CreateDraftPostBodyParams) {
-  const res = await fetch("/api/posts/draft", {
+  const res = await apiRequest("/api/posts/draft", {
     method: "POST",
-    headers: baseHeaders,
     body: JSON.stringify(body),
   });
   const data = await res.json();
@@ -68,9 +78,8 @@ export async function createDraftPost(body: CreateDraftPostBodyParams) {
 }
 
 export async function completeProfile(body: CompleteProfileBodyParams) {
-  const res = await fetch("/api/auth/complete-profile", {
+  const res = await apiRequest("/api/auth/complete-profile", {
     method: "POST",
-    headers: baseHeaders,
     body: JSON.stringify(body),
   });
   const data = await res.json();
@@ -79,9 +88,8 @@ export async function completeProfile(body: CompleteProfileBodyParams) {
 }
 
 export async function completeNgoProfile(body: CompleteNgoProfileBodyParams) {
-  const res = await fetch("/api/auth/complete-ngo-profile", {
+  const res = await apiRequest("/api/auth/complete-ngo-profile", {
     method: "POST",
-    headers: baseHeaders,
     body: JSON.stringify(body),
   });
   const data = await res.json();
@@ -90,9 +98,8 @@ export async function completeNgoProfile(body: CompleteNgoProfileBodyParams) {
 }
 
 export async function logout() {
-  const res = await fetch("/api/auth/logout", {
+  const res = await apiRequest("/api/auth/logout", {
     method: "POST",
-    headers: baseHeaders,
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Failed to logout");
@@ -100,9 +107,8 @@ export async function logout() {
 }
 
 export async function fetchCurrentUser() {
-  const res = await fetch("/api/auth/me", {
+  const res = await apiRequest("/api/auth/me", {
     method: "GET",
-    headers: baseHeaders,
   });
   if (res.status === 401) {
     return null;

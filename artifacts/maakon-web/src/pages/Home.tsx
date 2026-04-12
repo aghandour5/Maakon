@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState } from "react"; // we use useState to manage the state of the mobile menu and the current language direction (RTL or LTR).
 import { Link, useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
 import { MapPin, HeartHandshake, AlertTriangle, ArrowLeft, ArrowRight, Globe, Menu, X, LogOut, ShieldAlert, Heart } from "lucide-react";
@@ -39,12 +39,12 @@ export default function Home() {
       className="min-h-dvh flex flex-col relative home-bg-container"
       style={{
         backgroundImage: `
-          linear-gradient(135deg, rgba(1,15,10,0.85) 0%, rgba(5,46,35,0.95) 50%, rgba(1,15,10,0.9) 100%),
+          linear-gradient(135deg, rgba(1,15,10,0.85) 0%, rgba(5, 46, 35, 0.8) 50%, rgba(1,15,10,0.9) 100%),
           url('/Lebanon-Background.png')
         `,
         backgroundSize: "200% 200%, cover",
         backgroundRepeat: "no-repeat",
-        animation: "homeGradient 20s ease infinite",
+        animation: "homeGradient 10s ease infinite",
         backgroundBlendMode: "multiply",
       }}
     >
@@ -86,14 +86,10 @@ export default function Home() {
       `}</style>
       {/* ── Top nav ──────────────────────────────────────────────────────────── */}
       <header className="relative z-50 shrink-0 px-4 pt-6 sm:pt-8">
-        <div className="flex items-center justify-between h-16 sm:h-20 px-5 sm:px-8 rounded-2xl mx-auto max-w-7xl border border-white/10 bg-white/5 shadow-sm">
+        <div className="flex items-center justify-between h-16 sm:h-20 px-5 sm:px-8 rounded-2xl mx-auto max-w-6xl border border-white/10 bg-white/5 shadow-sm">
           {/* Brand */}
           <Link href="/" className="shrink-0 flex items-center gap-2 sm:gap-4 group">
-            <img src="/logo.svg" alt="Maakon" className="h-6 sm:h-10 w-auto drop-shadow-md group-hover:scale-105 transition-transform" style={{ filter: "brightness(0) invert(1)" }} />
-            <div className="flex flex-col justify-center">
-              <span className="text-white font-black leading-none text-base sm:text-xl tracking-tight">Maakon</span>
-              <span className="text-emerald-50/80 text-[7px] sm:text-xs mt-0.5 sm:mt-1 font-semibold tracking-wide uppercase">Lebanon Crisis Response — معكن</span>
-            </div>
+            <img src={isRtl ? "/logoNavbarRtl.svg" : "/logoNavbar.svg"} alt="Maakon" className="h-8 sm:h-12 w-auto drop-shadow-[0_4px_12px_rgba(0,0,0,0.15)] group-hover:scale-105 transition-transform" style={{ filter: "brightness(0) invert(1)" }} />
           </Link>
 
           {/* Desktop Nav */}
@@ -200,7 +196,7 @@ export default function Home() {
       </header>
 
       {/* ── Body ─────────────────────────────────────────────────────────────── */}
-      <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-5 pb-16 pt-8 gap-6">
+      <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-5 pb-16 pt-8 sm:pt-14 gap-6">
         {/* Logo Focus */}
         <motion.div
           variants={fadeUp}
@@ -211,12 +207,10 @@ export default function Home() {
           <img
             src="/logo.svg"
             alt="Maakon Logo"
-            className="h-28 sm:h-40 md:h-56 w-auto object-contain mb-2 sm:mb-5 drop-shadow-xl"
-            style={{ filter: "brightness(0) invert(1)" }}
+            className="h-28 sm:h-40 md:h-56 w-auto object-contain mb-4 sm:mb-6 drop-shadow-[0_35px_60px_rgba(0,0,0,0.2)]"
           />
-
           <h1
-            className="text-2xl sm:text-3xl lg:text-4xl font-normal text-emerald-50/90 leading-tight tracking-tight max-w-lg mx-auto drop-shadow-sm [&>strong]:font-bold [&>strong]:text-white"
+            className="text-2xl sm:text-3xl lg:text-4xl font-normal text-emerald-50/90 leading-none tracking-tight max-w-lg mx-auto drop-shadow-sm [&>strong]:font-bold [&>strong]:font-arabic [&>strong]:text-[#00A651] [&>strong]:[text-shadow:0_1px_4px_rgba(0,0,0,0.15)]"
             dangerouslySetInnerHTML={{ __html: t("home_tagline") }}
           />
         </motion.div>

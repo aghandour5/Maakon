@@ -17,7 +17,7 @@ export default function Footer() {
 
   return (
     <footer className="w-full bg-emerald-950 text-emerald-100/60 py-12 px-6 border-t border-white/[0.03] mt-auto shrink-0 shadow-[0_-8px_32px_rgba(0,0,0,0.15)]">
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-10 md:gap-6">
+      <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-10 md:gap-6">
         
         {/* Brand */}
         <div className="flex items-center gap-4 shrink-0 transition-opacity hover:opacity-100 opacity-90">

@@ -31,7 +31,7 @@ export function TopNav({ title, showBack = false }: TopNavProps) {
 
   return (
     <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-black/[0.03] shadow-sm transition-all">
-      <div className="max-w-7xl mx-auto px-6 sm:px-8 h-16 sm:h-20 flex items-center justify-between gap-3">
+      <div className="max-w-6xl mx-auto px-6 sm:px-8 h-16 sm:h-20 flex items-center justify-between gap-3">
         {/* Left: back + Brand */}
         <div className="flex items-center gap-3 sm:gap-4 shrink-0">
           {showBack && (
@@ -44,11 +44,7 @@ export function TopNav({ title, showBack = false }: TopNavProps) {
             </button>
           )}
           <Link href="/" className="shrink-0 no-underline mr-2 sm:mr-4 flex items-center gap-2 sm:gap-3 group">
-            <img src="/logo.svg" alt="Maakon" className="h-5 sm:h-9 w-auto group-hover:scale-105 transition-transform" />
-            <div className="flex flex-col justify-center">
-              <span className="text-slate-900 font-extrabold leading-none text-sm sm:text-lg tracking-tight">Maakon</span>
-              <span className="text-slate-600 text-[7px] sm:text-[10px] mt-0.5 font-bold tracking-tight sm:tracking-wide uppercase">Lebanon Crisis Response — معكن</span>
-            </div>
+            <img src={isRtl ? "/logoNavbarRtl.svg" : "/logoNavbar.svg"} alt="Maakon" className="h-7 sm:h-12 w-auto group-hover:scale-105 transition-transform" />
           </Link>
           {title && (
             <span className="font-bold text-sm text-slate-500 truncate border-s border-slate-300 ps-3 hidden lg:inline-block">

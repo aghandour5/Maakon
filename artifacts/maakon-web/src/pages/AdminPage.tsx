@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "wouter";
 import { NgoModal } from "@/components/admin/NgoModal";
+import { withCsrfHeader } from "@/lib/csrf";
 
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -85,9 +86,13 @@ interface Stats {
 const API = "/api";
 
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
+  const method = options?.method ?? "GET";
   const res = await fetch(`${API}${path}`, {
-    headers: { "Content-Type": "application/json" },
     ...options,
+    headers: withCsrfHeader(method, {
+      "Content-Type": "application/json",
+      ...(options?.headers ?? {}),
+    }),
   });
   
   if (!res.ok) {

@@ -13,11 +13,13 @@ import AdminPage from "@/pages/AdminPage";
 import About from "@/pages/About";
 import Contact from "@/pages/Contact";
 import MyPosts from "@/pages/MyPosts";
+import Support from "@/pages/Support";
+import AuthCallback from "@/pages/auth/AuthCallback";
 
 // Initialize i18n
-import "@/lib/i18n";
+import "@/lib/i18n"; // we import this file to initialize i18n before rendering the app. This is necessary to ensure that the translations are available when the app is rendered.
 
-const queryClient = new QueryClient({
+const queryClient = new QueryClient({ // we use queryClient to fetch data from the API and cache it. We can configure it to not retry failed requests and not refetch on window focus.
   defaultOptions: {
     queries: {
       retry: false,
@@ -25,10 +27,6 @@ const queryClient = new QueryClient({
     }
   }
 });
-
-import AuthCallback from "@/pages/auth/AuthCallback";
-
-import Support from "@/pages/Support";
 
 function Router() {
   return (
@@ -50,7 +48,6 @@ function Router() {
 
 function App() {
   return (
-    // queryClient is a client that is used to fetch data from the API.
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <TooltipProvider>
