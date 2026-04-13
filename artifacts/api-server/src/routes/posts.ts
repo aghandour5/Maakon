@@ -10,6 +10,7 @@ import {
 } from "@workspace/api-zod";
 import * as apiZod from "@workspace/api-zod";
 import { getPublicCoordinates } from "../lib/post-location";
+import { rateLimit } from "../middlewares/rateLimit";
 
 const router: IRouter = Router();
 const UpdatePostBody = (apiZod as unknown as {
@@ -144,7 +145,13 @@ router.get("/posts", async (req, res) => {
   })));
 });
 
-router.post("/posts", requireAuth, async (req, res) => {
+const createPostLimiter = rateLimit(
+  15 * 60 * 1000,
+  10,
+  "Too many posts created, please try again later."
+);
+
+router.post("/posts", requireAuth, createPostLimiter, async (req, res) => {
   const body = CreatePostBody.safeParse(req.body);
   if (!body.success) {
     res.status(400).json({ error: "Validation failed", details: String(body.error) });
