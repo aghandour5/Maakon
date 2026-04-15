@@ -10,8 +10,15 @@ import {
 } from "@workspace/api-zod";
 import * as apiZod from "@workspace/api-zod";
 import { getPublicCoordinates } from "../lib/post-location";
+import { rateLimit } from "../middlewares/rateLimit";
 
 const router: IRouter = Router();
+
+const postsLimiter = rateLimit(
+  15 * 60 * 1000,
+  20,
+  "Too many posts submitted, please try again later."
+);
 const UpdatePostBody = (apiZod as unknown as {
   UpdatePostBody: { safeParse: (input: unknown) => { success: boolean; data?: any } };
 }).UpdatePostBody;
@@ -144,7 +151,7 @@ router.get("/posts", async (req, res) => {
   })));
 });
 
-router.post("/posts", requireAuth, async (req, res) => {
+router.post("/posts", requireAuth, postsLimiter, async (req, res) => {
   const body = CreatePostBody.safeParse(req.body);
   if (!body.success) {
     res.status(400).json({ error: "Validation failed", details: String(body.error) });
