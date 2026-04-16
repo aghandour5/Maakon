@@ -94,7 +94,12 @@ router.post("/auth/supabase-login", loginLimiter, async (req: Request, res: Resp
     // Check if a user with this email already exists (e.g. previously created)
     const byEmail = await db.select().from(usersTable).where(eq(usersTable.email, email)).limit(1);
     if (byEmail[0]) {
-      // Link existing user to Supabase UID
+      // Link existing user to Supabase UID, ONLY if the email is verified
+      // Security: Prevents Account Takeover via unverified emails
+      if (!email_verified) {
+        res.status(403).json({ error: "Email must be verified to link to an existing account" });
+        return;
+      }
       const [updated] = await db
         .update(usersTable)
         .set({
