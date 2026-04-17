@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import { requireAuth } from "../middlewares/auth";
+import { rateLimit } from "../middlewares/rateLimit";
 import { db } from "@workspace/db";
 import { reportsTable, postsTable } from "@workspace/db/schema";
 import { eq, sql } from "drizzle-orm";
@@ -7,7 +8,14 @@ import { CreateReportBody } from "@workspace/api-zod";
 
 const router: IRouter = Router();
 
-router.post("/reports", requireAuth, async (req, res) => {
+const reportsLimiter = rateLimit(
+  15 * 60 * 1000,
+  5,
+  "Too many reports submitted from this IP, please try again later."
+);
+
+
+router.post("/reports", requireAuth, reportsLimiter, async (req, res) => {
   const body = CreateReportBody.safeParse(req.body);
   if (!body.success) {
     res.status(400).json({ error: "Validation failed", details: String(body.error) });
