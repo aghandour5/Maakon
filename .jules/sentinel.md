@@ -1,0 +1,4 @@
+## 2025-02-14 - Prevent Information Disclosure in Validation Errors
+**Vulnerability:** API endpoints were returning stringified Zod validation errors (`String(parsed.error)`) directly to the client in HTTP 400 Bad Request responses.
+**Learning:** Returning detailed validation errors to the client can inadvertently leak internal schema structures, and potentially stack traces. Additionally, when adding logging for these errors, it's critical to avoid logging sensitive data (like `req.body` on auth endpoints) to prevent credential leakage in logs.
+**Prevention:** Instead of sending `details` to the client, return a generic "Validation failed" or "Invalid request" error message. Log the error internally (using `logger.warn({ err: parsed.error })`), taking care *not* to include sensitive request bodies.
