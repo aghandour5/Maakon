@@ -9,6 +9,7 @@ import {
   GetPostParams,
 } from "@workspace/api-zod";
 import * as apiZod from "@workspace/api-zod";
+import { logger } from "../lib/logger";
 import { getPublicCoordinates } from "../lib/post-location";
 
 const router: IRouter = Router();
@@ -96,9 +97,10 @@ function isPubliclyVisiblePost(post: typeof postsTable.$inferSelect): boolean {
 router.get("/posts", async (req, res) => {
   const query = ListPostsQueryParams.safeParse(req.query);
   if (!query.success) {
+    logger.warn({ err: query.error, path: req.originalUrl }, "Invalid query parameters");
     res
       .status(400)
-      .json({ error: "Invalid query parameters", details: String(query.error) });
+      .json({ error: "Invalid query parameters" });
     return;
   }
 
@@ -147,7 +149,8 @@ router.get("/posts", async (req, res) => {
 router.post("/posts", requireAuth, async (req, res) => {
   const body = CreatePostBody.safeParse(req.body);
   if (!body.success) {
-    res.status(400).json({ error: "Validation failed", details: String(body.error) });
+    logger.warn({ err: body.error, path: req.originalUrl }, "Validation failed for post creation");
+    res.status(400).json({ error: "Validation failed" });
     return;
   }
 
