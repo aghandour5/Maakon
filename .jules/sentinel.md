@@ -1,0 +1,4 @@
+## 2024-04-26 - Information Exposure via Validation Error Serialization
+**Vulnerability:** Zod validation errors were being serialized as strings (`String(parsed.error)`) and returned directly to the client in HTTP 400 responses across multiple authentication, posts, and reports routes.
+**Learning:** Returning raw validation errors can inadvertently leak internal schema structures, data boundaries, or other sensitive details about the API's internal workings to potential attackers.
+**Prevention:** Catch validation errors and log them internally using the structured logger (`logger.error({ err })`). Return only generic, safe error messages (like "Invalid request" or "Validation failed") to the client.
