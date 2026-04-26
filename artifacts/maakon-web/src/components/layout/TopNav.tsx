@@ -38,7 +38,7 @@ export function TopNav({ title, showBack = false }: TopNavProps) {
             <button
               onClick={() => window.history.back()}
               className="w-8 h-8 rounded-xl flex items-center justify-center text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-all shrink-0"
-              aria-label="Back"
+              aria-label={t("back", "Back")}
             >
               {isRtl ? <ArrowRight className="h-4 w-4" aria-hidden="true" /> : <ArrowLeft className="h-4 w-4" aria-hidden="true" />}
             </button>
