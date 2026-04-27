@@ -10,6 +10,7 @@ import {
 } from "@workspace/api-zod";
 import * as apiZod from "@workspace/api-zod";
 import { getPublicCoordinates } from "../lib/post-location";
+import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
 const UpdatePostBody = (apiZod as unknown as {
@@ -96,9 +97,10 @@ function isPubliclyVisiblePost(post: typeof postsTable.$inferSelect): boolean {
 router.get("/posts", async (req, res) => {
   const query = ListPostsQueryParams.safeParse(req.query);
   if (!query.success) {
+    logger.warn({ err: query.error }, "Validation failed for /posts GET query");
     res
       .status(400)
-      .json({ error: "Invalid query parameters", details: String(query.error) });
+      .json({ error: "Invalid query parameters format" });
     return;
   }
 
@@ -147,7 +149,8 @@ router.get("/posts", async (req, res) => {
 router.post("/posts", requireAuth, async (req, res) => {
   const body = CreatePostBody.safeParse(req.body);
   if (!body.success) {
-    res.status(400).json({ error: "Validation failed", details: String(body.error) });
+    logger.warn({ err: body.error }, "Validation failed for /posts POST body");
+    res.status(400).json({ error: "Invalid request format" });
     return;
   }
 
