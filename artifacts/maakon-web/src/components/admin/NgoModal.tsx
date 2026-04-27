@@ -120,47 +120,47 @@ export function NgoModal({
         <form onSubmit={handleSubmit} className="space-y-6 mt-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Name *</label>
-              <input required value={name} onChange={e => setName(e.target.value)} className="w-full h-10 px-3 rounded-md border border-slate-200 text-sm" placeholder="NGO Name" />
+              <label htmlFor="ngo-name" className="text-sm font-medium">Name *</label>
+              <input id="ngo-name" required value={name} onChange={e => setName(e.target.value)} className="w-full h-10 px-3 rounded-md border border-slate-200 text-sm" placeholder="NGO Name" />
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Status</label>
-              <select value={status} onChange={e => setStatus(e.target.value)} className="w-full h-10 px-3 rounded-md border border-slate-200 text-sm bg-white">
+              <label htmlFor="ngo-status" className="text-sm font-medium">Status</label>
+              <select id="ngo-status" value={status} onChange={e => setStatus(e.target.value)} className="w-full h-10 px-3 rounded-md border border-slate-200 text-sm bg-white">
                 <option value="active">Active</option>
                 <option value="hidden">Hidden</option>
               </select>
             </div>
             
             <div className="space-y-2 md:col-span-2">
-              <label className="text-sm font-medium">Description *</label>
-              <textarea required minLength={10} value={description} onChange={e => setDescription(e.target.value)} rows={3} className="w-full p-3 rounded-md border border-slate-200 text-sm" placeholder="Brief about the NGO... (min 10 characters)" />
+              <label htmlFor="ngo-description" className="text-sm font-medium">Description *</label>
+              <textarea id="ngo-description" required minLength={10} value={description} onChange={e => setDescription(e.target.value)} rows={3} className="w-full p-3 rounded-md border border-slate-200 text-sm" placeholder="Brief about the NGO... (min 10 characters)" />
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Governorate *</label>
-              <select required value={governorate} onChange={e => { setGovernorate(e.target.value); setDistrict(""); }} className="w-full h-10 px-3 rounded-md border border-slate-200 text-sm bg-white">
+              <label htmlFor="ngo-governorate" className="text-sm font-medium">Governorate *</label>
+              <select id="ngo-governorate" required value={governorate} onChange={e => { setGovernorate(e.target.value); setDistrict(""); }} className="w-full h-10 px-3 rounded-md border border-slate-200 text-sm bg-white">
                 <option value="" disabled>Select Governorate...</option>
                 {governorateOpts.map(g => <option key={g} value={g}>{g}</option>)}
               </select>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">District</label>
-              <select value={district} onChange={e => setDistrict(e.target.value)} disabled={!governorate} className="w-full h-10 px-3 rounded-md border border-slate-200 text-sm bg-white disabled:bg-slate-50">
+              <label htmlFor="ngo-district" className="text-sm font-medium">District</label>
+              <select id="ngo-district" value={district} onChange={e => setDistrict(e.target.value)} disabled={!governorate} className="w-full h-10 px-3 rounded-md border border-slate-200 text-sm bg-white disabled:bg-slate-50">
                 <option value="">Select District (Optional)...</option>
                 {districtOpts.map(d => <option key={d} value={d}>{d}</option>)}
               </select>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Phone</label>
-              <input value={phone} onChange={e => setPhone(e.target.value)} className="w-full h-10 px-3 rounded-md border border-slate-200 text-sm" placeholder="+961..." />
+              <label htmlFor="ngo-phone" className="text-sm font-medium">Phone</label>
+              <input id="ngo-phone" value={phone} onChange={e => setPhone(e.target.value)} className="w-full h-10 px-3 rounded-md border border-slate-200 text-sm" placeholder="+961..." />
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Website</label>
-              <input type="url" value={website} onChange={e => setWebsite(e.target.value)} className="w-full h-10 px-3 rounded-md border border-slate-200 text-sm" placeholder="https://..." />
+              <label htmlFor="ngo-website" className="text-sm font-medium">Website</label>
+              <input id="ngo-website" type="url" value={website} onChange={e => setWebsite(e.target.value)} className="w-full h-10 px-3 rounded-md border border-slate-200 text-sm" placeholder="https://..." />
             </div>
           </div>
 
