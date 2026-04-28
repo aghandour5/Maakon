@@ -10,7 +10,7 @@ const router: IRouter = Router();
 router.post("/reports", requireAuth, async (req, res) => {
   const body = CreateReportBody.safeParse(req.body);
   if (!body.success) {
-    res.status(400).json({ error: "Validation failed", details: String(body.error) });
+    res.status(400).json({ error: "Validation failed" });
     return;
   }
 

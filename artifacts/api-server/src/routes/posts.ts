@@ -98,7 +98,7 @@ router.get("/posts", async (req, res) => {
   if (!query.success) {
     res
       .status(400)
-      .json({ error: "Invalid query parameters", details: String(query.error) });
+      .json({ error: "Invalid query parameters" });
     return;
   }
 
@@ -147,7 +147,7 @@ router.get("/posts", async (req, res) => {
 router.post("/posts", requireAuth, async (req, res) => {
   const body = CreatePostBody.safeParse(req.body);
   if (!body.success) {
-    res.status(400).json({ error: "Validation failed", details: String(body.error) });
+    res.status(400).json({ error: "Validation failed" });
     return;
   }
 
