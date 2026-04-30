@@ -59,7 +59,7 @@ const draftPostLimiter = customRateLimit(
 router.post("/auth/supabase-login", loginLimiter, async (req: Request, res: Response) => {
   const parsed = FirebaseLoginBody.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: "Invalid request", details: String(parsed.error) });
+    res.status(400).json({ error: "Invalid request" });
     return;
   }
 
@@ -276,7 +276,7 @@ router.post("/auth/mfa-challenge", requireAuth, mfaLimiter, async (req: Request,
 router.post("/posts/draft", draftPostLimiter, async (req: Request, res: Response) => {
   const parsed = CreateDraftPostBody.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: "Validation failed", details: String(parsed.error) });
+    res.status(400).json({ error: "Validation failed" });
     return;
   }
 
