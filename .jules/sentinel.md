@@ -1,0 +1,4 @@
+## 2024-05-14 - Information Leakage via Zod Error Stringification
+**Vulnerability:** Zod validation errors were being stringified and returned directly in 400 Bad Request responses across several endpoints (e.g., `String(parsed.error)` or `String(body.error)`).
+**Learning:** Stringifying Zod errors can inadvertently leak internal schema structures, expected types, and potentially sensitive stack traces or internal application logic details to the client. This violates the principle of failing securely, as error messages should be generic and not expose implementation details.
+**Prevention:** Never expose raw validation error details or stack traces in HTTP responses. Always return generic error messages (e.g., "Invalid request" or "Validation failed") to the client. Log the full validation error internally using the structured logger for debugging purposes.
