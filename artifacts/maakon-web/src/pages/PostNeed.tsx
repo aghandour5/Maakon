@@ -844,6 +844,7 @@ export default function PostNeed() {
             {step > 1 && (
               <button
                 onClick={() => go(step - 1)}
+                aria-label={t("back", "Back")}
                 className="w-12 h-12 rounded-2xl border-2 border-slate-200 bg-white flex items-center justify-center text-gray-500 hover:border-slate-300 hover:bg-slate-50 transition-all active:scale-95 shrink-0"
               >
                 {isRtl ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
