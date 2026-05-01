@@ -3,6 +3,7 @@ import { requireAuth } from "../middlewares/auth";
 import { db } from "@workspace/db";
 import { postsTable, ngosTable } from "@workspace/db/schema";
 import { and, eq, gt, isNull, or, desc } from "drizzle-orm";
+import { logger } from "../lib/logger";
 import {
   ListPostsQueryParams,
   CreatePostBody,
@@ -96,9 +97,10 @@ function isPubliclyVisiblePost(post: typeof postsTable.$inferSelect): boolean {
 router.get("/posts", async (req, res) => {
   const query = ListPostsQueryParams.safeParse(req.query);
   if (!query.success) {
+    logger.warn({ err: query.error }, "Validation failed for GET /posts query");
     res
       .status(400)
-      .json({ error: "Invalid query parameters", details: String(query.error) });
+      .json({ error: "Invalid query parameters" });
     return;
   }
 
@@ -147,7 +149,8 @@ router.get("/posts", async (req, res) => {
 router.post("/posts", requireAuth, async (req, res) => {
   const body = CreatePostBody.safeParse(req.body);
   if (!body.success) {
-    res.status(400).json({ error: "Validation failed", details: String(body.error) });
+    logger.warn({ err: body.error }, "Validation failed for POST /posts");
+    res.status(400).json({ error: "Validation failed" });
     return;
   }
 

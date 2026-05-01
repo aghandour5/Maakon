@@ -3,6 +3,7 @@ import { requireAuth } from "../middlewares/auth";
 import { db } from "@workspace/db";
 import { reportsTable, postsTable } from "@workspace/db/schema";
 import { eq, sql } from "drizzle-orm";
+import { logger } from "../lib/logger";
 import { CreateReportBody } from "@workspace/api-zod";
 
 const router: IRouter = Router();
@@ -10,7 +11,8 @@ const router: IRouter = Router();
 router.post("/reports", requireAuth, async (req, res) => {
   const body = CreateReportBody.safeParse(req.body);
   if (!body.success) {
-    res.status(400).json({ error: "Validation failed", details: String(body.error) });
+    logger.warn({ err: body.error }, "Validation failed for POST /reports");
+    res.status(400).json({ error: "Validation failed" });
     return;
   }
 
