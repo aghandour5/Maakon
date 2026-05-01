@@ -393,8 +393,9 @@ export default function MyPosts() {
               </div>
               <div className="p-6 space-y-4">
                 <div>
-                  <label className="block text-sm font-semibold text-slate-600 mb-1.5">{t("myposts_title_label")}</label>
+                  <label htmlFor="edit-title" className="block text-sm font-semibold text-slate-600 mb-1.5">{t("myposts_title_label")}</label>
                   <input
+                    id="edit-title"
                     type="text"
                     value={editTitle}
                     onChange={(e) => setEditTitle(e.target.value)}
@@ -403,8 +404,9 @@ export default function MyPosts() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-slate-600 mb-1.5">{t("myposts_description_label")}</label>
+                  <label htmlFor="edit-description" className="block text-sm font-semibold text-slate-600 mb-1.5">{t("myposts_description_label")}</label>
                   <textarea
+                    id="edit-description"
                     value={editDescription}
                     onChange={(e) => setEditDescription(e.target.value)}
                     rows={5}
