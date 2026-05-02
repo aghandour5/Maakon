@@ -1,16 +1,18 @@
-import { Router, type IRouter } from "express";
+import { Router } from "express";
 import { requireAuth } from "../middlewares/auth";
 import { db } from "@workspace/db";
+import { logger } from "../lib/logger";
 import { reportsTable, postsTable } from "@workspace/db/schema";
 import { eq, sql } from "drizzle-orm";
 import { CreateReportBody } from "@workspace/api-zod";
 
-const router: IRouter = Router();
+const router = Router();
 
 router.post("/reports", requireAuth, async (req, res) => {
   const body = CreateReportBody.safeParse(req.body);
   if (!body.success) {
-    res.status(400).json({ error: "Validation failed", details: String(body.error) });
+    logger.warn({ err: body.error }, "Report validation failed");
+    res.status(400).json({ error: "Validation failed" });
     return;
   }
 
