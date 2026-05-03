@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { completeProfile } from "@/lib/auth-api";
+import { Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
@@ -65,7 +66,14 @@ export default function IndividualProfileStep({ onComplete }: IndividualProfileS
         </div>
 
         <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? t("saving") : t("complete_profile")}
+          {isLoading ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              {t("saving")}
+            </>
+          ) : (
+            t("complete_profile")
+          )}
         </Button>
       </form>
     </div>

@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { completeNgoProfile } from "@/lib/auth-api";
+import { Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGetMetadata } from "@workspace/api-client-react";
 import { toast } from "sonner";
@@ -126,7 +127,14 @@ export default function NgoProfileStep({ onComplete }: NgoProfileStepProps) {
         </div>
 
         <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? t("submitting") : t("submit_verify")}
+          {isLoading ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              {t("submitting")}
+            </>
+          ) : (
+            t("submit_verify")
+          )}
         </Button>
       </form>
     </div>
