@@ -68,9 +68,15 @@ export default function EmailStep({ email, setEmail, onNext }: EmailStepProps) {
       </div>
 
       <div>
+        <label htmlFor="email" className="sr-only">
+          {t("email_placeholder", "you@example.com")}
+        </label>
         <input
+          id="email"
           type="email"
-          className="w-full px-4 py-3.5 rounded-2xl bg-slate-50 border-2 border-slate-200 focus:border-blue-400 outline-none text-sm font-medium placeholder:text-gray-400"
+          className={`w-full px-4 py-3.5 rounded-2xl bg-slate-50 border-2 outline-none text-sm font-medium placeholder:text-gray-400 ${
+            error ? "border-red-500 focus:border-red-600" : "border-slate-200 focus:border-blue-400"
+          }`}
           placeholder={t("email_placeholder", "you@example.com")}
           value={email}
           onChange={(e) => {
@@ -81,9 +87,11 @@ export default function EmailStep({ email, setEmail, onNext }: EmailStepProps) {
           autoComplete="email"
           disabled={isLoading}
           onKeyDown={(e) => e.key === "Enter" && handleSendLink()}
+          aria-invalid={!!error}
+          aria-describedby={error ? "email-error" : undefined}
         />
         {error && (
-          <p className="text-red-500 text-xs mt-1.5 flex items-center gap-1 font-medium">
+          <p id="email-error" role="alert" className="text-red-500 text-xs mt-1.5 flex items-center gap-1 font-medium">
             <AlertCircle className="w-3.5 h-3.5 shrink-0" />
             {error}
           </p>
