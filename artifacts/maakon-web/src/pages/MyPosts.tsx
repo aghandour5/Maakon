@@ -11,6 +11,16 @@ import {
   MapPin, AlertTriangle, Edit2, Plus, ClipboardList,
 } from "lucide-react";
 import Footer from "@/components/layout/Footer";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -87,6 +97,7 @@ export default function MyPosts() {
   const [editingPost, setEditingPost] = useState<MyPost | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
+  const [postToDelete, setPostToDelete] = useState<number | null>(null);
 
   const fetchPosts = useCallback(async () => {
     try {
@@ -121,7 +132,6 @@ export default function MyPosts() {
   };
 
   const handleDelete = async (postId: number) => {
-    if (!confirm("Are you sure you want to delete this post? This cannot be undone.")) return;
     try {
       setActionLoading(postId);
       await apiFetch(`/posts/${postId}`, { method: "DELETE" });
@@ -352,7 +362,7 @@ export default function MyPosts() {
                         )}
                         <div className="flex-1" />
                         <button
-                          onClick={() => handleDelete(post.id)}
+                          onClick={() => setPostToDelete(post.id)}
                           disabled={isBeingActioned}
                           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-red-500 hover:bg-red-50 transition-colors disabled:opacity-40"
                         >
@@ -433,6 +443,32 @@ export default function MyPosts() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Delete Confirmation Alert Dialog */}
+      <AlertDialog open={postToDelete !== null} onOpenChange={(open) => !open && setPostToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete your post and remove the data from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700 text-white"
+              onClick={() => {
+                if (postToDelete !== null) {
+                  handleDelete(postToDelete);
+                  setPostToDelete(null);
+                }
+              }}
+            >
+              Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
