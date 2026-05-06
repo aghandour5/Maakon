@@ -174,7 +174,7 @@ router.post("/auth/supabase-login", loginLimiter, async (req: Request, res: Resp
 
 // ── Admin MFA Flow ────────────────────────────────────────────────────────────
 
-router.get("/auth/mfa-setup", requireAuth, async (req: Request, res: Response) => {
+router.post("/auth/mfa-setup", requireAuth, async (req: Request, res: Response) => {
   const user = req.user!;
 
   if (user.role !== "admin") {

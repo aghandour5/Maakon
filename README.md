@@ -118,7 +118,7 @@ Authenticated routes:
 | POST | `/api/auth/complete-ngo-profile` | Complete NGO onboarding |
 | POST | `/api/auth/logout` | Logout current session |
 | GET | `/api/auth/me` | Current user |
-| GET | `/api/auth/mfa-setup` | Admin MFA setup |
+| POST | `/api/auth/mfa-setup` | Admin MFA setup |
 | POST | `/api/auth/mfa-verify` | Admin MFA setup verification |
 | POST | `/api/auth/mfa-challenge` | Admin MFA challenge |
 | POST | `/api/posts` | Create need or offer |
