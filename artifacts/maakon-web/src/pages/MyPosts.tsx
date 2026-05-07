@@ -3,6 +3,16 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "react-i18next";
 import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { TopNav } from "@/components/layout/TopNav";
 import { Link } from "wouter";
 import { withCsrfHeader } from "@/lib/csrf";
@@ -84,6 +94,7 @@ export default function MyPosts() {
   const [posts, setPosts] = useState<MyPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
+  const [postToDelete, setPostToDelete] = useState<number | null>(null);
   const [editingPost, setEditingPost] = useState<MyPost | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
@@ -120,8 +131,14 @@ export default function MyPosts() {
     }
   };
 
-  const handleDelete = async (postId: number) => {
-    if (!confirm("Are you sure you want to delete this post? This cannot be undone.")) return;
+  const handleDelete = (postId: number) => {
+    setPostToDelete(postId);
+  };
+
+  const confirmDelete = async () => {
+    if (postToDelete === null) return;
+    const postId = postToDelete;
+    setPostToDelete(null);
     try {
       setActionLoading(postId);
       await apiFetch(`/posts/${postId}`, { method: "DELETE" });
@@ -185,7 +202,23 @@ export default function MyPosts() {
             </button>
           </div>
         </main>
-        <Footer />
+
+      <AlertDialog open={postToDelete !== null} onOpenChange={(open) => !open && setPostToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete this post.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700 text-white">Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <Footer />
       </>
     );
   }
