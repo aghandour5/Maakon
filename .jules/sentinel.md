@@ -1,0 +1,4 @@
+## 2024-05-18 - Information Disclosure via Zod Error Stringification
+**Vulnerability:** Zod validation errors were being stringified and returned directly to users in API error responses via `String(parsed.error)` or `String(body.error)`.
+**Learning:** Stringifying Zod validation errors leaks the internal shape of the validation schema (including paths, types, and constraints). This allows attackers to map out the exact expected payloads, making it easier to craft malicious requests or understand internal server structures.
+**Prevention:** Never use `String(error)` or similar methods to include validation details directly in HTTP error responses. Instead, log the detailed Zod error internally using `logger.warn({ err: parsed.error })` and return a generic `400 Bad Request` or `"Validation failed"` error to the client.
