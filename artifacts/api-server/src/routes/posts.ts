@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router } from "express";
 import { requireAuth } from "../middlewares/auth";
 import { db } from "@workspace/db";
 import { postsTable, ngosTable } from "@workspace/db/schema";
@@ -10,8 +10,9 @@ import {
 } from "@workspace/api-zod";
 import * as apiZod from "@workspace/api-zod";
 import { getPublicCoordinates } from "../lib/post-location";
+import { logger } from "../lib/logger";
 
-const router: IRouter = Router();
+const router = Router();
 const UpdatePostBody = (apiZod as unknown as {
   UpdatePostBody: { safeParse: (input: unknown) => { success: boolean; data?: any } };
 }).UpdatePostBody;
@@ -96,9 +97,8 @@ function isPubliclyVisiblePost(post: typeof postsTable.$inferSelect): boolean {
 router.get("/posts", async (req, res) => {
   const query = ListPostsQueryParams.safeParse(req.query);
   if (!query.success) {
-    res
-      .status(400)
-      .json({ error: "Invalid query parameters", details: String(query.error) });
+    logger.warn({ err: query.error }, "Invalid query parameters");
+    res.status(400).json({ error: "Invalid query parameters" });
     return;
   }
 
@@ -147,7 +147,8 @@ router.get("/posts", async (req, res) => {
 router.post("/posts", requireAuth, async (req, res) => {
   const body = CreatePostBody.safeParse(req.body);
   if (!body.success) {
-    res.status(400).json({ error: "Validation failed", details: String(body.error) });
+    logger.warn({ err: body.error }, "Validation failed");
+    res.status(400).json({ error: "Validation failed" });
     return;
   }
 
