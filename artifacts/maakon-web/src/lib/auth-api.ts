@@ -39,7 +39,7 @@ export async function supabaseLogin(body: FirebaseLoginBodyParams) {
 
 export async function setupMfa() {
   const res = await apiRequest("/api/auth/mfa-setup", {
-    method: "GET",
+    method: "POST",
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Failed to setup MFA");

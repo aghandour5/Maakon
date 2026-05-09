@@ -21,6 +21,7 @@ export const CompleteNgoProfileBody = z.object({
   orgName: z.string().min(2, "Organization name must be at least 2 characters"),
   description: z.string().optional(),
   governorate: z.string().min(1, "Governorate is required"),
+  district: z.string().optional(),
   phone: z.string().regex(/^\+[1-9]\d{1,14}$/, "Invalid phone number format. Must include country code (e.g. +961...)").optional(),
   website: z.string().url("Must be a valid URL").optional().or(z.literal("")),
 });
@@ -45,4 +46,3 @@ export const CreateDraftPostBody = z.object({
   providedLng: z.number().optional(),
 });
 export type CreateDraftPostBodyParams = z.infer<typeof CreateDraftPostBody>;
-

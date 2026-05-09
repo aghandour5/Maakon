@@ -30,6 +30,7 @@ import { rateLimit as customRateLimit } from "../middlewares/rateLimit";
 import { rateLimit as expressRateLimit } from "express-rate-limit";
 import { logger } from "../lib/logger";
 import { getPublicCoordinates } from "../lib/post-location";
+import { isValidLocation } from "@workspace/locations";
 import { generateSecret, generateURI, verify as verifyTotp } from "otplib";
 import qrcode from "qrcode";
 
@@ -59,7 +60,8 @@ const draftPostLimiter = customRateLimit(
 router.post("/auth/supabase-login", loginLimiter, async (req: Request, res: Response) => {
   const parsed = FirebaseLoginBody.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: "Invalid request", details: String(parsed.error) });
+    logger.warn({ err: parsed.error, path: req.originalUrl }, "Supabase login validation failed");
+    res.status(400).json({ error: "Validation failed" });
     return;
   }
 
@@ -78,6 +80,12 @@ router.post("/auth/supabase-login", loginLimiter, async (req: Request, res: Resp
 
   if (!email) {
     res.status(400).json({ error: "Supabase token does not contain an email" });
+    return;
+  }
+
+  if (email_verified !== true) {
+    logger.warn({ supabaseUid: uid }, "Rejected Supabase login with unverified email");
+    res.status(403).json({ error: "Email must be verified before login" });
     return;
   }
 
@@ -174,7 +182,7 @@ router.post("/auth/supabase-login", loginLimiter, async (req: Request, res: Resp
 
 // ── Admin MFA Flow ────────────────────────────────────────────────────────────
 
-router.get("/auth/mfa-setup", requireAuth, async (req: Request, res: Response) => {
+router.post("/auth/mfa-setup", requireAuth, async (req: Request, res: Response) => {
   const user = req.user!;
 
   if (user.role !== "admin") {
@@ -276,7 +284,8 @@ router.post("/auth/mfa-challenge", requireAuth, mfaLimiter, async (req: Request,
 router.post("/posts/draft", draftPostLimiter, async (req: Request, res: Response) => {
   const parsed = CreateDraftPostBody.safeParse(req.body);
   if (!parsed.success) {
-    res.status(400).json({ error: "Validation failed", details: String(parsed.error) });
+    logger.warn({ err: parsed.error, path: req.originalUrl }, "Draft post validation failed");
+    res.status(400).json({ error: "Validation failed" });
     return;
   }
 
@@ -285,6 +294,12 @@ router.post("/posts/draft", draftPostLimiter, async (req: Request, res: Response
     providedLat?: number;
     providedLng?: number;
   };
+
+  if (!isValidLocation(draftData.governorate, draftData.district)) {
+    res.status(400).json({ error: "Invalid governorate or district" });
+    return;
+  }
+
   const { publicLat, publicLng } = getPublicCoordinates(
     draftData.postType,
     draftData.governorate,
@@ -331,6 +346,7 @@ router.post("/posts/draft", draftPostLimiter, async (req: Request, res: Response
 router.post("/auth/complete-profile", requireAuth, async (req: Request, res: Response) => {
   const parsed = CompleteProfileBody.safeParse(req.body);
   if (!parsed.success) {
+    logger.warn({ err: parsed.error, path: req.originalUrl }, "Complete profile validation failed");
     res.status(400).json({ error: "Invalid parameters" });
     return;
   }
@@ -348,6 +364,7 @@ router.post("/auth/complete-profile", requireAuth, async (req: Request, res: Res
 router.post("/auth/complete-ngo-profile", requireAuth, async (req: Request, res: Response) => {
   const parsed = CompleteNgoProfileBody.safeParse(req.body);
   if (!parsed.success) {
+    logger.warn({ err: parsed.error, path: req.originalUrl }, "Complete NGO profile validation failed");
     res.status(400).json({ error: "Invalid parameters" });
     return;
   }
@@ -369,14 +386,19 @@ router.post("/auth/complete-ngo-profile", requireAuth, async (req: Request, res:
     return;
   }
 
-  const { orgName, description, governorate, phone, website } = parsed.data;
+  const { orgName, description, governorate, district, phone, website } = parsed.data;
+
+  if (!isValidLocation(governorate, district)) {
+    res.status(400).json({ error: "Invalid governorate or district" });
+    return;
+  }
 
   await db.insert(ngosTable).values({
     userId: user.id,
     name: orgName,
     description: description || null,
     governorate,
-    district: null,
+    district: district || null,
     phone: phone || null,
     website: website || null,
     status: "active",

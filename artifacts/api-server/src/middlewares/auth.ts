@@ -94,14 +94,30 @@ export const optionalAuth = async (req: Request, res: Response, next: NextFuncti
   try {
     const result = await validateSession(token);
     if (result) {
+      const cookieCsrfToken = req.cookies?.[CSRF_COOKIE_NAME];
+      const csrfToken = isValidCsrfToken(cookieCsrfToken)
+        ? cookieCsrfToken
+        : createCsrfToken();
+
+      if (cookieCsrfToken !== csrfToken) {
+        res.cookie(CSRF_COOKIE_NAME, csrfToken, getCsrfCookieOptions());
+      }
+
+      if (isCsrfProtectedMethod(req.method)) {
+        const csrfHeaderValue = req.header(CSRF_HEADER_NAME);
+        if (
+          !isValidCsrfToken(csrfHeaderValue) ||
+          !safeCompareCsrfTokens(csrfToken, csrfHeaderValue)
+        ) {
+          res.status(403).json({ error: "CSRF token missing or invalid" });
+          return;
+        }
+      }
+
       req.user = result.user;
       req.sessionId = token;
       req.mfaVerified = result.mfaVerified;
-
-      const cookieCsrfToken = req.cookies?.[CSRF_COOKIE_NAME];
-      if (!isValidCsrfToken(cookieCsrfToken)) {
-        res.cookie(CSRF_COOKIE_NAME, createCsrfToken(), getCsrfCookieOptions());
-      }
+      req.csrfToken = csrfToken;
     } else {
       res.clearCookie(SESSION_COOKIE_NAME, getSessionClearCookieOptions());
       res.clearCookie(CSRF_COOKIE_NAME, getCsrfClearCookieOptions());

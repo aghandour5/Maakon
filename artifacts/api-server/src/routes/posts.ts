@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import { requireAuth } from "../middlewares/auth";
+import { rateLimit } from "../middlewares/rateLimit";
 import { db } from "@workspace/db";
 import { postsTable, ngosTable } from "@workspace/db/schema";
 import { and, eq, gt, isNull, or, desc } from "drizzle-orm";
@@ -7,23 +8,34 @@ import {
   ListPostsQueryParams,
   CreatePostBody,
   GetPostParams,
+  UpdatePostBody,
 } from "@workspace/api-zod";
-import * as apiZod from "@workspace/api-zod";
+import {
+  clampLocationCoordinates,
+  isValidGovernorate,
+  isValidLocation,
+} from "@workspace/locations";
 import { getPublicCoordinates } from "../lib/post-location";
+import { logger } from "../lib/logger";
+
+const DEFAULT_EXPIRY_DAYS = 30;
+const MAX_EXPIRY_DAYS = 90;
 
 const router: IRouter = Router();
-const UpdatePostBody = (apiZod as unknown as {
-  UpdatePostBody: { safeParse: (input: unknown) => { success: boolean; data?: any } };
-}).UpdatePostBody;
+const createPostRateLimiter = rateLimit(
+  15 * 60 * 1000,
+  20,
+  "Too many post submissions, please try again after 15 minutes.",
+);
 
 function toPublicPost(post: typeof postsTable.$inferSelect) {
   const { lat: publicLat, lng: publicLng } =
     post.publicLat != null && post.publicLng != null
-      ? clampCoastalCoords(
+      ? clampLocationCoordinates(
           post.publicLat,
           post.publicLng,
-          post.district,
           post.governorate,
+          post.district,
         )
       : { lat: null, lng: null };
 
@@ -61,30 +73,6 @@ function toPrivatePost(post: typeof postsTable.$inferSelect) {
   };
 }
 
-const COASTAL_BOUNDS: Record<string, [number, number, number, number]> = {
-  Beirut: [33.85, 33.93, 35.49, 35.56],
-  "Beirut City": [33.85, 33.93, 35.49, 35.56],
-};
-
-function clampCoastalCoords(
-  lat: number,
-  lng: number,
-  district: string | null | undefined,
-  governorate: string,
-): { lat: number; lng: number } {
-  const bounds = COASTAL_BOUNDS[district ?? ""] ?? COASTAL_BOUNDS[governorate];
-
-  if (!bounds) {
-    return { lat, lng };
-  }
-
-  const [minLat, maxLat, minLng, maxLng] = bounds;
-  return {
-    lat: Math.min(Math.max(lat, minLat), maxLat),
-    lng: Math.min(Math.max(lng, minLng), maxLng),
-  };
-}
-
 function isPubliclyVisiblePost(post: typeof postsTable.$inferSelect): boolean {
   if (post.status !== "active") {
     return false;
@@ -96,13 +84,12 @@ function isPubliclyVisiblePost(post: typeof postsTable.$inferSelect): boolean {
 router.get("/posts", async (req, res) => {
   const query = ListPostsQueryParams.safeParse(req.query);
   if (!query.success) {
-    res
-      .status(400)
-      .json({ error: "Invalid query parameters", details: String(query.error) });
+    logger.warn({ err: query.error, path: req.originalUrl }, "Invalid list-posts query");
+    res.status(400).json({ error: "Validation failed" });
     return;
   }
 
-  let {
+  const {
     postType,
     category,
     governorate,
@@ -110,10 +97,19 @@ router.get("/posts", async (req, res) => {
     urgency,
     activeOnly,
     verifiedNgoOnly,
+    page,
+    limit,
   } = query.data;
 
-  if (req.query.activeOnly === "false") activeOnly = false;
-  if (req.query.verifiedNgoOnly === "false") verifiedNgoOnly = false;
+  if (governorate && !isValidGovernorate(governorate)) {
+    res.status(400).json({ error: "Invalid governorate" });
+    return;
+  }
+
+  if (district && !isValidLocation(governorate, district)) {
+    res.status(400).json({ error: "Invalid district for governorate" });
+    return;
+  }
 
   const filters = [];
   if (postType) filters.push(eq(postsTable.postType, postType));
@@ -136,7 +132,9 @@ router.get("/posts", async (req, res) => {
     .from(postsTable)
     .leftJoin(ngosTable, eq(postsTable.userId, ngosTable.userId))
     .where(filters.length > 0 ? and(...filters) : undefined)
-    .orderBy(postsTable.createdAt);
+    .orderBy(desc(postsTable.createdAt))
+    .limit(limit)
+    .offset((page - 1) * limit);
 
   res.json(rows.map(({ post, ngoId }) => ({
     ...toPublicPost(post),
@@ -144,10 +142,11 @@ router.get("/posts", async (req, res) => {
   })));
 });
 
-router.post("/posts", requireAuth, async (req, res) => {
+router.post("/posts", requireAuth, createPostRateLimiter, async (req, res) => {
   const body = CreatePostBody.safeParse(req.body);
   if (!body.success) {
-    res.status(400).json({ error: "Validation failed", details: String(body.error) });
+    logger.warn({ err: body.error, path: req.originalUrl }, "Create post validation failed");
+    res.status(400).json({ error: "Validation failed" });
     return;
   }
 
@@ -166,10 +165,12 @@ router.post("/posts", requireAuth, async (req, res) => {
     providedLat,
     providedLng,
     expiresInDays,
-  } = body.data as typeof body.data & {
-    providedLat?: number | null;
-    providedLng?: number | null;
-  };
+  } = body.data;
+
+  if (!isValidLocation(governorate, district)) {
+    res.status(400).json({ error: "Invalid governorate or district" });
+    return;
+  }
 
   const { publicLat, publicLng } = getPublicCoordinates(
     postType,
@@ -180,75 +181,76 @@ router.post("/posts", requireAuth, async (req, res) => {
     providerType,
   );
 
-  let verifiedBadgeType: "ngo" | null = null;
-  let ngoId: number | null = null;
-  if (providerType === "ngo") {
-    let [ngo] = await db
-      .select()
-      .from(ngosTable)
-      .where(eq(ngosTable.userId, req.user!.id))
-      .limit(1);
-
-    if (!ngo) {
-      // Auto-create unverified NGO so it appears in the admin console
-      const [newNgo] = await db
-        .insert(ngosTable)
-        .values({
-          name: title, // Initially use post title as NGO name
-          description: description,
-          governorate: governorate,
-          district: district ?? null,
-          lat: providedLat ?? null,
-          lng: providedLng ?? null,
-          phone: contactInfo ?? null,
-          status: "active",
-        } as any) // Cast required due to inference limits
-        .returning();
-      
-      // Link the new NGO to the current user
-      await db
-        .update(ngosTable)
-        .set({ userId: req.user!.id })
-        .where(eq(ngosTable.id, newNgo.id));
-      ngo = newNgo;
-    }
-
-    ngoId = ngo.id;
-    if (ngo && ngo.verifiedAt) {
-      verifiedBadgeType = "ngo";
-    }
-  }
-
   const daysUntilExpiry =
-    expiresInDays && expiresInDays > 0 ? Math.min(expiresInDays, 90) : 30;
+    expiresInDays && expiresInDays > 0
+      ? Math.min(expiresInDays, MAX_EXPIRY_DAYS)
+      : DEFAULT_EXPIRY_DAYS;
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + daysUntilExpiry);
 
-  const [post] = await db
-    .insert(postsTable)
-    .values({
-      postType,
-      title,
-      category,
-      description,
-      urgency: urgency ?? null,
-      governorate,
-      district: district ?? null,
-      publicLat,
-      publicLng,
-      privateLat: providedLat ?? null,
-      privateLng: providedLng ?? null,
-      exactAddressPrivate: exactAddressPrivate ?? null,
-      providerType: providerType ?? null,
-      verifiedBadgeType,
-      contactMethod: contactMethod ?? null,
-      contactInfo: contactInfo ?? null,
-      status: "active",
-      userId: req.user!.id,
-      expiresAt,
-      lastConfirmedAt: new Date(),
-    })
-    .returning();
+  const { post, ngoId } = await db.transaction(async (tx) => {
+    let verifiedBadgeType: "ngo" | null = null;
+    let ngoId: number | null = null;
+
+    if (providerType === "ngo") {
+      let [ngo] = await tx
+        .select()
+        .from(ngosTable)
+        .where(eq(ngosTable.userId, req.user!.id))
+        .limit(1);
+
+      if (!ngo) {
+        // Auto-create unverified NGO so it appears in the admin console.
+        [ngo] = await tx
+          .insert(ngosTable)
+          .values({
+            userId: req.user!.id,
+            name: title,
+            description,
+            governorate,
+            district: district ?? null,
+            lat: providedLat ?? null,
+            lng: providedLng ?? null,
+            phone: contactInfo ?? null,
+            status: "active",
+          })
+          .returning();
+      }
+
+      ngoId = ngo.id;
+      if (ngo.verifiedAt) {
+        verifiedBadgeType = "ngo";
+      }
+    }
+
+    const [post] = await tx
+      .insert(postsTable)
+      .values({
+        postType,
+        title,
+        category,
+        description,
+        urgency: urgency ?? null,
+        governorate,
+        district: district ?? null,
+        publicLat,
+        publicLng,
+        privateLat: providedLat ?? null,
+        privateLng: providedLng ?? null,
+        exactAddressPrivate: exactAddressPrivate ?? null,
+        providerType: providerType ?? null,
+        verifiedBadgeType,
+        contactMethod: contactMethod ?? null,
+        contactInfo: contactInfo ?? null,
+        status: "active",
+        userId: req.user!.id,
+        expiresAt,
+        lastConfirmedAt: new Date(),
+      })
+      .returning();
+
+    return { post, ngoId };
+  });
 
   res.status(201).json({
     ...toPublicPost(post),
@@ -275,39 +277,46 @@ router.get("/posts/me", requireAuth, async (req, res) => {
 
 router.patch("/posts/:id", requireAuth, async (req, res) => {
   const params = GetPostParams.safeParse({ id: Number(req.params.id) });
-  if (!params.success) return void res.status(400).json({ error: "Invalid post ID" });
+  if (!params.success) {
+    logger.warn({ err: params.error, path: req.originalUrl }, "Invalid update-post params");
+    return void res.status(400).json({ error: "Invalid post ID" });
+  }
 
   const body = UpdatePostBody.safeParse(req.body);
-  if (!body.success) return void res.status(400).json({ error: "Validation failed" });
-
-  const [post] = await db
-    .select()
-    .from(postsTable)
-    .where(eq(postsTable.id, params.data.id))
-    .limit(1);
-
-  if (!post) return void res.status(404).json({ error: "Post not found" });
-  if (post.userId !== req.user!.id) return void res.status(403).json({ error: "Forbidden" });
+  if (!body.success) {
+    logger.warn({ err: body.error, path: req.originalUrl }, "Update post validation failed");
+    return void res.status(400).json({ error: "Validation failed" });
+  }
 
   const { title, description, status } = body.data;
 
+  // Single atomic UPDATE: ownership check is part of the WHERE clause,
+  // eliminating the SELECT → UPDATE race condition (TOCTOU).
   const [updatedPost] = await db
     .update(postsTable)
     .set({
-      ...(title ? { title } : {}),
-      ...(description ? { description } : {}),
-      ...(status ? { status } : {}),
+      ...(title !== undefined ? { title } : {}),
+      ...(description !== undefined ? { description } : {}),
+      ...(status !== undefined ? { status } : {}),
       updatedAt: new Date(),
     })
-    .where(eq(postsTable.id, post.id))
+    .where(and(eq(postsTable.id, params.data.id), eq(postsTable.userId, req.user!.id)))
     .returning();
+
+  if (!updatedPost) {
+    // Could not find a post with this id owned by this user.
+    return void res.status(404).json({ error: "Post not found or forbidden" });
+  }
 
   res.json(toPrivatePost(updatedPost));
 });
 
 router.delete("/posts/:id", requireAuth, async (req, res) => {
   const params = GetPostParams.safeParse({ id: Number(req.params.id) });
-  if (!params.success) return void res.status(400).json({ error: "Invalid post ID" });
+  if (!params.success) {
+    logger.warn({ err: params.error, path: req.originalUrl }, "Invalid delete-post params");
+    return void res.status(400).json({ error: "Invalid post ID" });
+  }
 
   const [post] = await db
     .select()
@@ -326,6 +335,7 @@ router.delete("/posts/:id", requireAuth, async (req, res) => {
 router.get("/posts/:id", async (req, res) => {
   const params = GetPostParams.safeParse({ id: Number(req.params.id) });
   if (!params.success) {
+    logger.warn({ err: params.error, path: req.originalUrl }, "Invalid get-post params");
     res.status(400).json({ error: "Invalid post ID" });
     return;
   }

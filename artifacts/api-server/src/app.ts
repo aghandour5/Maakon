@@ -10,6 +10,7 @@ import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
 import { securityHeaders } from "./middlewares/security";
+import { rateLimit } from "./middlewares/rateLimit";
 
 const configuredCorsOrigins = (process.env["CORS_ORIGINS"] ?? "")
   .split(",")
@@ -35,21 +36,23 @@ function isAllowedOrigin(req: Request, origin: string): boolean {
     return true;
   }
 
-  const forwardedProto = req.header("x-forwarded-proto")?.split(",")[0]?.trim();
-  const forwardedHost = req.header("x-forwarded-host")?.split(",")[0]?.trim();
-  const host = forwardedHost || req.header("host");
+  const host = req.header("host")?.trim();
 
   if (!host) {
     return false;
   }
 
-  const protocol = forwardedProto || req.protocol;
-  return normalizedOrigin === normalizeOrigin(`${protocol}://${host}`);
+  return normalizedOrigin === normalizeOrigin(`${req.protocol}://${host}`);
 }
 
 const app: Express = express();
 const jsonBodyLimit = process.env["JSON_BODY_LIMIT"] ?? "100kb";
 const urlencodedBodyLimit = process.env["URLENCODED_BODY_LIMIT"] ?? "100kb";
+const apiReadRateLimiter = rateLimit(
+  60 * 1000,
+  300,
+  "Too many read requests from this IP, please try again shortly.",
+);
 
 // SECURITY: Ensure accurate client IP identification for rate limiting and audit logging.
 // The API server is behind a reverse proxy/load balancer in production.
@@ -60,6 +63,9 @@ app.use(securityHeaders);
 app.use(
   pinoHttp({
     logger,
+    autoLogging: {
+      ignore: (req) => req.method === "OPTIONS",
+    },
     serializers: {
       req(req) {
         return {
@@ -95,20 +101,33 @@ app.use(express.json({ limit: jsonBodyLimit }));
 app.use(express.urlencoded({ extended: true, limit: urlencodedBodyLimit, parameterLimit: 1000 }));
 app.use(cookieParser());
 
+app.use("/api", (req: Request, res: Response, next: NextFunction) => {
+  if (req.method !== "GET") {
+    next();
+    return;
+  }
+
+  apiReadRateLimiter(req, res, next);
+});
+
 app.use("/api", router);
 
+app.use("/api", (_req: Request, res: Response) => {
+  res.status(404).json({ error: "Not found" });
+});
+
 app.use((err: unknown, req: Request, res: Response, _next: NextFunction) => {
-  const parseError = err as SyntaxError & {
-    status?: number;
-    body?: unknown;
-    type?: string;
-  };
+  const isObject = typeof err === "object" && err !== null;
+  const statusValue = isObject && "status" in err ? err.status : undefined;
+  const typeValue = isObject && "type" in err ? err.type : undefined;
+  const status = typeof statusValue === "number" ? statusValue : undefined;
+  const type = typeof typeValue === "string" ? typeValue : undefined;
   const isJsonParseError =
     err instanceof SyntaxError &&
-    parseError.status === 400 &&
-    "body" in parseError;
-  const isPayloadTooLarge =
-    parseError.status === 413 || parseError.type === "entity.too.large";
+    status === 400 &&
+    isObject &&
+    "body" in err;
+  const isPayloadTooLarge = status === 413 || type === "entity.too.large";
 
   if (isPayloadTooLarge) {
     res.status(413).json({ error: "Request body too large" });

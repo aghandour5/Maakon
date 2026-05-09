@@ -10,6 +10,14 @@ export type AuthTokenGetter = () => Promise<string | null> | string | null;
 
 const NO_BODY_STATUS = new Set([204, 205, 304]);
 const DEFAULT_JSON_ACCEPT = "application/json, application/problem+json";
+const CSRF_COOKIE_NAME = "maakon_csrf";
+const CSRF_HEADER_NAME = "x-csrf-token";
+
+function getCsrfTokenFromCookie(): string | null {
+  if (typeof document === "undefined") return null;
+  const match = document.cookie.match(new RegExp('(^| )' + CSRF_COOKIE_NAME + '=([^;]+)'));
+  return match ? decodeURIComponent(match[2]) : null;
+}
 
 // ---------------------------------------------------------------------------
 // Module-level configuration
@@ -352,6 +360,14 @@ export async function customFetch<T = unknown>(
     const token = await _authTokenGetter();
     if (token) {
       headers.set("authorization", `Bearer ${token}`);
+    }
+  }
+
+  // Automatically attach CSRF token for unsafe methods
+  if (method !== "GET" && method !== "HEAD" && !headers.has(CSRF_HEADER_NAME)) {
+    const csrfToken = getCsrfTokenFromCookie();
+    if (csrfToken) {
+      headers.set(CSRF_HEADER_NAME, csrfToken);
     }
   }
 

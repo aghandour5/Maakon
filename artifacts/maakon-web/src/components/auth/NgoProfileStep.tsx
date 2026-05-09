@@ -11,11 +11,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useGetMetadata } from "@workspace/api-client-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import { Loader2 } from "lucide-react";
 
 export function getNgoProfileSchema(t: any) {
   return z.object({
     orgName: z.string().min(2, t("min_length", { min: 2 })).max(100),
     governorate: z.string().min(1, t("required")),
+    district: z.string().optional(),
     description: z.string().max(500).optional(),
     phone: z.string().max(20).optional(),
     website: z.string().max(200).optional(),
@@ -34,18 +36,34 @@ export default function NgoProfileStep({ onComplete }: NgoProfileStepProps) {
   const { data: metadata } = useGetMetadata();
   const [isLoading, setIsLoading] = useState(false);
   
-  const { register, handleSubmit, formState: { errors } } = useForm<NgoProfileFormValues>({
+  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<NgoProfileFormValues>({
     resolver: zodResolver(getNgoProfileSchema(t)),
     defaultValues: {
       orgName: "",
       governorate: "",
+      district: "",
       description: "",
       phone: "",
       website: "",
     },
   });
+  const selectedGovernorate = watch("governorate");
+  const districtOptions =
+    selectedGovernorate && metadata?.districts
+      ? metadata.districts[selectedGovernorate] ?? []
+      : [];
 
   const onSubmit = async (data: NgoProfileFormValues) => {
+    if (!metadata?.governorates.includes(data.governorate)) {
+      toast.error(t("invalid_selection", "Invalid selection"));
+      return;
+    }
+
+    if (data.district && !districtOptions.includes(data.district)) {
+      toast.error(t("invalid_selection", "Invalid selection"));
+      return;
+    }
+
     setIsLoading(true);
     try {
       const res = await completeNgoProfile(data);
@@ -84,7 +102,9 @@ export default function NgoProfileStep({ onComplete }: NgoProfileStepProps) {
           <select
             id="governorate"
             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            {...register("governorate")}
+            {...register("governorate", {
+              onChange: () => setValue("district", ""),
+            })}
           >
             <option value="" disabled>Select governorate</option>
             {metadata?.governorates.map((g) => (
@@ -93,6 +113,22 @@ export default function NgoProfileStep({ onComplete }: NgoProfileStepProps) {
           </select>
           {errors.governorate && <p className="text-sm text-destructive">{errors.governorate.message}</p>}
         </div>
+
+        {districtOptions.length > 0 && (
+          <div className="space-y-2">
+            <Label htmlFor="district">{t("district")}</Label>
+            <select
+              id="district"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              {...register("district")}
+            >
+              <option value="">{t("select_placeholder")}</option>
+              {districtOptions.map((district) => (
+                <option key={district} value={district}>{district}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <div className="space-y-2">
           <Label htmlFor="description">{t("ngo_desc_label")}</Label>
@@ -125,7 +161,8 @@ export default function NgoProfileStep({ onComplete }: NgoProfileStepProps) {
           />
         </div>
 
-        <Button type="submit" className="w-full" disabled={isLoading}>
+        <Button type="submit" className="w-full gap-2" disabled={isLoading}>
+          {isLoading && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
           {isLoading ? t("submitting") : t("submit_verify")}
         </Button>
       </form>

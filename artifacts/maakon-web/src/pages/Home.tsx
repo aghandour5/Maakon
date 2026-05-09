@@ -6,6 +6,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAuthGate } from "@/hooks/useAuthGate";
 import Footer from "@/components/layout/Footer";
+import { Logo } from "@/components/layout/Logo";
+import { LogoRtl } from "@/components/layout/LogoRtl";
 
 // ── Minimal Animation Variants ──────────────────────────────────────────────
 const fadeUp = {
@@ -83,13 +85,30 @@ export default function Home() {
           border: 1px solid rgba(255, 255, 255, 0.1);
           box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
         }
+        .home-nav-logo .logo-cls-1,
+        .home-nav-logo .logo-cls-2,
+        .home-nav-logo .logo-cls-3,
+        .home-nav-logo .logo-cls-4,
+        .home-nav-logo .logo-rtl-cls-1,
+        .home-nav-logo .logo-rtl-cls-2,
+        .home-nav-logo .logo-rtl-cls-3,
+        .home-nav-logo .logo-rtl-cls-4 {
+          fill: #fff !important;
+        }
       `}</style>
       {/* ── Top nav ──────────────────────────────────────────────────────────── */}
       <header className="relative z-50 shrink-0 px-4 pt-6 sm:pt-8">
-        <div className="flex items-center justify-between h-16 sm:h-20 px-5 sm:px-8 rounded-2xl mx-auto max-w-6xl border border-white/10 bg-white/5 shadow-sm">
+        <div
+          dir={isRtl ? "rtl" : "ltr"}
+          className="flex items-center justify-between h-16 sm:h-20 px-5 sm:px-8 rounded-2xl mx-auto max-w-6xl border border-white/10 bg-white/5 shadow-sm"
+        >
           {/* Brand */}
-          <Link href="/" className="shrink-0 flex items-center gap-2 sm:gap-4 group">
-            <img src={isRtl ? "/logoNavbarRtl.svg" : "/logoNavbar.svg"} alt="Maakon" className="h-8 sm:h-12 w-auto drop-shadow-[0_4px_12px_rgba(0,0,0,0.15)] group-hover:scale-105 transition-transform" style={{ filter: "brightness(0) invert(1)" }} />
+          <Link href="/" className={`shrink-0 flex items-center gap-2 sm:gap-4 group ${isRtl ? "translate-x-2 sm:translate-x-3" : ""}`}>
+            {isRtl ? (
+              <LogoRtl className="home-nav-logo h-8 sm:h-12 w-auto drop-shadow-[0_4px_12px_rgba(0,0,0,0.15)] group-hover:scale-105 transition-transform" />
+            ) : (
+              <Logo className="home-nav-logo h-8 sm:h-12 w-auto drop-shadow-[0_4px_12px_rgba(0,0,0,0.15)] group-hover:scale-105 transition-transform" />
+            )}
           </Link>
 
           {/* Desktop Nav */}
@@ -207,6 +226,7 @@ export default function Home() {
           <img
             src="/logo.svg"
             alt="Maakon Logo"
+            draggable={false}
             className="h-28 sm:h-40 md:h-56 w-auto object-contain mb-4 sm:mb-6 drop-shadow-[0_35px_60px_rgba(0,0,0,0.2)]"
           />
           <h1

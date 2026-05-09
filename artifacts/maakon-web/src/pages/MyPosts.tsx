@@ -11,6 +11,16 @@ import {
   MapPin, AlertTriangle, Edit2, Plus, ClipboardList,
 } from "lucide-react";
 import Footer from "@/components/layout/Footer";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -85,6 +95,8 @@ export default function MyPosts() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [editingPost, setEditingPost] = useState<MyPost | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [postToDelete, setPostToDelete] = useState<MyPost | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
 
@@ -120,17 +132,25 @@ export default function MyPosts() {
     }
   };
 
-  const handleDelete = async (postId: number) => {
-    if (!confirm("Are you sure you want to delete this post? This cannot be undone.")) return;
+  const handleDelete = (post: MyPost) => {
+    setPostToDelete(post);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!postToDelete) return;
+
     try {
-      setActionLoading(postId);
-      await apiFetch(`/posts/${postId}`, { method: "DELETE" });
-      setPosts(posts.filter(p => p.id !== postId));
+      setActionLoading(postToDelete.id);
+      await apiFetch(`/posts/${postToDelete.id}`, { method: "DELETE" });
+      setPosts(posts.filter(p => p.id !== postToDelete.id));
       toast({ title: t("toast_post_deleted") });
     } catch {
       toast({ title: t("toast_failed_delete"), variant: "destructive" });
     } finally {
       setActionLoading(null);
+      setDeleteDialogOpen(false);
+      setPostToDelete(null);
     }
   };
 
@@ -352,7 +372,7 @@ export default function MyPosts() {
                         )}
                         <div className="flex-1" />
                         <button
-                          onClick={() => handleDelete(post.id)}
+                          onClick={() => handleDelete(post)}
                           disabled={isBeingActioned}
                           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-red-500 hover:bg-red-50 transition-colors disabled:opacity-40"
                         >
@@ -369,6 +389,42 @@ export default function MyPosts() {
         </div>
       </main>
       <Footer />
+
+      <AlertDialog
+        open={deleteDialogOpen}
+        onOpenChange={(open) => {
+          if (actionLoading != null) return;
+          setDeleteDialogOpen(open);
+          if (!open) setPostToDelete(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("myposts_delete")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this post? This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={actionLoading != null}>
+              {t("myposts_cancel_btn")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={actionLoading != null}
+              className="bg-red-600 text-white hover:bg-red-700"
+              onClick={(event) => {
+                event.preventDefault();
+                void handleConfirmDelete();
+              }}
+            >
+              {actionLoading === postToDelete?.id && (
+                <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+              )}
+              {t("myposts_delete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Edit modal */}
       <AnimatePresence>
@@ -393,8 +449,9 @@ export default function MyPosts() {
               </div>
               <div className="p-6 space-y-4">
                 <div>
-                  <label className="block text-sm font-semibold text-slate-600 mb-1.5">{t("myposts_title_label")}</label>
+                  <label htmlFor="edit-title" className="block text-sm font-semibold text-slate-600 mb-1.5">{t("myposts_title_label")}</label>
                   <input
+                    id="edit-title"
                     type="text"
                     value={editTitle}
                     onChange={(e) => setEditTitle(e.target.value)}
@@ -403,8 +460,9 @@ export default function MyPosts() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-slate-600 mb-1.5">{t("myposts_description_label")}</label>
+                  <label htmlFor="edit-description" className="block text-sm font-semibold text-slate-600 mb-1.5">{t("myposts_description_label")}</label>
                   <textarea
+                    id="edit-description"
                     value={editDescription}
                     onChange={(e) => setEditDescription(e.target.value)}
                     rows={5}

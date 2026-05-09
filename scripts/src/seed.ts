@@ -1,15 +1,5 @@
 import { db, pool, postsTable, ngosTable, usersTable, reportsTable, adminActionsTable } from "@workspace/db";
-
-const GOVERNORATE_CENTERS: Record<string, { lat: number; lng: number }> = {
-  "Beirut": { lat: 33.8938, lng: 35.5018 },
-  "Mount Lebanon": { lat: 33.8100, lng: 35.6000 },
-  "North Lebanon": { lat: 34.4333, lng: 35.8333 },
-  "South Lebanon": { lat: 33.2717, lng: 35.2033 },
-  "Nabatieh": { lat: 33.3772, lng: 35.4840 },
-  "Bekaa": { lat: 33.8500, lng: 35.9017 },
-  "Akkar": { lat: 34.5581, lng: 36.0808 },
-  "Baalbek-Hermel": { lat: 34.0049, lng: 36.2098 },
-};
+import { GOVERNORATE_CENTERS } from "@workspace/locations";
 
 function fuzz(val: number) {
   return Math.round((val + (Math.random() - 0.5) * 0.1) * 10000) / 10000;

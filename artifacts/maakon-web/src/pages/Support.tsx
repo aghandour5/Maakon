@@ -32,10 +32,11 @@ const METHODS = [
     accent: "#07614A", // Taptap Send Dark Green
     descEn: "International money transfer with low fees. Ideal for supporters outside Lebanon.",
     descAr: "خدمة تحويل أموال دولية بدون رسوم مرتفعة. مثالية للمقيمين خارج لبنان.",
-    detailEn: "Details coming soon.",
-    detailAr: "سيتم إضافة التفاصيل قريباً.",
-    noteEn: "A direct transfer link will be published here.",
-    noteAr: "رابط التحويل المباشر سيُنشر هنا.",
+    isReady: true,
+    details: {
+      name: "Ali Ghandour",
+      phone: "+961 79 30 79 04"
+    }
   },
   {
     name: "Patreon",

@@ -24,6 +24,7 @@ export default function Footer() {
           <img
             src="/logo.svg"
             alt="Maakon"
+            draggable={false}
             className="h-8 w-auto brightness-0 invert opacity-70"
           />
           <div className="flex flex-col">

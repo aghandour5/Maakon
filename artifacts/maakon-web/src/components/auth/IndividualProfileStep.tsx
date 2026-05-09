@@ -9,6 +9,7 @@ import { completeProfile } from "@/lib/auth-api";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import { Loader2 } from "lucide-react";
 
 export function getProfileSchema(t: any) {
   return z.object({
@@ -64,7 +65,8 @@ export default function IndividualProfileStep({ onComplete }: IndividualProfileS
           {errors.displayName && <p className="text-sm text-destructive">{errors.displayName.message}</p>}
         </div>
 
-        <Button type="submit" className="w-full" disabled={isLoading}>
+        <Button type="submit" className="w-full gap-2" disabled={isLoading}>
+          {isLoading && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
           {isLoading ? t("saving") : t("complete_profile")}
         </Button>
       </form>

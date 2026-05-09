@@ -40,6 +40,7 @@ import { createDraftPost } from "@/lib/auth-api";
 import { supabase } from "@/lib/supabase";
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from "react-leaflet";
 import L from "leaflet";
+import { GOVERNORATE_CENTERS } from "@workspace/locations";
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -167,7 +168,15 @@ export default function PostOffer() {
         e.description = t("min_length", { min: 10 });
     }
     if (s === 3) {
+      const validGovernorate =
+        !!formData.governorate && metadata?.governorates.includes(formData.governorate);
+      const validDistrict =
+        !formData.district ||
+        (validGovernorate && metadata?.districts[formData.governorate!]?.includes(formData.district));
+
       if (!formData.governorate) e.governorate = t("required");
+      else if (!validGovernorate) e.governorate = t("invalid_selection", "Invalid selection");
+      if (!validDistrict) e.district = t("invalid_selection", "Invalid selection");
       if (!expiresInDays) e.expiresInDays = t("required");
 
       const isPhoneContact = ["phone", "whatsapp", "signal"].includes(formData.contactMethod || "");
@@ -525,6 +534,7 @@ export default function PostOffer() {
                               <option key={d} value={d}>{t(d)}</option>
                             ))}
                           </select>
+                          <FieldError msg={errors.district} />
                         </div>
                       ) : null}
                     </div>
@@ -614,17 +624,6 @@ export default function PostOffer() {
 
                 {/* ── Step 4 ──────────────────────────────────────────────── */}
                 {step === 4 && (() => {
-                  // Governorate centers for distance check
-                  const GOV_CENTERS: Record<string, { lat: number; lng: number }> = {
-                    "Beirut": { lat: 33.8938, lng: 35.5018 },
-                    "Mount Lebanon": { lat: 33.8100, lng: 35.6000 },
-                    "North Lebanon": { lat: 34.4333, lng: 35.8333 },
-                    "South Lebanon": { lat: 33.2717, lng: 35.2033 },
-                    "Nabatieh": { lat: 33.3772, lng: 35.4840 },
-                    "Bekaa": { lat: 33.8500, lng: 35.9017 },
-                    "Akkar": { lat: 34.5581, lng: 36.0808 },
-                    "Baalbek-Hermel": { lat: 34.0049, lng: 36.2098 },
-                  };
                   const haversineKm = (lat1: number, lng1: number, lat2: number, lng2: number) => {
                     const R = 6371;
                     const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -634,7 +633,9 @@ export default function PostOffer() {
                       Math.sin(dLng / 2) ** 2;
                     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
                   };
-                  const govCenter = formData.governorate ? GOV_CENTERS[formData.governorate] : null;
+                  const govCenter = formData.governorate
+                    ? GOVERNORATE_CENTERS[formData.governorate as keyof typeof GOVERNORATE_CENTERS]
+                    : null;
                   const pinLat = formData.providedLat;
                   const pinLng = formData.providedLng;
                   const distKm = govCenter && pinLat && pinLng
@@ -756,6 +757,7 @@ export default function PostOffer() {
             {step > 1 && (
               <button
                 onClick={() => go(step - 1)}
+                aria-label={t("back", "Back")}
                 className="w-12 h-12 rounded-2xl border-2 border-slate-200 bg-white flex items-center justify-center text-gray-500 hover:border-slate-300 hover:bg-slate-50 transition-all active:scale-95 shrink-0"
               >
                 {isRtl ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}

@@ -171,7 +171,15 @@ export default function PostNeed() {
       }
     }
     if (s === 3) {
+      const validGovernorate =
+        !!formData.governorate && metadata?.governorates.includes(formData.governorate);
+      const validDistrict =
+        !formData.district ||
+        (validGovernorate && metadata?.districts[formData.governorate!]?.includes(formData.district));
+
       if (!formData.governorate) e.governorate = t("required");
+      else if (!validGovernorate) e.governorate = t("invalid_selection", "Invalid selection");
+      if (!validDistrict) e.district = t("invalid_selection", "Invalid selection");
       if (!expiresInDays) e.expiresInDays = t("required");
       if (isNgo && !ngoData.contactPerson) e.contactPerson = t("required");
       
@@ -653,6 +661,7 @@ export default function PostNeed() {
                              <option value="" disabled>{t("select_placeholder")}</option>
                              {metadata.districts[formData.governorate].map((d) => <option key={d} value={d}>{t(d)}</option>)}
                            </select>
+                           <FieldError msg={errors.district} />
                          </div>
                        ) : null}
                      </div>
@@ -844,6 +853,7 @@ export default function PostNeed() {
             {step > 1 && (
               <button
                 onClick={() => go(step - 1)}
+                aria-label={t("back", "Back")}
                 className="w-12 h-12 rounded-2xl border-2 border-slate-200 bg-white flex items-center justify-center text-gray-500 hover:border-slate-300 hover:bg-slate-50 transition-all active:scale-95 shrink-0"
               >
                 {isRtl ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}

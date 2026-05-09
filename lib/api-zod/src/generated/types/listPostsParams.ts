@@ -16,4 +16,6 @@ export type ListPostsParams = {
   urgency?: ListPostsUrgency;
   activeOnly?: boolean;
   verifiedNgoOnly?: boolean;
+  page?: number;
+  limit?: number;
 };

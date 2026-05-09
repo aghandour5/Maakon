@@ -4,6 +4,8 @@ import { useTranslation } from "react-i18next";
 import { Globe, ArrowRight, ArrowLeft, Menu, X, LogOut, User as UserIcon, Heart } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
+import { Logo } from "./Logo";
+import { LogoRtl } from "./LogoRtl";
 
 interface TopNavProps {
   title?: string;
@@ -43,9 +45,15 @@ export function TopNav({ title, showBack = false }: TopNavProps) {
               {isRtl ? <ArrowRight className="h-4 w-4" aria-hidden="true" /> : <ArrowLeft className="h-4 w-4" aria-hidden="true" />}
             </button>
           )}
-          <Link href="/" className="shrink-0 no-underline mr-2 sm:mr-4 flex items-center gap-2 sm:gap-3 group">
-            <img src={isRtl ? "/logoNavbarRtl.svg" : "/logoNavbar.svg"} alt="Maakon" className="h-7 sm:h-12 w-auto group-hover:scale-105 transition-transform" />
-          </Link>
+          <span dir="ltr" className="shrink-0">
+            <Link href="/" className="no-underline mr-2 sm:mr-4 flex items-center gap-2 sm:gap-3 group">
+              {isRtl ? (
+                <LogoRtl className="h-7 sm:h-12 w-auto group-hover:scale-105 transition-transform" />
+              ) : (
+                <Logo className="h-7 sm:h-12 w-auto group-hover:scale-105 transition-transform" />
+              )}
+            </Link>
+          </span>
           {title && (
             <span className="font-bold text-sm text-slate-500 truncate border-s border-slate-300 ps-3 hidden lg:inline-block">
               {title}

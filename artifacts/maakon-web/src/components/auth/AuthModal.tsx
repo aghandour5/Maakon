@@ -181,7 +181,7 @@ export default function AuthModal() {
                 <div className="w-48 h-48 bg-slate-100 rounded-xl animate-pulse" />
               )}
               {mfaQrCode && (
-                <img src={mfaQrCode} alt="MFA QR Code" className="w-48 h-48 rounded-xl border border-slate-200 shadow-sm" />
+                <img src={mfaQrCode} alt="MFA QR Code" draggable={false} className="w-48 h-48 rounded-xl border border-slate-200 shadow-sm" />
               )}
               <p className="text-xs text-slate-400 text-center max-w-xs">
                 After scanning, enter the 6-digit code from the app to activate 2FA on your account.

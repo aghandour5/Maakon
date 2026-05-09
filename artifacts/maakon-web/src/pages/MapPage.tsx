@@ -520,7 +520,7 @@ export default function MapPage() {
         {showFilters && (
           <div
             className={`
-              absolute z-[500] bg-card border-border shadow-2xl
+              absolute z-[1100] bg-card border-border shadow-2xl
               bottom-0 left-0 right-0 rounded-t-2xl border-t md:border
               md:bottom-auto md:top-22 md:rounded-2xl md:w-80
               ${isRtl ? 'md:left-4 md:right-auto' : 'md:right-4 md:left-auto'}
@@ -567,7 +567,7 @@ export default function MapPage() {
                           ? pt === 'need'
                             ? 'bg-red-500 text-white border-red-500'
                             : 'bg-green-500 text-white border-green-500'
-                          : 'bg-background text-foreground border-border hover:bg-secondary'
+                          : 'bg-background text-foreground border-border hover:bg-slate-100'
                           }`}
                       >
                         {t(pt)}
@@ -634,7 +634,7 @@ export default function MapPage() {
                           onClick={() => updateStringFilter('urgency', filters.urgency === u ? undefined : u)}
                           className={`py-1.5 px-3 rounded-lg text-xs font-medium border transition-colors ${filters.urgency === u
                             ? 'bg-primary text-primary-foreground border-primary'
-                            : 'bg-background text-foreground border-border hover:bg-secondary'
+                            : 'bg-background text-foreground border-border hover:bg-slate-100'
                             }`}
                         >
                           {t(u)}

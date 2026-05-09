@@ -3,6 +3,16 @@ import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { AlertTriangle, RefreshCw, CheckCircle2, EyeOff, Clock, Trash2, Shield, ShieldOff, Loader2, ChevronDown, Activity, ClipboardList, Building2, LayoutDashboard, Globe, Plus, Edit2, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
@@ -148,6 +158,7 @@ function Badge({ status }: { status: string }) {
 function PostActions({ post, onUpdate }: { post: AdminPost; onUpdate: () => void }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
   const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -199,6 +210,16 @@ function PostActions({ post, onUpdate }: { post: AdminPost; onUpdate: () => void
     }
   };
 
+  const requestStatusChange = (status: PostStatus) => {
+    setOpen(false);
+    if (status === "removed") {
+      setRemoveDialogOpen(true);
+      return;
+    }
+
+    void act(status);
+  };
+
   const options: { label: string; status: PostStatus; icon: React.ReactNode }[] = (
     [
       { label: "Restore active", status: "active" as PostStatus, icon: <CheckCircle2 className="w-3.5 h-3.5" /> },
@@ -238,7 +259,7 @@ function PostActions({ post, onUpdate }: { post: AdminPost; onUpdate: () => void
             {options.map((o) => (
               <button
                 key={o.status}
-                onClick={() => act(o.status)}
+                onClick={() => requestStatusChange(o.status)}
                 className="flex items-center gap-2.5 w-full px-4 py-2.5 text-xs font-medium hover:bg-slate-50 text-slate-700 transition-colors text-left"
               >
                 {o.icon}
@@ -249,6 +270,37 @@ function PostActions({ post, onUpdate }: { post: AdminPost; onUpdate: () => void
         </div>,
         document.body
       )}
+
+      <AlertDialog
+        open={removeDialogOpen}
+        onOpenChange={(nextOpen) => {
+          if (loading) return;
+          setRemoveDialogOpen(nextOpen);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove post?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove this post? It will no longer be visible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={loading}
+              className="bg-red-600 text-white hover:bg-red-700"
+              onClick={(event) => {
+                event.preventDefault();
+                void act("removed").finally(() => setRemoveDialogOpen(false));
+              }}
+            >
+              {loading && <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />}
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
@@ -308,6 +360,7 @@ function ReportActions({ report, onUpdate }: { report: AdminReport; onUpdate: ()
 
 function NgoActions({ ngo, onUpdate, onEdit }: { ngo: AdminNgo; onUpdate: () => void; onEdit: (ngo: AdminNgo) => void }) {
   const [loading, setLoading] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const { toast } = useToast();
 
   const toggleVerify = async () => {
@@ -324,54 +377,89 @@ function NgoActions({ ngo, onUpdate, onEdit }: { ngo: AdminNgo; onUpdate: () => 
     }
   };
 
+  const handleConfirmDelete = async () => {
+    setLoading(true);
+    try {
+      await apiFetch(`/admin/ngos/${ngo.id}`, { method: "DELETE" });
+      toast({ title: "Success", description: "NGO deleted successfully" });
+      onUpdate();
+    } catch (e) {
+      toast({ variant: "destructive", title: "Error", description: `Failed to delete: ${e instanceof Error ? e.message : e}` });
+    } finally {
+      setLoading(false);
+      setDeleteDialogOpen(false);
+    }
+  };
+
   return (
-    <div className="flex gap-2 justify-end">
-      <button
-        onClick={async () => {
-          if (!confirm("Are you sure you want to delete this NGO? This action cannot be undone.")) return;
-          setLoading(true);
-          try {
-            await apiFetch(`/admin/ngos/${ngo.id}`, { method: "DELETE" });
-            toast({ title: "Success", description: "NGO deleted successfully" });
-            onUpdate();
-          } catch (e) {
-            toast({ variant: "destructive", title: "Error", description: `Failed to delete: ${e instanceof Error ? e.message : e}` });
-          } finally {
-            setLoading(false);
-          }
+    <>
+      <div className="flex gap-2 justify-end">
+        <button
+          onClick={() => setDeleteDialogOpen(true)}
+          disabled={loading}
+          className="flex items-center justify-center gap-1.5 min-w-[70px] text-xs font-medium border border-red-200 text-red-600 rounded-lg px-3 py-1.5 hover:bg-red-50 transition-all disabled:opacity-50"
+        >
+          <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
+          Delete
+        </button>
+        <button
+          onClick={() => onEdit(ngo)}
+          className="flex items-center justify-center gap-1.5 min-w-[70px] text-xs font-medium border border-slate-200 text-slate-600 rounded-lg px-3 py-1.5 hover:bg-slate-50 transition-all"
+        >
+          <Edit2 className="w-3.5 h-3.5" aria-hidden="true" />
+          Edit
+        </button>
+        <button
+          onClick={toggleVerify}
+          disabled={loading}
+          className={`flex items-center justify-center gap-1.5 min-w-[100px] text-xs font-medium border rounded-lg px-3 py-1.5 disabled:opacity-50 transition-all ${
+            ngo.verifiedAt
+              ? "border-amber-200 text-amber-700 hover:bg-amber-50"
+              : "border-emerald-200 text-emerald-700 hover:bg-emerald-50 bg-emerald-50/50"
+          }`}
+        >
+          {loading ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
+          ) : ngo.verifiedAt ? (
+            <ShieldOff className="w-3.5 h-3.5" aria-hidden="true" />
+          ) : (
+            <Shield className="w-3.5 h-3.5" aria-hidden="true" />
+          )}
+          {ngo.verifiedAt ? "Unverify" : "Verify Logo"}
+        </button>
+      </div>
+
+      <AlertDialog
+        open={deleteDialogOpen}
+        onOpenChange={(nextOpen) => {
+          if (loading) return;
+          setDeleteDialogOpen(nextOpen);
         }}
-        disabled={loading}
-        className="flex items-center justify-center gap-1.5 min-w-[70px] text-xs font-medium border border-red-200 text-red-600 rounded-lg px-3 py-1.5 hover:bg-red-50 transition-all disabled:opacity-50"
       >
-        <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
-        Delete
-      </button>
-      <button
-        onClick={() => onEdit(ngo)}
-        className="flex items-center justify-center gap-1.5 min-w-[70px] text-xs font-medium border border-slate-200 text-slate-600 rounded-lg px-3 py-1.5 hover:bg-slate-50 transition-all"
-      >
-        <Edit2 className="w-3.5 h-3.5" aria-hidden="true" />
-        Edit
-      </button>
-      <button
-        onClick={toggleVerify}
-        disabled={loading}
-        className={`flex items-center justify-center gap-1.5 min-w-[100px] text-xs font-medium border rounded-lg px-3 py-1.5 disabled:opacity-50 transition-all ${
-          ngo.verifiedAt
-            ? "border-amber-200 text-amber-700 hover:bg-amber-50"
-            : "border-emerald-200 text-emerald-700 hover:bg-emerald-50 bg-emerald-50/50"
-        }`}
-      >
-        {loading ? (
-          <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
-        ) : ngo.verifiedAt ? (
-          <ShieldOff className="w-3.5 h-3.5" aria-hidden="true" />
-        ) : (
-          <Shield className="w-3.5 h-3.5" aria-hidden="true" />
-        )}
-        {ngo.verifiedAt ? "Unverify" : "Verify Logo"}
-      </button>
-    </div>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete NGO?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this NGO? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={loading}
+              className="bg-red-600 text-white hover:bg-red-700"
+              onClick={(event) => {
+                event.preventDefault();
+                void handleConfirmDelete();
+              }}
+            >
+              {loading && <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />}
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 
@@ -389,6 +477,9 @@ export default function AdminPage() {
   const [cleanupResult, setCleanupResult] = useState<string | null>(null);
   const [ngoModalOpen, setNgoModalOpen] = useState(false);
   const [editingNgo, setEditingNgo] = useState<AdminNgo | null>(null);
+  const [userDeleteDialogOpen, setUserDeleteDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<AdminUser | null>(null);
+  const [userDeleteLoading, setUserDeleteLoading] = useState(false);
   const { user, isAuthenticated, isLoading: authLoading, mfaStatus, setMfaStatus, openAuthModal } = useAuth();
   const { toast } = useToast();
   const { i18n } = useTranslation();
@@ -518,6 +609,28 @@ export default function AdminPage() {
     } catch (e) {
       setCleanupResult(`Error: ${e}`);
       toast({ variant: "destructive", title: "Error", description: `Cleanup failed: ${e}` });
+    }
+  };
+
+  const requestUserDelete = (targetUser: AdminUser) => {
+    setUserToDelete(targetUser);
+    setUserDeleteDialogOpen(true);
+  };
+
+  const handleConfirmUserDelete = async () => {
+    if (!userToDelete) return;
+
+    setUserDeleteLoading(true);
+    try {
+      await apiFetch(`/admin/users/${userToDelete.id}`, { method: "DELETE" });
+      toast({ title: "Success", description: "User deleted successfully" });
+      refresh();
+    } catch (e) {
+      toast({ variant: "destructive", title: "Error", description: `Failed to delete base user: ${e instanceof Error ? e.message : e}` });
+    } finally {
+      setUserDeleteLoading(false);
+      setUserDeleteDialogOpen(false);
+      setUserToDelete(null);
     }
   };
 
@@ -942,23 +1055,15 @@ export default function AdminPage() {
                         <div className="flex justify-end gap-2">
                            {u.role !== "admin" && (
                               <button
-                                onClick={async () => {
-                                  if (!confirm(`Are you sure you want to delete ${u.displayName || 'this user'}? This will also remove any related entities they created.`)) return;
-                                  setLoading(true);
-                                  try {
-                                    await apiFetch(`/admin/users/${u.id}`, { method: "DELETE" });
-                                    toast({ title: "Success", description: "User deleted successfully" });
-                                    refresh();
-                                  } catch (e) {
-                                    toast({ variant: "destructive", title: "Error", description: `Failed to delete base user: ${e instanceof Error ? e.message : e}` });
-                                  } finally {
-                                    setLoading(false);
-                                  }
-                                }}
-                                disabled={loading}
+                                onClick={() => requestUserDelete(u)}
+                                disabled={loading || userDeleteLoading}
                                 className="flex items-center justify-center gap-1.5 min-w-[70px] text-xs font-medium border border-red-200 text-red-600 rounded-lg px-3 py-1.5 hover:bg-red-50 transition-all disabled:opacity-50"
                               >
-                                <Trash2 className="w-3.5 h-3.5" />
+                                {userDeleteLoading && userToDelete?.id === u.id ? (
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
+                                ) : (
+                                  <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
+                                )}
                                 Delete
                               </button>
                            )}
@@ -985,6 +1090,38 @@ export default function AdminPage() {
         ngo={editingNgo}
         onSave={handleSaveNgo} 
       />
+
+      <AlertDialog
+        open={userDeleteDialogOpen}
+        onOpenChange={(nextOpen) => {
+          if (userDeleteLoading) return;
+          setUserDeleteDialogOpen(nextOpen);
+          if (!nextOpen) setUserToDelete(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete user?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {`Are you sure you want to delete ${userToDelete?.displayName || "this user"}? This will also remove any related entities they created.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={userDeleteLoading}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={userDeleteLoading}
+              className="bg-red-600 text-white hover:bg-red-700"
+              onClick={(event) => {
+                event.preventDefault();
+                void handleConfirmUserDelete();
+              }}
+            >
+              {userDeleteLoading && <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />}
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
     </div>
   );

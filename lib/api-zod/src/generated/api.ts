@@ -26,10 +26,20 @@ export const ListPostsQueryParams = zod.object({
   governorate: zod.coerce.string().optional(),
   district: zod.coerce.string().optional(),
   urgency: zod.enum(["critical", "high", "medium", "low"]).optional(),
-  activeOnly: zod.coerce.boolean().default(listPostsQueryActiveOnlyDefault),
-  verifiedNgoOnly: zod.coerce
-    .boolean()
+  activeOnly: zod
+    .preprocess(
+      (value) => (value === "false" ? false : value === "true" ? true : value),
+      zod.boolean(),
+    )
+    .default(listPostsQueryActiveOnlyDefault),
+  verifiedNgoOnly: zod
+    .preprocess(
+      (value) => (value === "false" ? false : value === "true" ? true : value),
+      zod.boolean(),
+    )
     .default(listPostsQueryVerifiedNgoOnlyDefault),
+  page: zod.coerce.number().min(1).default(1),
+  limit: zod.coerce.number().min(1).max(100).default(20),
 });
 
 export const ListPostsResponseItem = zod
@@ -108,6 +118,7 @@ export const CreatePostBody = zod.object({
     .describe("Exact user-provided longitude from the map"),
   expiresInDays: zod
     .number()
+    .int()
     .min(1)
     .max(createPostBodyExpiresInDaysMax)
     .nullish()

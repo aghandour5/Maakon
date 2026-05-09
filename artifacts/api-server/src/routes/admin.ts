@@ -13,6 +13,7 @@ import { supabaseAdmin } from "../lib/supabase-admin";
 import { logger } from "../lib/logger";
 import { rateLimit } from "express-rate-limit";
 import { adminSubdomainCheck, adminIpWhitelist } from "../middlewares/adminSecurity";
+import { isValidLocation } from "@workspace/locations";
 
 const router: IRouter = Router();
 const INTERNAL_SERVER_ERROR = { error: "Internal server error" };
@@ -355,6 +356,10 @@ router.post("/admin/ngos", async (req, res) => {
     res.status(400).json({ error: "governorate is required" });
     return;
   }
+  if (!isValidLocation(governorate, district ? String(district) : null)) {
+    res.status(400).json({ error: "Invalid governorate or district" });
+    return;
+  }
 
   const [ngo] = await db
     .insert(ngosTable)
@@ -389,6 +394,7 @@ router.patch("/admin/ngos/:id", async (req, res) => {
   if (description != null) updates.description = String(description);
   if (governorate != null) updates.governorate = String(governorate);
   if (district != null) updates.district = String(district);
+  if (governorate != null && district == null) updates.district = null;
   if (lat != null) updates.lat = Number(lat);
   if (lng != null) updates.lng = Number(lng);
   if (phone != null) updates.phone = String(phone);
@@ -398,6 +404,36 @@ router.patch("/admin/ngos/:id", async (req, res) => {
   if (Object.keys(updates).length === 0) {
     res.status(400).json({ error: "No fields provided to update" });
     return;
+  }
+
+  if (updates.governorate != null || updates.district != null) {
+    let validationGovernorate =
+      typeof updates.governorate === "string" ? updates.governorate : undefined;
+
+    if (!validationGovernorate) {
+      const [existingNgo] = await db
+        .select({ governorate: ngosTable.governorate })
+        .from(ngosTable)
+        .where(eq(ngosTable.id, id))
+        .limit(1);
+
+      if (!existingNgo) {
+        res.status(404).json({ error: "NGO not found" });
+        return;
+      }
+
+      validationGovernorate = existingNgo?.governorate;
+    }
+
+    if (
+      !isValidLocation(
+        validationGovernorate,
+        typeof updates.district === "string" ? updates.district : null,
+      )
+    ) {
+      res.status(400).json({ error: "Invalid governorate or district" });
+      return;
+    }
   }
 
   const [ngo] = await db

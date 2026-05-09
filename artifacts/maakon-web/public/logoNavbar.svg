@@ -2,8 +2,10 @@
 <svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 916.51 352.62">
   <defs>
     <style>
+      @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@700;800&amp;display=swap');
+
       .cls-1 {
-        font-family: Cairo-Black, Cairo;
+        font-family: 'Cairo', Cairo-Black, sans-serif;
         font-size: 121.18px;
         font-weight: 800;
       }
@@ -17,7 +19,7 @@
       }
 
       .cls-3 {
-        font-family: Cairo-ExtraBold, Cairo;
+        font-family: 'Cairo', Cairo-ExtraBold, sans-serif;
         font-size: 94.14px;
         font-weight: 700;
       }
