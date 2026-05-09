@@ -1,6 +1,12 @@
 # Maakon
 
-Mobile-first, Arabic-first crisis-response web app for Lebanon.
+![Mobile-first](https://img.shields.io/badge/Mobile-first-FF6B6B?style=flat-square&logo=mobile)
+![Arabic-first](https://img.shields.io/badge/Arabic-first-00A651?style=flat-square)
+![React 19](https://img.shields.io/badge/React-19.0.0-61DAFB?style=flat-square&logo=react&logoColor=white)
+![Express 5](https://img.shields.io/badge/Express-5.0.0-000000?style=flat-square&logo=express&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-316192?style=flat-square&logo=postgresql&logoColor=white)
+
+A mobile-first, Arabic-first crisis-response web app for Lebanon.
 
 ## Stack
 
@@ -18,7 +24,7 @@ Mobile-first, Arabic-first crisis-response web app for Lebanon.
 
 - Node.js 22+
 - pnpm (`npm install -g pnpm`)
-- PostgreSQL running locally (or via Docker, see below)
+- PostgreSQL running locally or via Docker
 
 ## Quick Start
 
@@ -30,7 +36,7 @@ pnpm install
 
 ### 2. Configure environment
 
-Use the root `.env.example` as a template, then copy it into each package:
+Copy the root `.env.example` into the package directories that need runtime configuration:
 
 ```powershell
 Copy-Item .env.example artifacts/api-server/.env
@@ -41,14 +47,14 @@ Copy-Item .env.example lib/db/.env
 
 Adjust values per package:
 
-- `artifacts/api-server/.env`: set `DATABASE_URL`, `PORT=3001`, and Supabase keys
-- `artifacts/maakon-web/.env`: set `PORT=5173`, `BASE_PATH`, `API_URL`, and `VITE_SUPABASE_*`
-- `artifacts/waitlist/.env`: set `NEXT_PUBLIC_SUPABASE_*`
-- `lib/db/.env`: set `DATABASE_URL` (required by drizzle-kit)
+- `artifacts/api-server/.env`: `DATABASE_URL`, `PORT=3001`, Supabase keys, and session settings
+- `artifacts/maakon-web/.env`: `PORT=5173`, `BASE_PATH`, `API_URL`, `VITE_SUPABASE_*`
+- `artifacts/waitlist/.env`: `NEXT_PUBLIC_SUPABASE_*`
+- `lib/db/.env`: `DATABASE_URL`
 
-`DEV_FIREBASE_BYPASS="true"` is only for local API auth bypass. Never enable it in production.
+> `DEV_FIREBASE_BYPASS=true` is only for local development and should never be enabled in production.
 
-### 3. Push DB schema
+### 3. Prepare the database
 
 ```bash
 pnpm --filter @workspace/db run push
@@ -60,19 +66,26 @@ pnpm --filter @workspace/db run push
 pnpm --filter @workspace/scripts run seed
 ```
 
-### 5. Run in dev mode
+### 5. Run development servers
+
+Run frontend and API together:
 
 ```bash
-# Starts API + web together
 pnpm dev
 ```
 
-Run apps individually if needed:
+Run packages individually:
 
 ```bash
 pnpm dev:api                  # Express API -> http://localhost:3001
 pnpm dev:web                  # Vite web app -> http://localhost:5173
 pnpm --filter waitlist dev    # Next.js waitlist -> http://localhost:3000
+```
+
+### 6. Build for production
+
+```bash
+pnpm build
 ```
 
 ## Project Structure
@@ -84,15 +97,38 @@ Maakon/
 │   ├── maakon-web/       # React + Vite frontend
 │   └── waitlist/         # Next.js waitlist page
 ├── lib/
-│   ├── api-client-react/ # Generated React Query hooks (from OpenAPI)
+│   ├── api-client-react/ # Generated React hooks from OpenAPI
 │   ├── api-spec/         # OpenAPI spec + Orval codegen config
 │   ├── api-zod/          # Shared Zod schemas
 │   └── db/               # Drizzle schema + DB connection
 ├── scripts/              # DB migrate + seed scripts
-├── .env.example          # Env template copied into package-level .env files
+├── .env.example          # Env template for package-level config
 ├── pnpm-workspace.yaml
 └── tsconfig.base.json
 ```
+
+## Available npm Scripts
+
+From the repository root:
+
+```bash
+pnpm install
+pnpm dev
+pnpm dev:api
+pnpm dev:web
+pnpm build
+pnpm run typecheck
+```
+
+Package-specific scripts:
+
+- `pnpm --filter @workspace/api-server run dev`
+- `pnpm --filter @workspace/maakon-web run dev`
+- `pnpm --filter waitlist dev`
+- `pnpm --filter @workspace/api-spec run codegen`
+- `pnpm --filter @workspace/db run push`
+- `pnpm --filter @workspace/scripts run migrate`
+- `pnpm --filter @workspace/scripts run seed`
 
 ## API Routes
 
@@ -119,7 +155,7 @@ Authenticated routes:
 | POST | `/api/auth/logout` | Logout current session |
 | GET | `/api/auth/me` | Current user |
 | POST | `/api/auth/mfa-setup` | Admin MFA setup |
-| POST | `/api/auth/mfa-verify` | Admin MFA setup verification |
+| POST | `/api/auth/mfa-verify` | Admin MFA verification |
 | POST | `/api/auth/mfa-challenge` | Admin MFA challenge |
 | POST | `/api/posts` | Create need or offer |
 | GET | `/api/posts/me` | Current user's posts |
