@@ -17,6 +17,12 @@ const basePath = process.env.BASE_PATH ?? "/"; // local default
 // --- API proxy target ---
 const apiTarget = process.env.API_URL ?? "http://localhost:3001";
 
+if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  throw new Error(
+    "SUPABASE_SERVICE_ROLE_KEY must not be configured in the frontend app. Put it only in artifacts/api-server/.env.",
+  );
+}
+
 export default defineConfig({
   base: basePath,
   plugins: [react(), tailwindcss()],

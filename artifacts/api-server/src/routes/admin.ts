@@ -19,9 +19,11 @@ const INTERNAL_SERVER_ERROR = { error: "Internal server error" };
 
 type PostStatus = "pending" | "active" | "hidden" | "resolved" | "expired" | "removed";
 type ReportStatus = "pending" | "reviewed" | "dismissed" | "actioned";
+type NgoStatus = "active" | "hidden" | "removed";
 
 const VALID_POST_STATUSES: PostStatus[] = ["pending", "active", "hidden", "resolved", "expired", "removed"];
 const VALID_REPORT_STATUSES: ReportStatus[] = ["pending", "reviewed", "dismissed", "actioned"];
+const VALID_NGO_STATUSES: NgoStatus[] = ["active", "hidden", "removed"];
 
 const adminLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -38,6 +40,10 @@ function isPostStatus(v: unknown): v is PostStatus {
 
 function isReportStatus(v: unknown): v is ReportStatus {
   return typeof v === "string" && (VALID_REPORT_STATUSES as string[]).includes(v);
+}
+
+function isNgoStatus(v: unknown): v is NgoStatus {
+  return typeof v === "string" && (VALID_NGO_STATUSES as string[]).includes(v);
 }
 
 function normalizeCount(value: unknown): number {
@@ -406,6 +412,10 @@ router.post("/admin/ngos", async (req, res) => {
     res.status(400).json({ error: "Invalid governorate or district" });
     return;
   }
+  if (status != null && !isNgoStatus(status)) {
+    res.status(400).json({ error: `status must be one of: ${VALID_NGO_STATUSES.join(", ")}` });
+    return;
+  }
 
   const [ngo] = await db
     .insert(ngosTable)
@@ -418,7 +428,7 @@ router.post("/admin/ngos", async (req, res) => {
       lng: lng != null ? Number(lng) : null,
       phone: phone ? String(phone) : null,
       website: website ? String(website) : null,
-      status: status ? String(status) : "active",
+      status: status ?? "active",
       verifiedAt: verified ? new Date() : null,
     })
     .returning();
@@ -445,7 +455,13 @@ router.patch("/admin/ngos/:id", async (req, res) => {
   if (lng != null) updates.lng = Number(lng);
   if (phone != null) updates.phone = String(phone);
   if (website != null) updates.website = String(website);
-  if (status != null) updates.status = String(status);
+  if (status != null) {
+    if (!isNgoStatus(status)) {
+      res.status(400).json({ error: `status must be one of: ${VALID_NGO_STATUSES.join(", ")}` });
+      return;
+    }
+    updates.status = status;
+  }
 
   if (Object.keys(updates).length === 0) {
     res.status(400).json({ error: "No fields provided to update" });
