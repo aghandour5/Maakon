@@ -1,7 +1,11 @@
 import type { Request, Response, NextFunction } from "express";
 import { logger } from "../lib/logger";
 
-const ADMIN_SUBDOMAIN = process.env.ADMIN_SUBDOMAIN || "admin.maakon.com";
+const ADMIN_SUBDOMAIN = process.env.ADMIN_SUBDOMAIN?.trim() || "";
+const EXPLICIT_ADMIN_ALLOWED_HOSTS = (process.env.ADMIN_ALLOWED_HOSTS || "")
+  .split(",")
+  .map(host => host.trim())
+  .filter(Boolean);
 const CORS_HOSTS = (process.env.CORS_ORIGINS || "")
   .split(",")
   .map(origin => origin.trim())
@@ -17,13 +21,11 @@ const ADMIN_ALLOWED_HOSTS = [
   ADMIN_SUBDOMAIN,
   process.env.RENDER_EXTERNAL_HOSTNAME,
   ...CORS_HOSTS,
-  ...(process.env.ADMIN_ALLOWED_HOSTS || "")
-    .split(",")
-    .map(host => host.trim())
-    .filter(Boolean),
+  ...EXPLICIT_ADMIN_ALLOWED_HOSTS,
 ]
   .filter((host): host is string => !!host)
   .map(host => host.toLowerCase());
+const ADMIN_HOST_CHECK_ENABLED = Boolean(ADMIN_SUBDOMAIN || EXPLICIT_ADMIN_ALLOWED_HOSTS.length > 0);
 const ADMIN_IP_WHITELIST = (process.env.ADMIN_IP_WHITELIST || "")
   .split(",")
   .map(ip => ip.trim())
@@ -46,12 +48,12 @@ function getRequestHosts(req: Request): string[] {
 }
 
 /**
- * Ensures that the request hostname matches the required admin subdomain.
- * Bypassed in local development unless specifically targeting it.
+ * Optionally ensures that the request hostname matches a configured admin host.
+ * Admin role and MFA are still enforced separately by the admin router.
  */
 export const adminSubdomainCheck = (req: Request, res: Response, next: NextFunction) => {
-  if (process.env.NODE_ENV !== "production") {
-    return next(); // Bypass for local dev where hostname is usually localhost
+  if (process.env.NODE_ENV !== "production" || !ADMIN_HOST_CHECK_ENABLED) {
+    return next();
   }
 
   const requestHosts = getRequestHosts(req);
