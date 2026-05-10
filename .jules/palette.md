@@ -1,0 +1,3 @@
+## 2024-05-10 - Add accessible labels and loading states to MFA inputs
+**Learning:** In the MFA setup and challenge forms, standard accessibility attributes for error handling (`aria-invalid` and `aria-describedby`) and asynchronous visual feedback were missing. Adding these attributes to the single `input` alongside the `Loader2` spinner greatly improves the UX and accessibility for a critical security flow.
+**Action:** When implementing authentication and verification flows, always explicitly bind inline error states to inputs using `aria-invalid` and `aria-describedby`, mark the error text with `role="alert"`, and ensure submit buttons display a clear loading spinner during network requests to prevent confusion and double-submissions.

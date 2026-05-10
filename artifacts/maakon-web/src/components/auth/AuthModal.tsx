@@ -8,6 +8,7 @@ import EmailStep from "./EmailStep";
 
 import { useTranslation } from "react-i18next";
 import { setupMfa, verifyMfa, challengeMfa, fetchCurrentUser } from "@/lib/auth-api";
+import { Loader2 } from "lucide-react";
 
 export type AuthStep = "email" | "accountType" | "checkEmail" | "individualProfile" | "ngoProfile" | "mfaSetup" | "mfaChallenge";
 export type AccountType = "individual" | "ngo";
@@ -194,14 +195,24 @@ export default function AuthModal() {
                 value={mfaCode}
                 onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                 className="w-full text-center text-2xl font-mono tracking-[0.5em] border border-slate-200 rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                aria-label="6-digit authenticator app code"
+                aria-invalid={!!mfaError}
+                aria-describedby={mfaError ? "mfa-setup-error" : undefined}
               />
-              {mfaError && <p className="text-sm text-red-500">{mfaError}</p>}
+              {mfaError && <p id="mfa-setup-error" role="alert" className="text-sm text-red-500">{mfaError}</p>}
               <button
                 onClick={handleMfaSubmit}
                 disabled={mfaCode.length !== 6 || mfaLoading}
-                className="w-full py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="w-full py-3 flex items-center justify-center gap-2 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {mfaLoading ? "Verifying..." : "Activate 2FA"}
+                {mfaLoading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />
+                    Verifying...
+                  </>
+                ) : (
+                  "Activate 2FA"
+                )}
               </button>
             </div>
           )}
@@ -226,14 +237,24 @@ export default function AuthModal() {
                 onKeyDown={(e) => e.key === "Enter" && handleMfaSubmit()}
                 className="w-full text-center text-2xl font-mono tracking-[0.5em] border border-slate-200 rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 autoFocus
+                aria-label="6-digit authenticator app code"
+                aria-invalid={!!mfaError}
+                aria-describedby={mfaError ? "mfa-challenge-error" : undefined}
               />
-              {mfaError && <p className="text-sm text-red-500">{mfaError}</p>}
+              {mfaError && <p id="mfa-challenge-error" role="alert" className="text-sm text-red-500">{mfaError}</p>}
               <button
                 onClick={handleMfaSubmit}
                 disabled={mfaCode.length !== 6 || mfaLoading}
-                className="w-full py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="w-full py-3 flex items-center justify-center gap-2 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {mfaLoading ? "Verifying..." : "Continue"}
+                {mfaLoading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />
+                    Verifying...
+                  </>
+                ) : (
+                  "Continue"
+                )}
               </button>
             </div>
           )}
