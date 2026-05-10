@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { TopNav } from "@/components/layout/TopNav";
 import { useListPosts, useListNgos, useGetMetadata } from "@workspace/api-client-react";
 import type { ListPostsParams, PostPublic, Ngo } from "@workspace/api-client-react";
-import { MapContainer, TileLayer, Marker, Popup, ZoomControl, useMap } from "react-leaflet";
+import { CircleMarker, MapContainer, TileLayer, Marker, Popup, ZoomControl, useMap } from "react-leaflet";
 import MarkerClusterGroup from "react-leaflet-cluster";
 import L from "leaflet";
 import { PostDetailsModal } from "@/components/map/PostDetailsModal";
@@ -68,7 +68,9 @@ function ModernMapControls() {
   const isRtl = i18n.dir() === "rtl";
   const ref = useRef<HTMLDivElement>(null);
   const [locating, setLocating] = useState(false);
-  const [locateError, setLocateError] = useState(false);
+  const [locateMessage, setLocateMessage] = useState<string | null>(null);
+  const [locateStatus, setLocateStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
 
   useEffect(() => {
     if (ref.current) {
@@ -77,61 +79,140 @@ function ModernMapControls() {
     }
   }, []);
 
+  const showLocateMessage = (message: string, status: 'success' | 'error') => {
+    setLocateMessage(message);
+    setLocateStatus(status);
+    window.setTimeout(() => {
+      setLocateMessage(null);
+      setLocateStatus('idle');
+    }, 4500);
+  };
+
+  const getLocateErrorMessage = (error: GeolocationPositionError) => {
+    if (error.code === error.PERMISSION_DENIED) {
+      return t('locate_permission_denied', 'Location permission is blocked. Allow location access in your browser settings.');
+    }
+    if (error.code === error.POSITION_UNAVAILABLE) {
+      return t('locate_unavailable', 'Could not detect your location. Check GPS or network location services.');
+    }
+    if (error.code === error.TIMEOUT) {
+      return t('locate_timeout', 'Location request timed out. Try again.');
+    }
+    return t('locate_failed', 'Could not detect your location.');
+  };
+
   const handleLocate = () => {
-    if (!navigator.geolocation) return;
+    if (!window.isSecureContext) {
+      showLocateMessage(
+        t('locate_secure_context_required', 'Location only works on HTTPS or localhost.'),
+        'error',
+      );
+      return;
+    }
+    if (!navigator.geolocation) {
+      showLocateMessage(t('locate_not_supported', 'This browser does not support location detection.'), 'error');
+      return;
+    }
     setLocating(true);
-    setLocateError(false);
+    setLocateMessage(null);
+    setLocateStatus('idle');
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setLocating(false);
-        map.flyTo([pos.coords.latitude, pos.coords.longitude], 14, { duration: 1 });
+        const nextLocation: [number, number] = [pos.coords.latitude, pos.coords.longitude];
+        const lebanonBounds = L.latLngBounds(LEBANON_BOUNDS as L.LatLngTuple[]);
+
+        if (!lebanonBounds.contains(nextLocation)) {
+          showLocateMessage(
+            t('locate_outside_map', 'Your detected location is outside Lebanon, so it cannot be shown on this map.'),
+            'error',
+          );
+          map.flyToBounds(LEBANON_BOUNDS, { duration: 1 });
+          return;
+        }
+
+        setUserLocation(nextLocation);
+        map.invalidateSize();
+        map.flyTo(nextLocation, Math.max(map.getZoom(), 15), { duration: 1 });
+        showLocateMessage(t('locate_success', 'Location found.'), 'success');
       },
-      () => {
+      (error) => {
         setLocating(false);
-        setLocateError(true);
-        setTimeout(() => setLocateError(false), 3000);
+        showLocateMessage(getLocateErrorMessage(error), 'error');
       },
-      { timeout: 8000 },
+      { enableHighAccuracy: true, maximumAge: 30000, timeout: 15000 },
     );
   };
 
   return (
-    <div ref={ref} className={`absolute top-4 sm:top-6 ${isRtl ? 'right-4 sm:right-6' : 'left-4 sm:left-6'} z-[1000] flex flex-col gap-2`}>
-      <button
-        onClick={() => map.zoomIn()}
-        className="w-10 h-10 bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.12)] border border-slate-200/50 flex flex-col items-center justify-center text-slate-700 hover:bg-white hover:text-emerald-600 transition-all hover:scale-105 active:scale-95"
-        aria-label={t("zoom_in", "Zoom in")}
-      >
-        <Plus className="w-5 h-5" aria-hidden="true" />
-      </button>
-      <button
-        onClick={() => map.zoomOut()}
-        className="w-10 h-10 bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.12)] border border-slate-200/50 flex flex-col items-center justify-center text-slate-700 hover:bg-white hover:text-emerald-600 transition-all hover:scale-105 active:scale-95"
-        aria-label={t("zoom_out", "Zoom out")}
-      >
-        <Minus className="w-5 h-5" aria-hidden="true" />
-      </button>
-      <button
-        onClick={() => map.flyToBounds([[33.05, 35.1], [34.70, 36.65]], { duration: 1.2 })}
-        className="w-10 h-10 bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.12)] border border-slate-200/50 flex items-center justify-center text-slate-700 hover:bg-white hover:text-emerald-600 transition-all hover:scale-105 active:scale-95 mt-1 sm:mt-2"
-        title={t('fit_to_screen') || "Fit to Screen"}
-        aria-label={t("fit_to_screen", "Fit to Screen")}
-      >
-        <Maximize className="w-4 h-4 sm:w-5 sm:h-5" aria-hidden="true" />
-      </button>
-      <button
-        onClick={handleLocate}
-        disabled={locating}
-        title={t('locate_me') || "My Location"}
-        aria-label={t("locate_me", "My Location")}
-        className={`w-10 h-10 backdrop-blur-md rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.12)] border flex items-center justify-center transition-all hover:scale-105 active:scale-95 ${locateError
-          ? 'bg-red-50 border-red-200 text-red-500'
-          : 'bg-white/90 border-slate-200/50 text-slate-700 hover:bg-white hover:text-blue-600'
-          } ${locating ? 'opacity-60 cursor-wait' : ''}`}
-      >
-        <LocateFixed className={`w-4 h-4 sm:w-5 sm:h-5 ${locating ? 'animate-pulse text-blue-500' : ''}`} aria-hidden="true" />
-      </button>
-    </div>
+    <>
+      {userLocation && (
+        <CircleMarker
+          center={userLocation}
+          radius={9}
+          pathOptions={{
+            color: '#ffffff',
+            fillColor: '#2563eb',
+            fillOpacity: 1,
+            opacity: 1,
+            weight: 3,
+          }}
+        />
+      )}
+      <div ref={ref} className={`absolute top-4 sm:top-6 ${isRtl ? 'right-4 sm:right-6' : 'left-4 sm:left-6'} z-[1000] flex flex-col gap-2`}>
+        <button
+          type="button"
+          onClick={() => map.zoomIn()}
+          className="w-10 h-10 bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.12)] border border-slate-200/50 flex flex-col items-center justify-center text-slate-700 hover:bg-white hover:text-emerald-600 transition-all hover:scale-105 active:scale-95"
+          aria-label={t("zoom_in", "Zoom in")}
+        >
+          <Plus className="w-5 h-5" aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          onClick={() => map.zoomOut()}
+          className="w-10 h-10 bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.12)] border border-slate-200/50 flex flex-col items-center justify-center text-slate-700 hover:bg-white hover:text-emerald-600 transition-all hover:scale-105 active:scale-95"
+          aria-label={t("zoom_out", "Zoom out")}
+        >
+          <Minus className="w-5 h-5" aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          onClick={() => map.flyToBounds(LEBANON_BOUNDS, { duration: 1.2 })}
+          className="w-10 h-10 bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.12)] border border-slate-200/50 flex items-center justify-center text-slate-700 hover:bg-white hover:text-emerald-600 transition-all hover:scale-105 active:scale-95 mt-1 sm:mt-2"
+          title={t('fit_to_screen') || "Fit to Screen"}
+          aria-label={t("fit_to_screen", "Fit to Screen")}
+        >
+          <Maximize className="w-4 h-4 sm:w-5 sm:h-5" aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          onClick={handleLocate}
+          disabled={locating}
+          title={t('locate_me') || "My Location"}
+          aria-label={t("locate_me", "My Location")}
+          className={`w-10 h-10 backdrop-blur-md rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.12)] border flex items-center justify-center transition-all hover:scale-105 active:scale-95 ${locateStatus === 'error'
+            ? 'bg-red-50 border-red-200 text-red-500'
+            : locateStatus === 'success'
+              ? 'bg-blue-50 border-blue-200 text-blue-600'
+              : 'bg-white/90 border-slate-200/50 text-slate-700 hover:bg-white hover:text-blue-600'
+            } ${locating ? 'opacity-60 cursor-wait' : ''}`}
+        >
+          <LocateFixed className={`w-4 h-4 sm:w-5 sm:h-5 ${locating ? 'animate-pulse text-blue-500' : ''}`} aria-hidden="true" />
+        </button>
+        {locateMessage && (
+          <div
+            className={`max-w-64 rounded-xl border px-3 py-2 text-xs font-semibold shadow-md backdrop-blur-md ${locateStatus === 'success'
+              ? 'border-blue-200 bg-blue-50/95 text-blue-700'
+              : 'border-red-200 bg-red-50/95 text-red-700'
+              }`}
+            role="status"
+          >
+            {locateMessage}
+          </div>
+        )}
+      </div>
+    </>
   );
 }
 
