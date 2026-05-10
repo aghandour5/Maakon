@@ -161,6 +161,9 @@ const resources = {
       sign_in_required: "تسجيل الدخول مطلوب",
       sign_in_continue: "تسجيل الدخول للمتابعة",
       sign_in_manage_posts: "سجل الدخول لعرض وإدارة منشوراتك.",
+      auth_title_account: "اختر نوع الحساب",
+      auth_title_profile: "إكمال الملف الشخصي",
+      auth_title_ngo: "تفاصيل المؤسسة",
       
       account_individual: "حساب فردي",
       account_ngo: "مؤسسة / جمعية",
@@ -483,6 +486,9 @@ const resources = {
       sign_in_required: "Sign In Required",
       sign_in_continue: "Sign In to Continue",
       sign_in_manage_posts: "Sign in to view and manage your listings.",
+      auth_title_account: "Choose Account Type",
+      auth_title_profile: "Complete Your Profile",
+      auth_title_ngo: "Organization Details",
       
       account_individual: "Individual",
       account_ngo: "NGO / Organization",

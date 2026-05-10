@@ -1,8 +1,7 @@
 /**
  * Admin/moderation routes.
  * Requires an authenticated user with the 'admin' role.
- * Exposes full post list (with exactAddressPrivate for moderation context)
- * but NEVER exposes privateLat or privateLng.
+ * Exposes moderation views without private requester coordinates.
  */
 import { Router, type IRouter } from "express";
 import { requireAuth, requireAdmin, requireMfa } from "../middlewares/auth";
@@ -46,8 +45,8 @@ function normalizeCount(value: unknown): number {
   return Number.isFinite(count) ? count : 0;
 }
 
-// Admin post view — adds exactAddressPrivate for moderation context
-// privateLat / privateLng are NEVER exposed
+// Admin post view. Private requester coordinates and exact private addresses
+// are intentionally not included in the default moderation list.
 function toAdminPost(post: typeof postsTable.$inferSelect) {
   return {
     id: post.id,
@@ -60,7 +59,6 @@ function toAdminPost(post: typeof postsTable.$inferSelect) {
     district: post.district ?? null,
     publicLat: post.publicLat ?? null,
     publicLng: post.publicLng ?? null,
-    exactAddressPrivate: post.exactAddressPrivate ?? null,
     providerType: post.providerType ?? null,
     contactMethod: post.contactMethod ?? null,
     contactInfo: post.contactInfo ?? null,
@@ -70,7 +68,39 @@ function toAdminPost(post: typeof postsTable.$inferSelect) {
     updatedAt: post.updatedAt,
     expiresAt: post.expiresAt ?? null,
     lastConfirmedAt: post.lastConfirmedAt ?? null,
-    // privateLat, privateLng — NEVER included
+  };
+}
+
+function toAdminUser(user: typeof usersTable.$inferSelect) {
+  return {
+    id: user.id,
+    email: user.email ?? null,
+    displayName: user.displayName ?? null,
+    role: user.role,
+    accountType: user.accountType,
+    onboardingComplete: user.onboardingComplete,
+    emailVerified: user.emailVerified,
+    ngoVerificationStatus: user.ngoVerificationStatus ?? null,
+    mfaEnabled: user.mfaEnabled,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+  };
+}
+
+function toAdminNgo(ngo: typeof ngosTable.$inferSelect) {
+  return {
+    id: ngo.id,
+    name: ngo.name,
+    description: ngo.description ?? null,
+    governorate: ngo.governorate,
+    district: ngo.district ?? null,
+    lat: ngo.lat ?? null,
+    lng: ngo.lng ?? null,
+    phone: ngo.phone ?? null,
+    website: ngo.website ?? null,
+    verifiedAt: ngo.verifiedAt ?? null,
+    status: ngo.status,
+    createdAt: ngo.createdAt,
   };
 }
 
@@ -270,7 +300,7 @@ router.patch("/admin/reports/:id/status", async (req, res) => {
 router.get("/admin/users", async (_req, res) => {
   try {
     const users = await db.select().from(usersTable).orderBy(desc(usersTable.createdAt));
-    res.json(users);
+    res.json(users.map(toAdminUser));
   } catch (err) {
     logger.error({ err }, "Failed to fetch users");
     res.status(500).json(INTERNAL_SERVER_ERROR);
@@ -284,6 +314,22 @@ router.delete("/admin/users/:id", async (req, res) => {
     return;
   }
   try {
+    const [existingUser] = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.id, id))
+      .limit(1);
+
+    if (!existingUser) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+
+    if (existingUser.role === "admin") {
+      res.status(403).json({ error: "Admin users cannot be deleted from this endpoint" });
+      return;
+    }
+
     // 1. Find the user's posts so we can delete their reports first
     const userPosts = await db
       .select({ id: postsTable.id })
@@ -303,18 +349,18 @@ router.delete("/admin/users/:id", async (req, res) => {
     await db.delete(adminActionsTable).where(eq(adminActionsTable.adminId, id));
 
     // 5. Delete the user
-    const [user] = await db
+    const [deletedUser] = await db
       .delete(usersTable)
       .where(eq(usersTable.id, id))
       .returning();
 
-    if (!user) {
+    if (!deletedUser) {
       res.status(404).json({ error: "User not found" });
       return;
     }
 
     // 6. Attempt to delete from Supabase Auth if a UID is present
-    const supabaseUid = (user as { supabaseUid?: string | null }).supabaseUid;
+    const supabaseUid = (deletedUser as { supabaseUid?: string | null }).supabaseUid;
     if (supabaseUid && supabaseAdmin) {
       const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(supabaseUid);
       if (authError) {
@@ -322,7 +368,7 @@ router.delete("/admin/users/:id", async (req, res) => {
       }
     }
 
-    res.json(user);
+    res.json(toAdminUser(deletedUser));
   } catch (err: any) {
     logger.error({ err, userId: id }, "Failed to delete user");
     res.status(500).json(INTERNAL_SERVER_ERROR);
@@ -334,7 +380,7 @@ router.delete("/admin/users/:id", async (req, res) => {
 router.get("/admin/ngos", async (_req, res) => {
   try {
     const ngos = await db.select().from(ngosTable).orderBy(desc(ngosTable.createdAt));
-    res.json(ngos);
+    res.json(ngos.map(toAdminNgo));
   } catch (err) {
     logger.error({ err }, "Failed to fetch NGOs");
     res.status(500).json(INTERNAL_SERVER_ERROR);
@@ -377,7 +423,7 @@ router.post("/admin/ngos", async (req, res) => {
     })
     .returning();
 
-  res.status(201).json(ngo);
+  res.status(201).json(toAdminNgo(ngo));
 });
 
 router.patch("/admin/ngos/:id", async (req, res) => {
@@ -447,7 +493,7 @@ router.patch("/admin/ngos/:id", async (req, res) => {
     return;
   }
 
-  res.json(ngo);
+  res.json(toAdminNgo(ngo));
 });
 
 router.delete("/admin/ngos/:id", async (req, res) => {
@@ -466,7 +512,7 @@ router.delete("/admin/ngos/:id", async (req, res) => {
       res.status(404).json({ error: "NGO not found" });
       return;
     }
-    res.json(ngo);
+    res.json(toAdminNgo(ngo));
   } catch (err: any) {
     logger.error({ err, ngoId: id }, "Failed to delete NGO");
     res.status(500).json(INTERNAL_SERVER_ERROR);
@@ -493,7 +539,7 @@ router.patch("/admin/ngos/:id/verify", async (req, res) => {
       .where(and(eq(postsTable.userId, (ngo as any).userId), eq(postsTable.providerType, "ngo")));
   }
 
-  res.json(ngo);
+  res.json(toAdminNgo(ngo));
 });
 
 router.delete("/admin/ngos/:id/verify", async (req, res) => {
@@ -516,7 +562,7 @@ router.delete("/admin/ngos/:id/verify", async (req, res) => {
       .where(and(eq(postsTable.userId, (ngo as any).userId), eq(postsTable.providerType, "ngo")));
   }
 
-  res.json(ngo);
+  res.json(toAdminNgo(ngo));
 });
 
 // ── Stale post cleanup ─────────────────────────────────────────────────────────

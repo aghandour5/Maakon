@@ -12,7 +12,6 @@ import { ar, enUS } from "date-fns/locale";
 import type { PostPublic, Ngo, CreateReportInputReason } from "@workspace/api-client-react";
 import { useCreateReport, CreateReportInputReason as ReasonEnum } from "@workspace/api-client-react";
 import { useAuthGate } from "@/hooks/useAuthGate";
-import { useAuth } from "@/contexts/AuthContext";
 
 interface PostDetailsModalProps {
   item: PostPublic | Ngo | null;
@@ -80,7 +79,6 @@ export function PostDetailsModal({ item, isOpen, onClose, type, onViewNgo }: Pos
 
   const createReport = useCreateReport();
   const { requireAuth } = useAuthGate();
-  const { user } = useAuth();
 
   if (!item) return null;
 
@@ -88,7 +86,7 @@ export function PostDetailsModal({ item, isOpen, onClose, type, onViewNgo }: Pos
   const isPost = type === 'post';
   const post = isPost ? (item as PostPublic) : null;
   const ngo = isNgo ? (item as Ngo) : null;
-  const isOwnPost = isPost && post?.userId === user?.id;
+  const isOwnPost = isPost && post?.isOwnPost === true;
 
   const title = post ? post.title : ngo?.name;
   const description = post ? post.description : ngo?.description;

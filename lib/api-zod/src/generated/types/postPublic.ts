@@ -14,7 +14,8 @@ import type { PostPublicUrgency } from "./postPublicUrgency";
  */
 export interface PostPublic {
   id: number;
-  userId: number;
+  /** True only when the authenticated viewer owns this post; false for unauthenticated/public viewers */
+  isOwnPost: boolean;
   /** ID of the NGO if the provider is an NGO */
   ngoId?: number | null;
   postType: PostPublicPostType;

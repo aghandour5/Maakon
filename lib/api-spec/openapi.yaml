@@ -302,8 +302,9 @@ components:
       properties:
         id:
           type: integer
-        userId:
-          type: integer
+        isOwnPost:
+          type: boolean
+          description: True only when the authenticated viewer owns this post; false for unauthenticated/public viewers.
         ngoId:
           type: integer
           nullable: true
@@ -369,7 +370,7 @@ components:
           nullable: true
       required:
         - id
-        - userId
+        - isOwnPost
         - postType
         - title
         - category
@@ -387,6 +388,8 @@ components:
         - $ref: "#/components/schemas/PostPublic"
         - type: object
           properties:
+            userId:
+              type: integer
             privateLat:
               type: number
               format: double

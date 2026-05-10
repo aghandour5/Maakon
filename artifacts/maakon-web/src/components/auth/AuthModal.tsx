@@ -7,6 +7,7 @@ import NgoProfileStep from "./NgoProfileStep";
 import EmailStep from "./EmailStep";
 
 import { useTranslation } from "react-i18next";
+import { Loader2 } from "lucide-react";
 import { setupMfa, verifyMfa, challengeMfa, fetchCurrentUser } from "@/lib/auth-api";
 
 export type AuthStep = "email" | "accountType" | "checkEmail" | "individualProfile" | "ngoProfile" | "mfaSetup" | "mfaChallenge";
@@ -23,6 +24,8 @@ export default function AuthModal() {
   const [mfaCode, setMfaCode] = useState("");
   const [mfaError, setMfaError] = useState("");
   const [mfaLoading, setMfaLoading] = useState(false);
+  const mfaSetupErrorId = "mfa-setup-error";
+  const mfaChallengeErrorId = "mfa-challenge-error";
 
   // If the user is logged in but onboarding is not complete, force the modal open
   // and set the correct step — regardless of isAuthModalOpen.
@@ -92,10 +95,10 @@ export default function AuthModal() {
   const currentTitle = () => {
     switch (step) {
       case "email": return t("sign_in");
-      case "accountType": return t("auth_title_account");
+      case "accountType": return t("auth_title_account", "Choose Account Type");
       case "checkEmail": return t("auth_title_check_email", "Check Your Email");
-      case "individualProfile": return t("auth_title_profile");
-      case "ngoProfile": return t("auth_title_ngo");
+      case "individualProfile": return t("auth_title_profile", "Complete Your Profile");
+      case "ngoProfile": return t("auth_title_ngo", "Organization Details");
       case "mfaSetup": return "Set Up Two-Factor Authentication";
       case "mfaChallenge": return "Two-Factor Authentication";
       default: return "";
@@ -189,18 +192,23 @@ export default function AuthModal() {
               <input
                 type="text"
                 inputMode="numeric"
+                aria-label="6-digit authenticator app code"
+                aria-invalid={!!mfaError}
+                aria-describedby={mfaError ? mfaSetupErrorId : undefined}
                 maxLength={6}
                 placeholder="000000"
                 value={mfaCode}
                 onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                 className="w-full text-center text-2xl font-mono tracking-[0.5em] border border-slate-200 rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
-              {mfaError && <p className="text-sm text-red-500">{mfaError}</p>}
+              {mfaError && <p id={mfaSetupErrorId} role="alert" className="text-sm text-red-500">{mfaError}</p>}
               <button
+                type="button"
                 onClick={handleMfaSubmit}
                 disabled={mfaCode.length !== 6 || mfaLoading}
-                className="w-full py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="w-full py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
               >
+                {mfaLoading && <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />}
                 {mfaLoading ? "Verifying..." : "Activate 2FA"}
               </button>
             </div>
@@ -219,6 +227,9 @@ export default function AuthModal() {
               <input
                 type="text"
                 inputMode="numeric"
+                aria-label="6-digit authenticator app code"
+                aria-invalid={!!mfaError}
+                aria-describedby={mfaError ? mfaChallengeErrorId : undefined}
                 maxLength={6}
                 placeholder="000000"
                 value={mfaCode}
@@ -227,12 +238,14 @@ export default function AuthModal() {
                 className="w-full text-center text-2xl font-mono tracking-[0.5em] border border-slate-200 rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 autoFocus
               />
-              {mfaError && <p className="text-sm text-red-500">{mfaError}</p>}
+              {mfaError && <p id={mfaChallengeErrorId} role="alert" className="text-sm text-red-500">{mfaError}</p>}
               <button
+                type="button"
                 onClick={handleMfaSubmit}
                 disabled={mfaCode.length !== 6 || mfaLoading}
-                className="w-full py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="w-full py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
               >
+                {mfaLoading && <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />}
                 {mfaLoading ? "Verifying..." : "Continue"}
               </button>
             </div>

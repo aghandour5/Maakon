@@ -12,6 +12,7 @@ import AuthModal from "@/components/auth/AuthModal";
 import AdminPage from "@/pages/AdminPage";
 import About from "@/pages/About";
 import Contact from "@/pages/Contact";
+import FAQ from "@/pages/FAQ";
 import MyPosts from "@/pages/MyPosts";
 import Support from "@/pages/Support";
 import AuthCallback from "@/pages/auth/AuthCallback";
@@ -39,6 +40,7 @@ function Router() {
       <Route path="/my-posts" component={MyPosts} />
       <Route path="/admin" component={AdminPage} />
       <Route path="/about" component={About} />
+      <Route path="/faq" component={FAQ} />
       <Route path="/contact" component={Contact} />
       <Route path="/support" component={Support} />
       <Route component={NotFound} />

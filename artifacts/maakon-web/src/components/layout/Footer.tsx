@@ -12,7 +12,7 @@ export default function Footer() {
     { labelEn: "Support Us", labelAr: "ادعمنا", href: "/support" },
     { labelEn: "About Us", labelAr: "من نحن", href: "/about" },
     { labelEn: "Contact Us", labelAr: "تواصل معنا", href: "/contact" },
-    { labelEn: "FAQs", labelAr: "الأسئلة الشائعة", href: "/#faq" }, // Placeholder route
+    { labelEn: "FAQs", labelAr: "الأسئلة الشائعة", href: "/faq" },
   ];
 
   return (

@@ -45,7 +45,11 @@ export const ListPostsQueryParams = zod.object({
 export const ListPostsResponseItem = zod
   .object({
     id: zod.number(),
-    userId: zod.number(),
+    isOwnPost: zod
+      .boolean()
+      .describe(
+        "True only when the authenticated viewer owns this post; false for unauthenticated/public viewers",
+      ),
     ngoId: zod
       .number()
       .nullish()
@@ -131,6 +135,11 @@ export const CreatePostBody = zod.object({
 export const ListMyPostsResponseItem = zod
   .object({
     id: zod.number(),
+    isOwnPost: zod
+      .boolean()
+      .describe(
+        "True only when the authenticated viewer owns this post; false for unauthenticated/public viewers",
+      ),
     userId: zod.number(),
     ngoId: zod
       .number()
@@ -185,7 +194,11 @@ export const GetPostParams = zod.object({
 export const GetPostResponse = zod
   .object({
     id: zod.number(),
-    userId: zod.number(),
+    isOwnPost: zod
+      .boolean()
+      .describe(
+        "True only when the authenticated viewer owns this post; false for unauthenticated/public viewers",
+      ),
     ngoId: zod
       .number()
       .nullish()
@@ -248,6 +261,11 @@ export const UpdatePostBody = zod.object({
 export const UpdatePostResponse = zod
   .object({
     id: zod.number(),
+    isOwnPost: zod
+      .boolean()
+      .describe(
+        "True only when the authenticated viewer owns this post; false for unauthenticated/public viewers",
+      ),
     userId: zod.number(),
     ngoId: zod
       .number()

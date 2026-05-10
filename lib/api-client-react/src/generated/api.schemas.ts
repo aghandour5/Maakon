@@ -43,7 +43,8 @@ export const PostPublicStatus = {
  */
 export interface PostPublic {
   id: number;
-  userId: number;
+  /** True only when the authenticated viewer owns this post; false for unauthenticated/public viewers */
+  isOwnPost: boolean;
   /** ID of the NGO if the provider is an NGO */
   ngoId?: number | null;
   postType: PostPublicPostType;
@@ -73,6 +74,7 @@ export interface PostPublic {
  * A post that includes exact private coordinates and address, returned only to its owner
  */
 export type PostPrivate = PostPublic & {
+  userId: number;
   privateLat?: number | null;
   privateLng?: number | null;
   exactAddressPrivate?: string | null;

@@ -55,6 +55,13 @@ const draftPostLimiter = customRateLimit(
   "Too many draft post submissions, please try again later.",
 );
 
+function isVulnerableNeedPost(
+  postType: "need" | "offer",
+  providerType?: string | null,
+): boolean {
+  return postType === "need" && providerType !== "ngo";
+}
+
 // ── Supabase Email-Link Login ─────────────────────────────────────────────────
 
 router.post("/auth/supabase-login", loginLimiter, async (req: Request, res: Response) => {
@@ -308,6 +315,12 @@ router.post("/posts/draft", draftPostLimiter, async (req: Request, res: Response
     draftData.providedLng ?? null,
     draftData.providerType ?? null,
   );
+  const storePrivateLocation = !isVulnerableNeedPost(
+    draftData.postType,
+    draftData.providerType ?? null,
+  );
+  const storedPrivateLat = storePrivateLocation ? draftData.providedLat ?? null : null;
+  const storedPrivateLng = storePrivateLocation ? draftData.providedLng ?? null : null;
 
   // Compute expiry
   const expiresInDays = parsed.data.expiresInDays && parsed.data.expiresInDays > 0
@@ -326,8 +339,8 @@ router.post("/posts/draft", draftPostLimiter, async (req: Request, res: Response
     district: parsed.data.district ?? null,
     publicLat,
     publicLng,
-    privateLat: draftData.providedLat ?? null,
-    privateLng: draftData.providedLng ?? null,
+    privateLat: storedPrivateLat,
+    privateLng: storedPrivateLng,
     exactAddressPrivate: parsed.data.exactAddressPrivate ?? null,
     providerType: parsed.data.providerType ?? null,
     contactMethod: parsed.data.contactMethod ?? null,

@@ -194,7 +194,7 @@ export default function About() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
               href="/need/new"
-              className="inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl text-white font-bold text-sm transition-transform active:scale-95"
+              className="inline-flex w-60 max-w-full items-center justify-center gap-2 px-7 py-3.5 rounded-2xl text-white font-bold text-sm transition-transform active:scale-95"
               style={{ background: "linear-gradient(135deg, #ed1c24, #ff4d4d)", boxShadow: "0 6px 20px rgba(237,28,36,0.35)" }}
             >
               {isRtl ? "أحتاج مساعدة" : "I Need Help"}
@@ -202,7 +202,7 @@ export default function About() {
             </Link>
             <Link
               href="/offer/new"
-              className="inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl text-white font-bold text-sm transition-transform active:scale-95"
+              className="inline-flex w-60 max-w-full items-center justify-center gap-2 px-7 py-3.5 rounded-2xl text-white font-bold text-sm transition-transform active:scale-95"
               style={{ background: "linear-gradient(135deg, #00a651, #10b981)", boxShadow: "0 6px 20px rgba(0,166,81,0.35)" }}
             >
               {isRtl ? "أريد المساعدة" : "I Want to Help"}

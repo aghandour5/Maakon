@@ -12,6 +12,22 @@ function fuzzCoordinate(coord: number): number {
 
 const router: IRouter = Router();
 
+function toPublicNgo(ngo: typeof ngosTable.$inferSelect) {
+  return {
+    id: ngo.id,
+    name: ngo.name,
+    description: ngo.description ?? null,
+    governorate: ngo.governorate,
+    district: ngo.district ?? null,
+    lat: ngo.lat ?? null,
+    lng: ngo.lng ?? null,
+    phone: ngo.phone ?? null,
+    website: ngo.website ?? null,
+    verifiedAt: ngo.verifiedAt ?? null,
+    createdAt: ngo.createdAt,
+  };
+}
+
 router.get("/ngos", async (req, res) => {
   const query = ListNgosQueryParams.safeParse(req.query);
   if (!query.success) {
@@ -35,13 +51,13 @@ router.get("/ngos", async (req, res) => {
     : allNgos;
 
   const mapped = filtered.map(ngo => {
-    if (ngo.lat && ngo.lng) return ngo;
+    if (ngo.lat != null && ngo.lng != null) return toPublicNgo(ngo);
     const center = getLocationCenter(ngo.governorate, ngo.district);
-    return {
+    return toPublicNgo({
       ...ngo,
       lat: fuzzCoordinate(center.lat),
       lng: fuzzCoordinate(center.lng)
-    };
+    });
   });
 
   res.json(mapped);

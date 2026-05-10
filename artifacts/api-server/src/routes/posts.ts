@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { requireAuth } from "../middlewares/auth";
+import { optionalAuth, requireAuth } from "../middlewares/auth";
 import { rateLimit } from "../middlewares/rateLimit";
 import { db } from "@workspace/db";
 import { postsTable, ngosTable } from "@workspace/db/schema";
@@ -28,7 +28,17 @@ const createPostRateLimiter = rateLimit(
   "Too many post submissions, please try again after 15 minutes.",
 );
 
-function toPublicPost(post: typeof postsTable.$inferSelect) {
+function isVulnerableNeedPost(
+  postType: "need" | "offer",
+  providerType?: string | null,
+): boolean {
+  return postType === "need" && providerType !== "ngo";
+}
+
+function toPublicPost(
+  post: typeof postsTable.$inferSelect,
+  viewerUserId?: number | null,
+) {
   const { lat: publicLat, lng: publicLng } =
     post.publicLat != null && post.publicLng != null
       ? clampLocationCoordinates(
@@ -41,7 +51,7 @@ function toPublicPost(post: typeof postsTable.$inferSelect) {
 
   return {
     id: post.id,
-    userId: post.userId,
+    isOwnPost: viewerUserId != null && post.userId === viewerUserId,
     postType: post.postType,
     title: post.title,
     category: post.category,
@@ -64,9 +74,13 @@ function toPublicPost(post: typeof postsTable.$inferSelect) {
   };
 }
 
-function toPrivatePost(post: typeof postsTable.$inferSelect) {
+function toPrivatePost(
+  post: typeof postsTable.$inferSelect,
+  viewerUserId?: number | null,
+) {
   return {
-    ...toPublicPost(post),
+    ...toPublicPost(post, viewerUserId),
+    userId: post.userId,
     privateLat: post.privateLat ?? null,
     privateLng: post.privateLng ?? null,
     exactAddressPrivate: post.exactAddressPrivate ?? null,
@@ -81,7 +95,7 @@ function isPubliclyVisiblePost(post: typeof postsTable.$inferSelect): boolean {
   return !post.expiresAt || post.expiresAt.getTime() > Date.now();
 }
 
-router.get("/posts", async (req, res) => {
+router.get("/posts", optionalAuth, async (req, res) => {
   const query = ListPostsQueryParams.safeParse(req.query);
   if (!query.success) {
     logger.warn({ err: query.error, path: req.originalUrl }, "Invalid list-posts query");
@@ -137,7 +151,7 @@ router.get("/posts", async (req, res) => {
     .offset((page - 1) * limit);
 
   res.json(rows.map(({ post, ngoId }) => ({
-    ...toPublicPost(post),
+    ...toPublicPost(post, req.user?.id),
     ngoId: post.providerType === "ngo" ? ngoId : null,
   })));
 });
@@ -171,6 +185,10 @@ router.post("/posts", requireAuth, createPostRateLimiter, async (req, res) => {
     res.status(400).json({ error: "Invalid governorate or district" });
     return;
   }
+
+  const storePrivateLocation = !isVulnerableNeedPost(postType, providerType);
+  const storedPrivateLat = storePrivateLocation ? providedLat ?? null : null;
+  const storedPrivateLng = storePrivateLocation ? providedLng ?? null : null;
 
   const { publicLat, publicLng } = getPublicCoordinates(
     postType,
@@ -209,8 +227,8 @@ router.post("/posts", requireAuth, createPostRateLimiter, async (req, res) => {
             description,
             governorate,
             district: district ?? null,
-            lat: providedLat ?? null,
-            lng: providedLng ?? null,
+            lat: storedPrivateLat,
+            lng: storedPrivateLng,
             phone: contactInfo ?? null,
             status: "active",
           })
@@ -235,8 +253,8 @@ router.post("/posts", requireAuth, createPostRateLimiter, async (req, res) => {
         district: district ?? null,
         publicLat,
         publicLng,
-        privateLat: providedLat ?? null,
-        privateLng: providedLng ?? null,
+        privateLat: storedPrivateLat,
+        privateLng: storedPrivateLng,
         exactAddressPrivate: exactAddressPrivate ?? null,
         providerType: providerType ?? null,
         verifiedBadgeType,
@@ -253,7 +271,7 @@ router.post("/posts", requireAuth, createPostRateLimiter, async (req, res) => {
   });
 
   res.status(201).json({
-    ...toPublicPost(post),
+    ...toPublicPost(post, req.user!.id),
     ngoId,
   });
 });
@@ -270,7 +288,7 @@ router.get("/posts/me", requireAuth, async (req, res) => {
     .orderBy(desc(postsTable.createdAt));
 
   res.json(rows.map(({ post, ngoId }) => ({
-    ...toPrivatePost(post),
+    ...toPrivatePost(post, req.user!.id),
     ngoId: post.providerType === "ngo" ? ngoId : null,
   })));
 });
@@ -308,7 +326,7 @@ router.patch("/posts/:id", requireAuth, async (req, res) => {
     return void res.status(404).json({ error: "Post not found or forbidden" });
   }
 
-  res.json(toPrivatePost(updatedPost));
+  res.json(toPrivatePost(updatedPost, req.user!.id));
 });
 
 router.delete("/posts/:id", requireAuth, async (req, res) => {
@@ -332,7 +350,7 @@ router.delete("/posts/:id", requireAuth, async (req, res) => {
   res.status(204).send();
 });
 
-router.get("/posts/:id", async (req, res) => {
+router.get("/posts/:id", optionalAuth, async (req, res) => {
   const params = GetPostParams.safeParse({ id: Number(req.params.id) });
   if (!params.success) {
     logger.warn({ err: params.error, path: req.originalUrl }, "Invalid get-post params");
@@ -356,7 +374,7 @@ router.get("/posts/:id", async (req, res) => {
   }
 
   res.json({
-    ...toPublicPost(row.post),
+    ...toPublicPost(row.post, req.user?.id),
     ngoId: row.post.providerType === "ngo" ? row.ngoId : null,
   });
 });
