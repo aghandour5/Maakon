@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: maakon-api
+    env: node
+    buildCommand: pnpm install && pnpm --filter @workspace/api-server build
+    startCommand: cd artifacts/api-server && node dist/index.cjs
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
