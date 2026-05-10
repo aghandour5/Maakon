@@ -30,7 +30,8 @@ export default function AuthModal() {
   // If the user is logged in but onboarding is not complete, force the modal open
   // and set the correct step — regardless of isAuthModalOpen.
   const needsOnboarding = !!user && !user.onboardingComplete;
-  const isOpen = isAuthModalOpen || needsOnboarding;
+  const needsMfa = !!mfaStatus;
+  const isOpen = isAuthModalOpen || needsOnboarding || needsMfa;
 
   useEffect(() => {
     if (needsOnboarding) {
@@ -107,14 +108,14 @@ export default function AuthModal() {
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {
-      // Don't allow closing while onboarding is required
-      if (!open && !needsOnboarding) {
+      // Don't allow closing while onboarding or admin MFA is required.
+      if (!open && !needsOnboarding && !needsMfa) {
         handleOpenChange(open);
       }
     }}>
       <DialogContent className="!translate-y-0 !top-[10%] sm:!translate-y-[-50%] sm:!top-[50%] sm:max-w-[425px] max-h-[85vh] overflow-y-auto overflow-x-hidden" onInteractOutside={(e) => {
-        // Prevent closing by clicking outside during onboarding
-        if (needsOnboarding) e.preventDefault();
+        // Prevent closing by clicking outside during required onboarding or admin MFA.
+        if (needsOnboarding || needsMfa) e.preventDefault();
       }}>
         <DialogHeader>
           <DialogTitle className="text-xl text-center">{currentTitle()}</DialogTitle>

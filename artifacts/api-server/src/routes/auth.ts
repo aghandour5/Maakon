@@ -170,8 +170,15 @@ router.post("/auth/supabase-login", loginLimiter, async (req: Request, res: Resp
   res.cookie(SESSION_COOKIE_NAME, token, getSessionCookieOptions());
   res.cookie(CSRF_COOKIE_NAME, csrfToken, getCsrfCookieOptions());
 
+  const mfaStatus =
+    user.role === "admin"
+      ? user.mfaEnabled
+        ? "mfa_challenge"
+        : "mfa_setup_required"
+      : "success";
+
   res.json({
-    status: "success",
+    status: mfaStatus,
     user: {
       id: user.id,
       email: user.email,
@@ -182,6 +189,7 @@ router.post("/auth/supabase-login", loginLimiter, async (req: Request, res: Resp
       emailVerified: user.emailVerified,
       ngoVerificationStatus: user.ngoVerificationStatus,
       mfaEnabled: user.mfaEnabled,
+      mfaVerified: false,
     },
     isNew,
   });
@@ -454,6 +462,7 @@ router.get("/auth/me", requireAuth, async (req: Request, res: Response) => {
       emailVerified: user.emailVerified,
       ngoVerificationStatus: user.ngoVerificationStatus,
       mfaEnabled: user.mfaEnabled,
+      mfaVerified: req.mfaVerified ?? false,
     }
   });
 });

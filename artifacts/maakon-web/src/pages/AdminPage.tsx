@@ -116,6 +116,26 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   return res.json();
 }
 
+function formatAdminFetchError(error: unknown, fallback: string): string {
+  const status = typeof error === "object" && error !== null && "status" in error
+    ? (error as { status?: unknown }).status
+    : undefined;
+
+  if (status === 404) {
+    return "Admin API is not available from this host. Check ADMIN_ALLOWED_HOSTS, ADMIN_SUBDOMAIN, and the frontend /api rewrite.";
+  }
+
+  if (status === 401) {
+    return "Your admin session expired. Sign in again.";
+  }
+
+  if (status === 403) {
+    return "You do not have permission to access this admin resource, or MFA is required.";
+  }
+
+  return error instanceof Error ? error.message : fallback;
+}
+
 function daysUntil(dateStr: string | null): string {
   if (!dateStr) return "—";
   const diff = Math.round((new Date(dateStr).getTime() - Date.now()) / 86400000);
@@ -516,7 +536,7 @@ export default function AdminPage() {
       setPosts(p);
     } catch (e: any) {
       if (e.code === "MFA_REQUIRED") handleMfaRequired();
-      setError(e instanceof Error ? e.message : "Failed to load posts");
+      setError(formatAdminFetchError(e, "Failed to load posts"));
     } finally {
       setLoading(false);
     }
@@ -530,7 +550,7 @@ export default function AdminPage() {
       setReports(r);
     } catch (e: any) {
       if (e.code === "MFA_REQUIRED") handleMfaRequired();
-      setError(e instanceof Error ? e.message : "Failed to load reports");
+      setError(formatAdminFetchError(e, "Failed to load reports"));
     } finally {
       setLoading(false);
     }
@@ -544,7 +564,7 @@ export default function AdminPage() {
       setNgos(n);
     } catch (e: any) {
       if (e.code === "MFA_REQUIRED") handleMfaRequired();
-      setError(e instanceof Error ? e.message : "Failed to load NGOs");
+      setError(formatAdminFetchError(e, "Failed to load NGOs"));
     } finally {
       setLoading(false);
     }
@@ -558,7 +578,7 @@ export default function AdminPage() {
       setUsersList(u);
     } catch (e: any) {
       if (e.code === "MFA_REQUIRED") handleMfaRequired();
-      setError(e instanceof Error ? e.message : "Failed to load users");
+      setError(formatAdminFetchError(e, "Failed to load users"));
     } finally {
       setLoading(false);
     }
@@ -836,7 +856,7 @@ export default function AdminPage() {
         {error && !error.includes("403") && !loading && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-3 text-sm font-medium text-red-600 mb-6 bg-red-50 p-4 rounded-2xl border border-red-100 shadow-sm">
             <AlertTriangle className="w-5 h-5" />
-            Error fetching {tab}: {error}. Is the database running?
+            Error fetching {tab}: {error}
           </motion.div>
         )}
 

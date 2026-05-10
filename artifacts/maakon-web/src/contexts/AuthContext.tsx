@@ -22,6 +22,7 @@ export interface AuthUser {
   emailVerified: boolean;
   ngoVerificationStatus: string | null;
   mfaEnabled: boolean;
+  mfaVerified: boolean;
 }
 
 interface AuthContextType {
@@ -141,6 +142,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const handleAuthenticatedUser = useCallback((newUser: AuthUser) => {
+    if (newUser.role === "admin" && !newUser.mfaVerified) {
+      setMfaStatus(newUser.mfaEnabled ? "mfa_challenge" : "mfa_setup_required");
+      setIsAuthModalOpen(true);
+    }
+
     if (!newUser.onboardingComplete) {
       setIsAuthModalOpen(true);
     }
