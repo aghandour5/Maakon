@@ -17,14 +17,22 @@ const basePath = process.env.BASE_PATH ?? "/"; // local default
 // --- API proxy target ---
 const apiTarget = process.env.API_URL ?? "http://localhost:3001";
 
-if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
-  throw new Error(
-    "SUPABASE_SERVICE_ROLE_KEY must not be configured in the frontend app. Put it only in artifacts/api-server/.env.",
-  );
+const forbiddenClientEnvKeys = [
+  "VITE_SUPABASE_SERVICE_ROLE_KEY",
+  "VITE_SUPABASE_SECRET_KEY",
+];
+
+for (const envKey of forbiddenClientEnvKeys) {
+  if (process.env[envKey]) {
+    throw new Error(
+      `${envKey} must not be configured in the frontend app. Use only VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in artifacts/maakon-web/.env.`,
+    );
+  }
 }
 
 export default defineConfig({
   base: basePath,
+  envPrefix: "VITE_",
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
