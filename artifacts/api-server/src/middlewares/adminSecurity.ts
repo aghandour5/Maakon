@@ -25,6 +25,11 @@ const ADMIN_ALLOWED_HOSTS = [
 ]
   .filter((host): host is string => !!host)
   .map(host => host.toLowerCase());
+
+if (process.env.NODE_ENV === "production" && ADMIN_ALLOWED_HOSTS.length === 0) {
+  throw new Error("CRITICAL SECURITY ERROR: No admin allowed hosts are configured. ADMIN_SUBDOMAIN or ADMIN_ALLOWED_HOSTS must be provided in production to restrict admin access.");
+}
+
 const ADMIN_HOST_CHECK_ENABLED = Boolean(ADMIN_SUBDOMAIN || EXPLICIT_ADMIN_ALLOWED_HOSTS.length > 0);
 const ADMIN_IP_WHITELIST = (process.env.ADMIN_IP_WHITELIST || "")
   .split(",")
