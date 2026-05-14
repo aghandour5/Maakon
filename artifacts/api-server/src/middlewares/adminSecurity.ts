@@ -31,6 +31,16 @@ const ADMIN_IP_WHITELIST = (process.env.ADMIN_IP_WHITELIST || "")
   .map(ip => ip.trim())
   .filter(Boolean);
 
+// Fail-closed initialization for security-sensitive variables in production
+if (process.env.NODE_ENV === "production") {
+  if (!ADMIN_HOST_CHECK_ENABLED) {
+    throw new Error("CRITICAL: ADMIN_SUBDOMAIN or ADMIN_ALLOWED_HOSTS must be configured in production.");
+  }
+  if (ADMIN_IP_WHITELIST.length === 0) {
+    throw new Error("CRITICAL: ADMIN_IP_WHITELIST must be configured in production.");
+  }
+}
+
 function normalizeHost(host: string | undefined): string | null {
   if (!host) return null;
   return host.split(",", 1)[0].trim().toLowerCase();
@@ -75,10 +85,14 @@ export const adminSubdomainCheck = (req: Request, res: Response, next: NextFunct
  * Enforces IP restriction based on the ADMIN_IP_WHITELIST env var.
  */
 export const adminIpWhitelist = (req: Request, res: Response, next: NextFunction) => {
-  // If no whitelist is defined, we allow-all (fail-open) to prevent locking admins out
-  // during initial rollout. In a strict setup, you might want to fail-closed.
-  if (ADMIN_IP_WHITELIST.length === 0) {
+  if (ADMIN_IP_WHITELIST.length === 0 && process.env.NODE_ENV !== "production") {
+    // Only allow fail-open in non-production environments
     return next();
+  } else if (ADMIN_IP_WHITELIST.length === 0) {
+    // This branch shouldn't be hit due to the initialization check, but defensively fail-closed
+    logger.warn({ path: req.originalUrl }, "Blocked admin request because IP whitelist is not configured");
+    res.status(403).json({ error: "Admin IP whitelist not configured" });
+    return;
   }
 
   const clientIp = req.ip || req.socket.remoteAddress || "";
