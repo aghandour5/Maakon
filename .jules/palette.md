@@ -1,0 +1,3 @@
+## 2024-05-16 - Add focus states to custom selection buttons
+**Learning:** Custom selection buttons (like the account type selectors) in the authentication flow require explicit `focus-visible` classes (`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2`) and `aria-pressed` states to ensure proper accessibility and keyboard navigation support within the Maakon design system.
+**Action:** Always ensure custom button implementations or interactive div elements acting as buttons include both visible focus indicators using existing design tokens and appropriate ARIA semantic states like `aria-pressed` or `aria-selected`.
