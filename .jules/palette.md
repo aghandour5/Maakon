@@ -1,0 +1,3 @@
+## 2024-05-18 - Keyboard Accessibility for Custom Radio Buttons
+**Learning:** In the Maakon design system, custom button implementations or interactive div elements acting as buttons (such as account type selectors) require explicit focus-visible classes (`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2`) and ARIA semantic states like `aria-pressed` or `aria-selected` to ensure proper keyboard accessibility.
+**Action:** When implementing or modifying custom selection controls (e.g., cards acting as radio buttons), always verify that they have an accessible `aria-pressed` or `aria-selected` state, and ensure they have a visually distinct focus ring using the standard `focus-visible` utility classes for keyboard users.
