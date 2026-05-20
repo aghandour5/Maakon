@@ -20,7 +20,7 @@ const { feedbacksTable, insertFeedbackSchema } = dbSchema as unknown as {
     | {
         safeParse: (
           input: unknown,
-        ) => { success: true; data: unknown } | { success: false };
+        ) => { success: true; data: unknown } | { success: false; error?: unknown };
       }
     | {
         parse: (input: unknown) => unknown;
@@ -34,6 +34,10 @@ router.post("/feedback", feedbackRateLimiter, async (req, res) => {
       : { success: true as const, data: insertFeedbackSchema.parse(req.body) };
 
   if (!parsed.success) {
+    logger.warn(
+      { err: "error" in parsed ? parsed.error : undefined, path: req.originalUrl },
+      "Feedback validation failed"
+    );
     res.status(400).json({ error: "Invalid feedback payload" });
     return;
   }
