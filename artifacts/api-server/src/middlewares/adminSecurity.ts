@@ -31,6 +31,12 @@ const ADMIN_IP_WHITELIST = (process.env.ADMIN_IP_WHITELIST || "")
   .map(ip => ip.trim())
   .filter(Boolean);
 
+// SECURITY: Fail-closed configuration
+// We require an explicit IP whitelist for the admin console to prevent accidental exposure.
+if (process.env.NODE_ENV === "production" && ADMIN_IP_WHITELIST.length === 0) {
+  throw new Error("ADMIN_IP_WHITELIST environment variable is not configured. Failing closed.");
+}
+
 function normalizeHost(host: string | undefined): string | null {
   if (!host) return null;
   return host.split(",", 1)[0].trim().toLowerCase();
@@ -75,12 +81,6 @@ export const adminSubdomainCheck = (req: Request, res: Response, next: NextFunct
  * Enforces IP restriction based on the ADMIN_IP_WHITELIST env var.
  */
 export const adminIpWhitelist = (req: Request, res: Response, next: NextFunction) => {
-  // If no whitelist is defined, we allow-all (fail-open) to prevent locking admins out
-  // during initial rollout. In a strict setup, you might want to fail-closed.
-  if (ADMIN_IP_WHITELIST.length === 0) {
-    return next();
-  }
-
   const clientIp = req.ip || req.socket.remoteAddress || "";
 
   if (!ADMIN_IP_WHITELIST.includes(clientIp)) {
