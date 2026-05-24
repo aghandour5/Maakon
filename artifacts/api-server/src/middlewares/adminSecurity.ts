@@ -52,8 +52,14 @@ function getRequestHosts(req: Request): string[] {
  * Admin role and MFA are still enforced separately by the admin router.
  */
 export const adminSubdomainCheck = (req: Request, res: Response, next: NextFunction) => {
-  if (process.env.NODE_ENV !== "production" || !ADMIN_HOST_CHECK_ENABLED) {
+  if (process.env.NODE_ENV !== "production" && !ADMIN_HOST_CHECK_ENABLED) {
     return next();
+  }
+
+  if (process.env.NODE_ENV === "production" && !ADMIN_HOST_CHECK_ENABLED) {
+    logger.warn({ ip: req.ip }, "Blocked admin request: Host check is not configured in production");
+    res.status(404).end(); // Fail closed in production
+    return;
   }
 
   const requestHosts = getRequestHosts(req);
@@ -75,10 +81,14 @@ export const adminSubdomainCheck = (req: Request, res: Response, next: NextFunct
  * Enforces IP restriction based on the ADMIN_IP_WHITELIST env var.
  */
 export const adminIpWhitelist = (req: Request, res: Response, next: NextFunction) => {
-  // If no whitelist is defined, we allow-all (fail-open) to prevent locking admins out
-  // during initial rollout. In a strict setup, you might want to fail-closed.
-  if (ADMIN_IP_WHITELIST.length === 0) {
+  if (process.env.NODE_ENV !== "production" && ADMIN_IP_WHITELIST.length === 0) {
     return next();
+  }
+
+  if (process.env.NODE_ENV === "production" && ADMIN_IP_WHITELIST.length === 0) {
+    logger.warn({ path: req.originalUrl }, "Blocked admin request: IP Whitelist is not configured in production");
+    res.status(403).json({ error: "Access denied: Missing security configuration" });
+    return;
   }
 
   const clientIp = req.ip || req.socket.remoteAddress || "";
