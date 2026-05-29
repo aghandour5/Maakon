@@ -1,0 +1,3 @@
+## 2024-05-29 - Mutually Exclusive Button Selectors
+**Learning:** Custom UI components acting as mutually exclusive button selectors (like account type choice) require `role="radio"` and `aria-checked` to be correctly interpreted by assistive technologies. Using standard `<button>` without these attributes prevents screen readers from understanding their grouped, selectable state.
+**Action:** Always wrap these custom selections in a `role="radiogroup"` with an appropriate `aria-label`, assign `role="radio"` and `aria-checked` to the individual interactive elements, and ensure focus-visible styles are present for keyboard users.
