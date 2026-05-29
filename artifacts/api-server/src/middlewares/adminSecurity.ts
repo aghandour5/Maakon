@@ -26,10 +26,19 @@ const ADMIN_ALLOWED_HOSTS = [
   .filter((host): host is string => !!host)
   .map(host => host.toLowerCase());
 const ADMIN_HOST_CHECK_ENABLED = Boolean(ADMIN_SUBDOMAIN || EXPLICIT_ADMIN_ALLOWED_HOSTS.length > 0);
+
+if (process.env.NODE_ENV === "production" && !ADMIN_HOST_CHECK_ENABLED) {
+  throw new Error("CRITICAL: Admin subdomain or explicit allowed hosts must be configured in production (ADMIN_SUBDOMAIN or ADMIN_ALLOWED_HOSTS).");
+}
+
 const ADMIN_IP_WHITELIST = (process.env.ADMIN_IP_WHITELIST || "")
   .split(",")
   .map(ip => ip.trim())
   .filter(Boolean);
+
+if (process.env.NODE_ENV === "production" && ADMIN_IP_WHITELIST.length === 0) {
+  throw new Error("CRITICAL: Admin IP whitelist must be configured in production (ADMIN_IP_WHITELIST).");
+}
 
 function normalizeHost(host: string | undefined): string | null {
   if (!host) return null;
@@ -75,9 +84,9 @@ export const adminSubdomainCheck = (req: Request, res: Response, next: NextFunct
  * Enforces IP restriction based on the ADMIN_IP_WHITELIST env var.
  */
 export const adminIpWhitelist = (req: Request, res: Response, next: NextFunction) => {
-  // If no whitelist is defined, we allow-all (fail-open) to prevent locking admins out
-  // during initial rollout. In a strict setup, you might want to fail-closed.
-  if (ADMIN_IP_WHITELIST.length === 0) {
+  // Fail-closed mechanism for production is enforced during module initialization.
+  // We still allow missing whitelist in development environments.
+  if (process.env.NODE_ENV !== "production" && ADMIN_IP_WHITELIST.length === 0) {
     return next();
   }
 
