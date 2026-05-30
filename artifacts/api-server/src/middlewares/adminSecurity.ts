@@ -31,6 +31,15 @@ const ADMIN_IP_WHITELIST = (process.env.ADMIN_IP_WHITELIST || "")
   .map(ip => ip.trim())
   .filter(Boolean);
 
+if (process.env.NODE_ENV === "production") {
+  if (!ADMIN_SUBDOMAIN) {
+    throw new Error("ADMIN_SUBDOMAIN environment variable is required in production");
+  }
+  if (ADMIN_IP_WHITELIST.length === 0) {
+    throw new Error("ADMIN_IP_WHITELIST environment variable is required in production");
+  }
+}
+
 function normalizeHost(host: string | undefined): string | null {
   if (!host) return null;
   return host.split(",", 1)[0].trim().toLowerCase();
@@ -52,7 +61,7 @@ function getRequestHosts(req: Request): string[] {
  * Admin role and MFA are still enforced separately by the admin router.
  */
 export const adminSubdomainCheck = (req: Request, res: Response, next: NextFunction) => {
-  if (process.env.NODE_ENV !== "production" || !ADMIN_HOST_CHECK_ENABLED) {
+  if (process.env.NODE_ENV !== "production") {
     return next();
   }
 
@@ -75,9 +84,7 @@ export const adminSubdomainCheck = (req: Request, res: Response, next: NextFunct
  * Enforces IP restriction based on the ADMIN_IP_WHITELIST env var.
  */
 export const adminIpWhitelist = (req: Request, res: Response, next: NextFunction) => {
-  // If no whitelist is defined, we allow-all (fail-open) to prevent locking admins out
-  // during initial rollout. In a strict setup, you might want to fail-closed.
-  if (ADMIN_IP_WHITELIST.length === 0) {
+  if (process.env.NODE_ENV !== "production" && ADMIN_IP_WHITELIST.length === 0) {
     return next();
   }
 
