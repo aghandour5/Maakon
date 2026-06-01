@@ -20,8 +20,9 @@ export default function AccountTypeStep({ accountType, setAccountType, onNext }:
       <div className="grid gap-4">
         <button
           type="button"
+          aria-pressed={accountType === "individual"}
           onClick={() => setAccountType("individual")}
-          className={`flex items-start gap-4 p-4 rounded-lg border-2 text-left transition-colors ${
+          className={`flex items-start gap-4 p-4 rounded-lg border-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
             accountType === "individual" 
               ? "border-primary bg-primary/5" 
               : "border-muted hover:border-primary/50"
@@ -40,8 +41,9 @@ export default function AccountTypeStep({ accountType, setAccountType, onNext }:
 
         <button
           type="button"
+          aria-pressed={accountType === "ngo"}
           onClick={() => setAccountType("ngo")}
-          className={`flex items-start gap-4 p-4 rounded-lg border-2 text-left transition-colors ${
+          className={`flex items-start gap-4 p-4 rounded-lg border-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
             accountType === "ngo" 
               ? "border-primary bg-primary/5" 
               : "border-muted hover:border-primary/50"
