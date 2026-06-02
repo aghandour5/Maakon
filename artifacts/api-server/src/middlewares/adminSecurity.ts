@@ -1,6 +1,15 @@
 import type { Request, Response, NextFunction } from "express";
 import { logger } from "../lib/logger";
 
+if (process.env.NODE_ENV === "production") {
+  if (!process.env.ADMIN_SUBDOMAIN?.trim()) {
+    throw new Error("ADMIN_SUBDOMAIN environment variable is required in production");
+  }
+  if (!process.env.ADMIN_IP_WHITELIST?.trim()) {
+    throw new Error("ADMIN_IP_WHITELIST environment variable is required in production");
+  }
+}
+
 const ADMIN_SUBDOMAIN = process.env.ADMIN_SUBDOMAIN?.trim() || "";
 const EXPLICIT_ADMIN_ALLOWED_HOSTS = (process.env.ADMIN_ALLOWED_HOSTS || "")
   .split(",")
