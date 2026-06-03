@@ -43,7 +43,7 @@ export default function Footer() {
             <Link
               key={link.href}
               href={link.href}
-              className="text-emerald-100/60 hover:text-white transition-colors flex items-center gap-1.5"
+              className="text-emerald-100/60 hover:text-white transition-colors flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
               {"icon" in link && (link.icon as React.ReactNode)}
               {isRtl ? link.labelAr : link.labelEn}
