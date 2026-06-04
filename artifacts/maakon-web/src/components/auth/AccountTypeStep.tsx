@@ -21,6 +21,7 @@ export default function AccountTypeStep({ accountType, setAccountType, onNext }:
         <button
           type="button"
           onClick={() => setAccountType("individual")}
+          aria-pressed={accountType === "individual"}
           className={`flex items-start gap-4 p-4 rounded-lg border-2 text-left transition-colors ${
             accountType === "individual" 
               ? "border-primary bg-primary/5" 
@@ -41,6 +42,7 @@ export default function AccountTypeStep({ accountType, setAccountType, onNext }:
         <button
           type="button"
           onClick={() => setAccountType("ngo")}
+          aria-pressed={accountType === "ngo"}
           className={`flex items-start gap-4 p-4 rounded-lg border-2 text-left transition-colors ${
             accountType === "ngo" 
               ? "border-primary bg-primary/5" 
