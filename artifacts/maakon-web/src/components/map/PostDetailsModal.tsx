@@ -337,6 +337,7 @@ export function PostDetailsModal({ item, isOpen, onClose, type, onViewNgo }: Pos
                     <button
                       key={r}
                       onClick={() => setSelectedReason(r)}
+                      aria-pressed={selectedReason === r}
                       className={`py-1.5 px-3 rounded-lg text-xs font-medium border transition-colors ${
                         selectedReason === r
                           ? 'bg-destructive text-destructive-foreground border-destructive'
