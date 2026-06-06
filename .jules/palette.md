@@ -1,0 +1,3 @@
+## 2026-06-06 - Custom Selectable Buttons Accessibility
+**Learning:** When using custom interactive `<button>` elements for mutually exclusive selection UI (like account type cards) instead of standard radio inputs, they must have explicit `aria-pressed` states to indicate selection to screen readers. Furthermore, the design system requires explicit focus-visible classes (`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2`) on these custom elements to ensure keyboard accessibility.
+**Action:** Always add `aria-pressed` for custom selection buttons, and always include the explicit `focus-visible` utility class sequence when creating custom interactive elements outside of standard `@/components/ui` components.
