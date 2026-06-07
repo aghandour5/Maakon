@@ -1,0 +1,3 @@
+## 2026-06-07 - Added aria-hidden attributes to loading spinners
+**Learning:** Loading spinners (using Loader2 from lucide-react) inside interactive elements like buttons don't need to be read aloud to screen readers because visual users deduce state from the loader and surrounding context, whilst screen-reader users derive state from `disabled` properties or aria attributes such as `aria-busy`. Adding `aria-hidden="true"` prevents redundant and potentially confusing screen reader announcements like 'image'.
+**Action:** When adding decorative or supplemental icons like loading spinners that accompany text or are within a button that manages its own state via `disabled` or `aria-busy`, always include `aria-hidden="true"`.

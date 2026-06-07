@@ -870,7 +870,7 @@ export default function PostNeed() {
             >
               {(createPost.isPending || isDraftLoading) ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
                   {step === 4 ? t("sending", "Sending...") : t("submit")}
                 </>
               ) : step === 5 ? (
