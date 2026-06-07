@@ -659,7 +659,7 @@ export default function AdminPage() {
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-400">
-        <Loader2 className="w-8 h-8 animate-spin" />
+        <Loader2 className="w-8 h-8 animate-spin" aria-hidden="true" />
       </div>
     );
   }
@@ -883,7 +883,7 @@ export default function AdminPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {loading && posts.length === 0 ? (
-                      <tr><td colSpan={6} className="px-6 py-12 text-center text-slate-400"><Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />Loading...</td></tr>
+                      <tr><td colSpan={6} className="px-6 py-12 text-center text-slate-400"><Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" aria-hidden="true" />Loading...</td></tr>
                   ) : posts.map((post, index) => (
                     <tr key={post.id} className={`hover:bg-slate-50/80 transition-colors ${post.status !== "active" ? "opacity-75" : ""}`}>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -940,7 +940,7 @@ export default function AdminPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {loading && reports.length === 0 ? (
-                      <tr><td colSpan={5} className="px-6 py-12 text-center text-slate-400"><Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />Loading...</td></tr>
+                      <tr><td colSpan={5} className="px-6 py-12 text-center text-slate-400"><Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" aria-hidden="true" />Loading...</td></tr>
                   ) : reports.map((report) => (
                     <tr key={report.id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap"><Badge status={report.status} /></td>
@@ -991,7 +991,7 @@ export default function AdminPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {loading && ngos.length === 0 ? (
-                      <tr><td colSpan={4} className="px-6 py-12 text-center text-slate-400"><Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />Loading...</td></tr>
+                      <tr><td colSpan={4} className="px-6 py-12 text-center text-slate-400"><Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" aria-hidden="true" />Loading...</td></tr>
                   ) : ngos.map((ngo) => (
                     <tr key={ngo.id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="px-6 py-4">
@@ -1051,7 +1051,7 @@ export default function AdminPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {loading && usersList.length === 0 ? (
-                      <tr><td colSpan={4} className="px-6 py-12 text-center text-slate-400"><Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />Loading...</td></tr>
+                      <tr><td colSpan={4} className="px-6 py-12 text-center text-slate-400"><Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" aria-hidden="true" />Loading...</td></tr>
                   ) : usersList.map((u) => (
                     <tr key={u.id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="px-6 py-4">
