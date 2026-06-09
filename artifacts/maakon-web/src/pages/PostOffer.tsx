@@ -401,6 +401,7 @@ export default function PostOffer() {
                             key={cat}
                             type="button"
                             onClick={() => patch({ category: cat })}
+                            aria-pressed={selected}
                             className="py-3.5 px-3 rounded-2xl font-semibold text-sm flex items-center gap-3 transition-all duration-150 active:scale-95 border-2"
                             style={
                               selected
@@ -442,6 +443,7 @@ export default function PostOffer() {
                               key={prov}
                               type="button"
                               onClick={() => patch({ providerType: prov })}
+                              aria-pressed={selected}
                               className="p-4 rounded-2xl flex text-start items-center gap-4 transition-all duration-150 active:scale-95 border-2"
                               style={{
                                 ...(selected
@@ -547,6 +549,7 @@ export default function PostOffer() {
                             key={key}
                             type="button"
                             onClick={() => setExpiresInDays(days)}
+                            aria-pressed={expiresInDays === days}
                             className="py-2.5 rounded-xl text-xs font-bold transition-all duration-150 border-2 active:scale-95"
                             style={
                               expiresInDays === days
