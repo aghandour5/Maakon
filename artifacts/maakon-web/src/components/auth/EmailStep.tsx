@@ -110,7 +110,7 @@ export default function EmailStep({ email, setEmail, onNext }: EmailStepProps) {
         }}
       >
         {isLoading ? (
-          <Loader2 className="w-5 h-5 animate-spin" />
+          <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />
         ) : (
           <>
             {t("send_sign_in_link", "Send Sign-In Link")}
