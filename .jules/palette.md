@@ -1,0 +1,3 @@
+## 2025-02-14 - A11y Attributes for Interactive Divs/Buttons
+**Learning:** Mutually exclusive native `<button>` selections require `aria-pressed` to correctly announce their active state to screen readers. Relying solely on `border-primary bg-primary/5` visual changes excludes visually impaired users. Furthermore, decorative icons within these buttons must have `aria-hidden="true"` to prevent redundant reading. Focus states must also use `focus-visible` to support keyboard navigation.
+**Action:** Always add `aria-pressed`, `focus-visible` utility classes, and `aria-hidden` on nested decorative icons when implementing interactive toggle selections in the Maakon design system.
