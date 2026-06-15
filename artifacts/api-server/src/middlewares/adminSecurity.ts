@@ -31,6 +31,15 @@ const ADMIN_IP_WHITELIST = (process.env.ADMIN_IP_WHITELIST || "")
   .map(ip => ip.trim())
   .filter(Boolean);
 
+if (process.env.NODE_ENV === "production") {
+  if (!ADMIN_SUBDOMAIN) {
+    throw new Error("CRITICAL: ADMIN_SUBDOMAIN environment variable is missing. Refusing to start in production to prevent fail-open admin access.");
+  }
+  if (ADMIN_IP_WHITELIST.length === 0) {
+    throw new Error("CRITICAL: ADMIN_IP_WHITELIST environment variable is missing. Refusing to start in production to prevent fail-open admin access.");
+  }
+}
+
 function normalizeHost(host: string | undefined): string | null {
   if (!host) return null;
   return host.split(",", 1)[0].trim().toLowerCase();
