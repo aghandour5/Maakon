@@ -183,7 +183,7 @@ export default function MyPosts() {
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <Loader2 className="w-8 h-8 animate-spin text-primary" aria-hidden="true" />
       </div>
     );
   }
@@ -246,7 +246,7 @@ export default function MyPosts() {
           {/* Loading */}
           {loading && (
             <div className="flex items-center justify-center py-20">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              <Loader2 className="w-8 h-8 animate-spin text-primary" aria-hidden="true" />
             </div>
           )}
 
@@ -483,7 +483,7 @@ export default function MyPosts() {
                   disabled={actionLoading === editingPost.id || editTitle.length < 3 || editDescription.length < 10}
                   className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:opacity-90 transition-opacity disabled:opacity-40 shadow"
                 >
-                  {actionLoading === editingPost.id && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {actionLoading === editingPost.id && <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />}
                   {t("myposts_save_changes")}
                 </button>
               </div>
