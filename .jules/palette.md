@@ -1,0 +1,3 @@
+## 2026-05-10 - Mobile icon-only accessibility issues
+**Learning:** Elements that display visible text on desktop but hide it on mobile (using classes like `sm:hidden`) become icon-only buttons on mobile devices. Removing `aria-label` from these elements to satisfy WCAG 2.5.3 (Label in Name) on desktop inadvertently breaks accessibility on mobile.
+**Action:** When updating accessibility properties for responsive elements, ensure that `aria-label` provides an accessible name if visible text is ever hidden at certain breakpoints, or use CSS techniques to hide text visually rather than structurally (e.g. `sr-only`).
