@@ -39,7 +39,7 @@ export function TopNav({ title, showBack = false }: TopNavProps) {
           {showBack && (
             <button
               onClick={() => window.history.back()}
-              className="w-8 h-8 rounded-xl flex items-center justify-center text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-all shrink-0"
+              className="w-8 h-8 rounded-xl flex items-center justify-center text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-all shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               aria-label="Back"
             >
               {isRtl ? <ArrowRight className="h-4 w-4" aria-hidden="true" /> : <ArrowLeft className="h-4 w-4" aria-hidden="true" />}
@@ -79,14 +79,14 @@ export function TopNav({ title, showBack = false }: TopNavProps) {
           {!isAuthenticated ? (
             <button
               onClick={openAuthModal}
-              className="hidden sm:flex items-center gap-1.5 px-3 h-8 rounded-xl font-bold text-sm bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
+              className="hidden sm:flex items-center gap-1.5 px-3 h-8 rounded-xl font-bold text-sm bg-primary text-primary-foreground hover:opacity-90 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
               {t("sign_in")}
             </button>
           ) : (
             <button
               onClick={logout}
-              className="hidden sm:flex items-center gap-1.5 px-3 h-8 rounded-xl font-bold text-xs bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
+              className="hidden sm:flex items-center gap-1.5 px-3 h-8 rounded-xl font-bold text-xs bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               title="Logout"
               aria-label="Logout"
             >
@@ -99,7 +99,7 @@ export function TopNav({ title, showBack = false }: TopNavProps) {
           {/* Language toggle */}
           <button
             onClick={toggleLanguage}
-            className="flex items-center gap-1.5 px-3 h-8 rounded-xl text-slate-700 hover:text-slate-900 text-xs sm:text-sm font-semibold border border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition-all shrink-0"
+            className="flex items-center gap-1.5 px-3 h-8 rounded-xl text-slate-700 hover:text-slate-900 text-xs sm:text-sm font-semibold border border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition-all shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             aria-label={isRtl ? "Switch to English" : "تغيير اللغة إلى العربية"}
           >
             <Globe className="w-3.5 h-3.5 sm:w-4 sm:h-4" aria-hidden="true" />
@@ -110,7 +110,7 @@ export function TopNav({ title, showBack = false }: TopNavProps) {
           {/* Mobile menu toggle */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="sm:hidden flex items-center justify-center w-8 h-8 rounded-xl text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-all"
+            className="sm:hidden flex items-center justify-center w-8 h-8 rounded-xl text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
             aria-expanded={mobileMenuOpen}
           >
@@ -152,7 +152,7 @@ export function TopNav({ title, showBack = false }: TopNavProps) {
                       setMobileMenuOpen(false);
                       openAuthModal();
                     }}
-                    className="w-full px-4 py-3 rounded-xl text-sm font-bold bg-primary text-primary-foreground text-center"
+                    className="w-full px-4 py-3 rounded-xl text-sm font-bold bg-primary text-primary-foreground text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   >
                     {t("sign_in")}
                   </button>
@@ -162,8 +162,7 @@ export function TopNav({ title, showBack = false }: TopNavProps) {
                       setMobileMenuOpen(false);
                       logout();
                     }}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold text-destructive bg-destructive/10 text-center"
-                    aria-label="Logout"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold text-destructive bg-destructive/10 text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   >
                     <LogOut className="w-4 h-4" aria-hidden="true" />
                     {t("logout")}
