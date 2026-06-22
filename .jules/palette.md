@@ -1,0 +1,1 @@
+## 2024-06-22 - Add aria-hidden to decorative Loader2 icons\n**Learning:** Decorative icons inside elements that already manage state (like disabled buttons or aria-busy containers) can cause redundant screen reader announcements if they lack aria-hidden.\n**Action:** Add `aria-hidden="true"` to all decorative Loader2 instances.
