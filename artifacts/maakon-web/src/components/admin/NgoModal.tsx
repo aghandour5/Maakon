@@ -168,7 +168,7 @@ export function NgoModal({
             <div className="flex justify-between items-end">
               <label className="text-sm font-medium">Exact Location (Map Pin)</label>
               <Button type="button" variant="outline" size="sm" onClick={handleLocate} disabled={locating} className="h-8 text-xs">
-                {locating ? <Loader2 className="w-3 h-3 animate-spin mr-1.5" /> : <LocateFixed className="w-3 h-3 mr-1.5" />}
+                {locating ? <Loader2 className="w-3 h-3 animate-spin mr-1.5" aria-hidden="true" /> : <LocateFixed className="w-3 h-3 mr-1.5" />}
                 Use Current Location
               </Button>
             </div>
@@ -185,7 +185,7 @@ export function NgoModal({
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>Cancel</Button>
             <Button type="submit" disabled={loading}>
-              {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+              {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" aria-hidden="true" /> : null}
               {ngo ? "Save Changes" : "Create NGO"}
             </Button>
           </DialogFooter>
