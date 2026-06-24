@@ -400,6 +400,7 @@ export default function PostOffer() {
                           <button
                             key={cat}
                             type="button"
+                            aria-pressed={selected}
                             onClick={() => patch({ category: cat })}
                             className="py-3.5 px-3 rounded-2xl font-semibold text-sm flex items-center gap-3 transition-all duration-150 active:scale-95 border-2"
                             style={
@@ -441,6 +442,7 @@ export default function PostOffer() {
                             <button
                               key={prov}
                               type="button"
+                              aria-pressed={selected}
                               onClick={() => patch({ providerType: prov })}
                               className="p-4 rounded-2xl flex text-start items-center gap-4 transition-all duration-150 active:scale-95 border-2"
                               style={{
@@ -546,6 +548,7 @@ export default function PostOffer() {
                           <button
                             key={key}
                             type="button"
+                            aria-pressed={expiresInDays === days}
                             onClick={() => setExpiresInDays(days)}
                             className="py-2.5 rounded-xl text-xs font-bold transition-all duration-150 border-2 active:scale-95"
                             style={
