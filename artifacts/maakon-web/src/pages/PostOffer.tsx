@@ -760,7 +760,7 @@ export default function PostOffer() {
                 aria-label={t("back", "Back")}
                 className="w-12 h-12 rounded-2xl border-2 border-slate-200 bg-white flex items-center justify-center text-gray-500 hover:border-slate-300 hover:bg-slate-50 transition-all active:scale-95 shrink-0"
               >
-                {isRtl ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
+                {isRtl ? <ChevronRight className="w-5 h-5" aria-hidden="true" /> : <ChevronLeft className="w-5 h-5" aria-hidden="true" />}
               </button>
             )}
             <button
@@ -774,7 +774,7 @@ export default function PostOffer() {
             >
               {(createPost.isPending || isDraftLoading) ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
                   {step === 5 ? t("sending", "Sending...") : t("submit")}
                 </>
               ) : step === 6 ? (
@@ -782,14 +782,14 @@ export default function PostOffer() {
               ) : step === 5 ? (
                 <>
                   {t("send_sign_in_link")}
-                  <Mail className="w-4 h-4" />
+                  <Mail className="w-4 h-4" aria-hidden="true" />
                 </>
               ) : step === 4 ? (
                 t("submit")
               ) : (
                 <>
                   {t("next")}
-                  {isRtl ? <ArrowLeft className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
+                  {isRtl ? <ArrowLeft className="w-4 h-4" aria-hidden="true" /> : <ArrowRight className="w-4 h-4" aria-hidden="true" />}
                 </>
               )}
             </button>
