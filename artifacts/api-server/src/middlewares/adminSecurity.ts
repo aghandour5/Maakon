@@ -31,6 +31,16 @@ const ADMIN_IP_WHITELIST = (process.env.ADMIN_IP_WHITELIST || "")
   .map(ip => ip.trim())
   .filter(Boolean);
 
+// Fail-closed initialization check in production
+if (process.env.NODE_ENV === "production") {
+  if (!ADMIN_HOST_CHECK_ENABLED) {
+    throw new Error("Missing required ADMIN_SUBDOMAIN or ADMIN_ALLOWED_HOSTS in production");
+  }
+  if (ADMIN_IP_WHITELIST.length === 0) {
+    throw new Error("Missing required ADMIN_IP_WHITELIST in production");
+  }
+}
+
 function normalizeHost(host: string | undefined): string | null {
   if (!host) return null;
   return host.split(",", 1)[0].trim().toLowerCase();
@@ -52,7 +62,7 @@ function getRequestHosts(req: Request): string[] {
  * Admin role and MFA are still enforced separately by the admin router.
  */
 export const adminSubdomainCheck = (req: Request, res: Response, next: NextFunction) => {
-  if (process.env.NODE_ENV !== "production" || !ADMIN_HOST_CHECK_ENABLED) {
+  if (!ADMIN_HOST_CHECK_ENABLED) {
     return next();
   }
 
