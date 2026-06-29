@@ -60,7 +60,7 @@ export default function EmailStep({ email, setEmail, onNext }: EmailStepProps) {
       <div className="text-center">
         <div className="w-14 h-14 mx-auto rounded-full flex items-center justify-center mb-3"
           style={{ background: "linear-gradient(135deg, #eff6ff, #dbeafe)" }}>
-          <Mail className="w-7 h-7 text-blue-600" />
+          <Mail className="w-7 h-7 text-blue-600" aria-hidden="true" />
         </div>
         <p className="text-sm text-gray-500">
           {t("email_sign_in_desc")}
@@ -94,7 +94,7 @@ export default function EmailStep({ email, setEmail, onNext }: EmailStepProps) {
         />
         {error && (
           <p id="email-error" role="alert" className="text-red-500 text-xs mt-1.5 flex items-center gap-1 font-medium">
-            <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+            <AlertCircle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
             {error}
           </p>
         )}
@@ -103,18 +103,19 @@ export default function EmailStep({ email, setEmail, onNext }: EmailStepProps) {
       <button
         onClick={handleSendLink}
         disabled={isLoading || !email}
-        className="w-full h-12 rounded-2xl font-bold text-white text-base transition-all active:scale-95 disabled:opacity-60 flex items-center justify-center gap-2"
+        aria-busy={isLoading}
+        className="w-full h-12 rounded-2xl font-bold text-white text-base transition-all active:scale-95 disabled:opacity-60 flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         style={{
           background: "linear-gradient(135deg, #dc2626 0%, #ef4444 100%)",
           boxShadow: "0 4px 16px rgba(220,38,38,0.4)",
         }}
       >
         {isLoading ? (
-          <Loader2 className="w-5 h-5 animate-spin" />
+          <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />
         ) : (
           <>
             {t("send_sign_in_link", "Send Sign-In Link")}
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight className="w-4 h-4" aria-hidden="true" />
           </>
         )}
       </button>
