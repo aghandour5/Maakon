@@ -537,6 +537,10 @@ router.delete("/admin/ngos/:id", async (req, res) => {
 
 router.patch("/admin/ngos/:id/verify", async (req, res) => {
   const id = Number(req.params.id);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "Invalid NGO ID" });
+    return;
+  }
   const [ngo] = await db
     .update(ngosTable)
     .set({ verifiedAt: new Date() })
@@ -560,6 +564,10 @@ router.patch("/admin/ngos/:id/verify", async (req, res) => {
 
 router.delete("/admin/ngos/:id/verify", async (req, res) => {
   const id = Number(req.params.id);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "Invalid NGO ID" });
+    return;
+  }
   const [ngo] = await db
     .update(ngosTable)
     .set({ verifiedAt: null })
