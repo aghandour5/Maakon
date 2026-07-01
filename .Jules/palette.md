@@ -1,0 +1,3 @@
+## 2024-07-01 - Custom Selection Buttons Accessibility
+**Learning:** In the Maakon design system, custom interactive div elements or custom buttons acting as mutually exclusive selection UI must include focus-visible classes ('focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2') for keyboard navigation. Additionally, they should use 'aria-pressed="true/false"' to indicate their selection state to assistive technologies, rather than relying solely on visual cues or 'role="radio"' (unless implementing full roving tabindex).
+**Action:** Always add 'aria-pressed' and explicit 'focus-visible' utility classes when building custom selection buttons in the Maakon design system.
