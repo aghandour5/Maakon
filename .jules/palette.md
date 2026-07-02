@@ -1,0 +1,3 @@
+## 2026-07-02 - Added proper focus states and ARIA pressed indicators to custom selectable buttons
+**Learning:** When using mutually exclusive native `<button>` elements for selection (like account type choices), they act similarly to radio buttons but do not inherently convey their selected state to screen readers unless `aria-pressed` is applied. Furthermore, custom buttons often lack default focus indicators when styled with Tailwind.
+**Action:** Always include `aria-pressed={true/false}` for custom selection buttons, and apply standard focus classes (`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2`) so keyboard users can navigate effectively.
