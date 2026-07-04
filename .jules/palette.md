@@ -1,0 +1,3 @@
+## 2026-07-04 - Accessible Custom Buttons
+**Learning:** When using native `<button>` elements for complex multi-select or single-select UI patterns (where standard radio inputs aren't used), screen readers don't natively understand the selection state. Additionally, keyboard focus can be visually lost if custom styles override browser defaults. Decorative icons within these buttons also add unwanted noise for screen reader users.
+**Action:** For custom interactive buttons managing selection states, always provide explicit `aria-pressed` attributes, use `focus-visible` utility classes for clear keyboard focus indicators, and apply `aria-hidden="true"` to any paired decorative icons.
