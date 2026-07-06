@@ -139,8 +139,9 @@ export default function Home() {
                 onClick={logout}
                 className="hidden sm:flex items-center gap-1.5 px-3 h-9 rounded-xl font-bold text-xs bg-white/10 text-white/90 hover:bg-white/15 transition-colors border border-white/20"
                 title="Logout"
+                aria-label={`Logout ${user?.displayName || (user?.accountType === "ngo" ? "NGO" : "User")}`}
               >
-                <LogOut className="w-3.5 h-3.5" />
+                <LogOut className="w-3.5 h-3.5" aria-hidden="true" />
                 {user?.displayName || (user?.accountType === "ngo" ? "NGO" : "User")}
               </button>
             )}
@@ -203,7 +204,7 @@ export default function Home() {
                       onClick={() => { setMobileMenuOpen(false); logout(); }}
                       className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold text-red-100 bg-red-500/20 hover:bg-red-500/30 transition-colors text-center"
                     >
-                      <LogOut className="w-4 h-4" />
+                      <LogOut className="w-4 h-4" aria-hidden="true" />
                       Logout
                     </button>
                   )}
