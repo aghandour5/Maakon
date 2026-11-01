@@ -232,6 +232,28 @@ function ModernMapControls() {
 
 type SelectedItem = { item: PostPublic; type: 'post' } | { item: Ngo; type: 'ngo' };
 
+// ─── Map Tiles Configuration ─────────────────────────────────────────────────
+
+/** Determine tile URL and attribution based on CARTO API key availability */
+function getTileConfig() {
+  const cartoApiKey = import.meta.env.VITE_CARTO_API_KEY;
+  
+  if (cartoApiKey) {
+    return {
+      url: `https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png?key=${cartoApiKey}`,
+      attribution: '© OpenStreetMap contributors, © CARTO'
+    };
+  }
+  
+  // Fallback to OpenStreetMap
+  return {
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: '© OpenStreetMap contributors'
+  };
+}
+
+const tileConfig = getTileConfig();
+
 // ─── Page ───────────────────────────────────────────────────────────────────
 
 const LEBANON_BOUNDS: L.LatLngBoundsExpression = [
@@ -455,7 +477,8 @@ export default function MapPage() {
           attributionControl={false}
         >
           <TileLayer
-            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+            url={tileConfig.url}
+            attribution={tileConfig.attribution}
             maxZoom={19}
           />
           <ModernMapControls />

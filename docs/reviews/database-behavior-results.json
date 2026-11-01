@@ -1,0 +1,33 @@
+[
+  {
+    "check": "public_list_activeOnly_false",
+    "confirmed": true,
+    "outcome": "No status/expiry predicate; hidden row and its contactInfo reach public response."
+  },
+  {
+    "check": "public_list_default_control",
+    "confirmed": true,
+    "outcome": "Default query includes active status and expiry predicates."
+  },
+  {
+    "check": "owner_reactivation",
+    "confirmed": true,
+    "outcome": "Update checks only id and ownership; current moderation status is unrestricted.",
+    "where": "(\"posts\".\"id\" = $1 and \"posts\".\"user_id\" = $2)"
+  },
+  {
+    "check": "profile_secret_serialization",
+    "confirmed": true,
+    "outcome": "Profile-completion response contains mfaSecret and supabaseUid from the returned database row."
+  },
+  {
+    "check": "validation_gaps",
+    "confirmed": true,
+    "outcome": "Unknown category/provider/contact values pass API validation; NGO form empty optional phone is rejected by server validation."
+  },
+  {
+    "check": "report_partial_write",
+    "confirmed": true,
+    "outcome": "Report insertion completes before a simulated counter-update failure rejects the request."
+  }
+]

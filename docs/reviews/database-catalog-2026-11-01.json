@@ -1,0 +1,1297 @@
+{
+  "reviewedAt": "2026-11-01T11:40:17.254Z",
+  "connection": {
+    "clientTls": false,
+    "role": "postgres",
+    "version": "17.6",
+    "rolbypassrls": true,
+    "rolsuper": false
+  },
+  "tables": [
+    {
+      "name": "admin_actions",
+      "owner": "postgres",
+      "rls": true,
+      "force_rls": false
+    },
+    {
+      "name": "feedbacks",
+      "owner": "postgres",
+      "rls": true,
+      "force_rls": false
+    },
+    {
+      "name": "ngo_verification_requests",
+      "owner": "postgres",
+      "rls": true,
+      "force_rls": false
+    },
+    {
+      "name": "ngos",
+      "owner": "postgres",
+      "rls": true,
+      "force_rls": false
+    },
+    {
+      "name": "posts",
+      "owner": "postgres",
+      "rls": true,
+      "force_rls": false
+    },
+    {
+      "name": "reports",
+      "owner": "postgres",
+      "rls": true,
+      "force_rls": false
+    },
+    {
+      "name": "sessions",
+      "owner": "postgres",
+      "rls": true,
+      "force_rls": false
+    },
+    {
+      "name": "users",
+      "owner": "postgres",
+      "rls": true,
+      "force_rls": false
+    },
+    {
+      "name": "waitlist",
+      "owner": "postgres",
+      "rls": true,
+      "force_rls": false
+    }
+  ],
+  "columns": [
+    {
+      "table_name": "admin_actions",
+      "column_name": "id",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": "nextval('admin_actions_id_seq'::regclass)"
+    },
+    {
+      "table_name": "admin_actions",
+      "column_name": "admin_id",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "admin_actions",
+      "column_name": "target_type",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "admin_actions",
+      "column_name": "target_id",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "admin_actions",
+      "column_name": "action",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "admin_actions",
+      "column_name": "note",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "admin_actions",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "NO",
+      "column_default": "now()"
+    },
+    {
+      "table_name": "feedbacks",
+      "column_name": "id",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": "nextval('feedbacks_id_seq'::regclass)"
+    },
+    {
+      "table_name": "feedbacks",
+      "column_name": "type",
+      "data_type": "USER-DEFINED",
+      "udt_name": "feedback_type",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "feedbacks",
+      "column_name": "name",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "feedbacks",
+      "column_name": "email",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "feedbacks",
+      "column_name": "message",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "feedbacks",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "NO",
+      "column_default": "now()"
+    },
+    {
+      "table_name": "ngo_verification_requests",
+      "column_name": "id",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": "nextval('ngo_verification_requests_id_seq'::regclass)"
+    },
+    {
+      "table_name": "ngo_verification_requests",
+      "column_name": "user_id",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "ngo_verification_requests",
+      "column_name": "org_name",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "ngo_verification_requests",
+      "column_name": "description",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "ngo_verification_requests",
+      "column_name": "gov_doc",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "ngo_verification_requests",
+      "column_name": "status",
+      "data_type": "USER-DEFINED",
+      "udt_name": "ngo_verification_status",
+      "is_nullable": "NO",
+      "column_default": "'pending'::ngo_verification_status"
+    },
+    {
+      "table_name": "ngo_verification_requests",
+      "column_name": "submitted_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "NO",
+      "column_default": "now()"
+    },
+    {
+      "table_name": "ngo_verification_requests",
+      "column_name": "reviewed_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "ngo_verification_requests",
+      "column_name": "review_note",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "ngos",
+      "column_name": "id",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": "nextval('ngos_id_seq'::regclass)"
+    },
+    {
+      "table_name": "ngos",
+      "column_name": "name",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "ngos",
+      "column_name": "description",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "ngos",
+      "column_name": "governorate",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "ngos",
+      "column_name": "district",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "ngos",
+      "column_name": "lat",
+      "data_type": "double precision",
+      "udt_name": "float8",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "ngos",
+      "column_name": "lng",
+      "data_type": "double precision",
+      "udt_name": "float8",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "ngos",
+      "column_name": "phone",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "ngos",
+      "column_name": "website",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "ngos",
+      "column_name": "verified_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "ngos",
+      "column_name": "status",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": "'active'::text"
+    },
+    {
+      "table_name": "ngos",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "NO",
+      "column_default": "now()"
+    },
+    {
+      "table_name": "ngos",
+      "column_name": "user_id",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "posts",
+      "column_name": "id",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": "nextval('posts_id_seq'::regclass)"
+    },
+    {
+      "table_name": "posts",
+      "column_name": "post_type",
+      "data_type": "USER-DEFINED",
+      "udt_name": "post_type",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "posts",
+      "column_name": "title",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "posts",
+      "column_name": "category",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "posts",
+      "column_name": "description",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "posts",
+      "column_name": "urgency",
+      "data_type": "USER-DEFINED",
+      "udt_name": "urgency",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "posts",
+      "column_name": "governorate",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "posts",
+      "column_name": "district",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "posts",
+      "column_name": "public_lat",
+      "data_type": "double precision",
+      "udt_name": "float8",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "posts",
+      "column_name": "public_lng",
+      "data_type": "double precision",
+      "udt_name": "float8",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "posts",
+      "column_name": "private_lat",
+      "data_type": "double precision",
+      "udt_name": "float8",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "posts",
+      "column_name": "private_lng",
+      "data_type": "double precision",
+      "udt_name": "float8",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "posts",
+      "column_name": "exact_address_private",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "posts",
+      "column_name": "provider_type",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "posts",
+      "column_name": "verified_badge_type",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "posts",
+      "column_name": "contact_method",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "posts",
+      "column_name": "contact_info",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "posts",
+      "column_name": "status",
+      "data_type": "USER-DEFINED",
+      "udt_name": "post_status",
+      "is_nullable": "NO",
+      "column_default": "'pending'::post_status"
+    },
+    {
+      "table_name": "posts",
+      "column_name": "report_count",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": "0"
+    },
+    {
+      "table_name": "posts",
+      "column_name": "user_id",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "posts",
+      "column_name": "draft_token",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "posts",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "NO",
+      "column_default": "now()"
+    },
+    {
+      "table_name": "posts",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "NO",
+      "column_default": "now()"
+    },
+    {
+      "table_name": "posts",
+      "column_name": "expires_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "posts",
+      "column_name": "last_confirmed_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "reports",
+      "column_name": "id",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": "nextval('reports_id_seq'::regclass)"
+    },
+    {
+      "table_name": "reports",
+      "column_name": "post_id",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "reports",
+      "column_name": "reason",
+      "data_type": "USER-DEFINED",
+      "udt_name": "report_reason",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "reports",
+      "column_name": "details",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "reports",
+      "column_name": "reported_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "NO",
+      "column_default": "now()"
+    },
+    {
+      "table_name": "reports",
+      "column_name": "resolved_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "reports",
+      "column_name": "status",
+      "data_type": "USER-DEFINED",
+      "udt_name": "report_status",
+      "is_nullable": "NO",
+      "column_default": "'pending'::report_status"
+    },
+    {
+      "table_name": "sessions",
+      "column_name": "id",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": "nextval('sessions_id_seq'::regclass)"
+    },
+    {
+      "table_name": "sessions",
+      "column_name": "token",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "sessions",
+      "column_name": "user_id",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "sessions",
+      "column_name": "expires_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "sessions",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "NO",
+      "column_default": "now()"
+    },
+    {
+      "table_name": "sessions",
+      "column_name": "ip_address",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "sessions",
+      "column_name": "user_agent",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "sessions",
+      "column_name": "mfa_verified",
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "NO",
+      "column_default": "false"
+    },
+    {
+      "table_name": "users",
+      "column_name": "id",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": "nextval('users_id_seq'::regclass)"
+    },
+    {
+      "table_name": "users",
+      "column_name": "supabase_uid",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "users",
+      "column_name": "email",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "users",
+      "column_name": "display_name",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "users",
+      "column_name": "avatar_url",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "users",
+      "column_name": "account_type",
+      "data_type": "USER-DEFINED",
+      "udt_name": "account_type",
+      "is_nullable": "NO",
+      "column_default": "'individual'::account_type"
+    },
+    {
+      "table_name": "users",
+      "column_name": "role",
+      "data_type": "USER-DEFINED",
+      "udt_name": "user_role",
+      "is_nullable": "NO",
+      "column_default": "'user'::user_role"
+    },
+    {
+      "table_name": "users",
+      "column_name": "onboarding_complete",
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "NO",
+      "column_default": "false"
+    },
+    {
+      "table_name": "users",
+      "column_name": "email_verified",
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "NO",
+      "column_default": "false"
+    },
+    {
+      "table_name": "users",
+      "column_name": "ngo_verification_status",
+      "data_type": "USER-DEFINED",
+      "udt_name": "ngo_verification_status_user",
+      "is_nullable": "YES",
+      "column_default": "'pending'::ngo_verification_status_user"
+    },
+    {
+      "table_name": "users",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "NO",
+      "column_default": "now()"
+    },
+    {
+      "table_name": "users",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "NO",
+      "column_default": "now()"
+    },
+    {
+      "table_name": "users",
+      "column_name": "mfa_secret",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "users",
+      "column_name": "mfa_enabled",
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "NO",
+      "column_default": "false"
+    },
+    {
+      "table_name": "waitlist",
+      "column_name": "id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "table_name": "waitlist",
+      "column_name": "full_name",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "waitlist",
+      "column_name": "email",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "waitlist",
+      "column_name": "role",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "waitlist",
+      "column_name": "preferred_language",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "waitlist",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "NO",
+      "column_default": "timezone('utc'::text, now())"
+    },
+    {
+      "table_name": "waitlist",
+      "column_name": "notified_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": null
+    }
+  ],
+  "constraints": [
+    {
+      "table_name": "admin_actions",
+      "name": "admin_actions_admin_id_users_id_fk",
+      "type": "f",
+      "definition": "FOREIGN KEY (admin_id) REFERENCES users(id)"
+    },
+    {
+      "table_name": "admin_actions",
+      "name": "admin_actions_pkey",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table_name": "feedbacks",
+      "name": "feedbacks_pkey",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table_name": "ngo_verification_requests",
+      "name": "ngo_verification_requests_pkey",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table_name": "ngo_verification_requests",
+      "name": "ngo_verification_requests_user_id_users_id_fk",
+      "type": "f",
+      "definition": "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE"
+    },
+    {
+      "table_name": "ngos",
+      "name": "ngos_pkey",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table_name": "ngos",
+      "name": "ngos_user_id_users_id_fk",
+      "type": "f",
+      "definition": "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL"
+    },
+    {
+      "table_name": "posts",
+      "name": "posts_pkey",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table_name": "posts",
+      "name": "posts_user_id_users_id_fk",
+      "type": "f",
+      "definition": "FOREIGN KEY (user_id) REFERENCES users(id)"
+    },
+    {
+      "table_name": "reports",
+      "name": "reports_pkey",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table_name": "reports",
+      "name": "reports_post_id_posts_id_fk",
+      "type": "f",
+      "definition": "FOREIGN KEY (post_id) REFERENCES posts(id)"
+    },
+    {
+      "table_name": "sessions",
+      "name": "sessions_pkey",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table_name": "sessions",
+      "name": "sessions_token_unique",
+      "type": "u",
+      "definition": "UNIQUE (token)"
+    },
+    {
+      "table_name": "sessions",
+      "name": "sessions_user_id_users_id_fk",
+      "type": "f",
+      "definition": "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE"
+    },
+    {
+      "table_name": "users",
+      "name": "users_email_unique",
+      "type": "u",
+      "definition": "UNIQUE (email)"
+    },
+    {
+      "table_name": "users",
+      "name": "users_pkey",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "table_name": "users",
+      "name": "users_supabase_uid_unique",
+      "type": "u",
+      "definition": "UNIQUE (supabase_uid)"
+    },
+    {
+      "table_name": "waitlist",
+      "name": "waitlist_email_unique",
+      "type": "u",
+      "definition": "UNIQUE (email)"
+    },
+    {
+      "table_name": "waitlist",
+      "name": "waitlist_pkey",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    }
+  ],
+  "indexes": [
+    {
+      "tablename": "admin_actions",
+      "indexname": "admin_actions_pkey",
+      "indexdef": "CREATE UNIQUE INDEX admin_actions_pkey ON public.admin_actions USING btree (id)"
+    },
+    {
+      "tablename": "feedbacks",
+      "indexname": "feedbacks_pkey",
+      "indexdef": "CREATE UNIQUE INDEX feedbacks_pkey ON public.feedbacks USING btree (id)"
+    },
+    {
+      "tablename": "ngo_verification_requests",
+      "indexname": "ngo_verification_requests_pkey",
+      "indexdef": "CREATE UNIQUE INDEX ngo_verification_requests_pkey ON public.ngo_verification_requests USING btree (id)"
+    },
+    {
+      "tablename": "ngos",
+      "indexname": "ngos_pkey",
+      "indexdef": "CREATE UNIQUE INDEX ngos_pkey ON public.ngos USING btree (id)"
+    },
+    {
+      "tablename": "posts",
+      "indexname": "posts_pkey",
+      "indexdef": "CREATE UNIQUE INDEX posts_pkey ON public.posts USING btree (id)"
+    },
+    {
+      "tablename": "reports",
+      "indexname": "reports_pkey",
+      "indexdef": "CREATE UNIQUE INDEX reports_pkey ON public.reports USING btree (id)"
+    },
+    {
+      "tablename": "sessions",
+      "indexname": "sessions_pkey",
+      "indexdef": "CREATE UNIQUE INDEX sessions_pkey ON public.sessions USING btree (id)"
+    },
+    {
+      "tablename": "sessions",
+      "indexname": "sessions_token_unique",
+      "indexdef": "CREATE UNIQUE INDEX sessions_token_unique ON public.sessions USING btree (token)"
+    },
+    {
+      "tablename": "users",
+      "indexname": "users_email_unique",
+      "indexdef": "CREATE UNIQUE INDEX users_email_unique ON public.users USING btree (email)"
+    },
+    {
+      "tablename": "users",
+      "indexname": "users_pkey",
+      "indexdef": "CREATE UNIQUE INDEX users_pkey ON public.users USING btree (id)"
+    },
+    {
+      "tablename": "users",
+      "indexname": "users_supabase_uid_unique",
+      "indexdef": "CREATE UNIQUE INDEX users_supabase_uid_unique ON public.users USING btree (supabase_uid)"
+    },
+    {
+      "tablename": "waitlist",
+      "indexname": "waitlist_email_unique",
+      "indexdef": "CREATE UNIQUE INDEX waitlist_email_unique ON public.waitlist USING btree (email)"
+    },
+    {
+      "tablename": "waitlist",
+      "indexname": "waitlist_pkey",
+      "indexdef": "CREATE UNIQUE INDEX waitlist_pkey ON public.waitlist USING btree (id)"
+    }
+  ],
+  "enums": [
+    {
+      "name": "account_type",
+      "values": "{individual,ngo}"
+    },
+    {
+      "name": "feedback_type",
+      "values": "{general,bug,feature,complaint,other}"
+    },
+    {
+      "name": "ngo_verification_status",
+      "values": "{pending,approved,rejected}"
+    },
+    {
+      "name": "ngo_verification_status_user",
+      "values": "{pending,verified,rejected}"
+    },
+    {
+      "name": "post_status",
+      "values": "{pending,active,hidden,resolved,expired,removed}"
+    },
+    {
+      "name": "post_type",
+      "values": "{need,offer}"
+    },
+    {
+      "name": "report_reason",
+      "values": "{fake,scam,unsafe,outdated,spam,other}"
+    },
+    {
+      "name": "report_status",
+      "values": "{pending,reviewed,dismissed,actioned}"
+    },
+    {
+      "name": "urgency",
+      "values": "{critical,high,medium,low}"
+    },
+    {
+      "name": "user_role",
+      "values": "{user,admin,moderator}"
+    }
+  ],
+  "policies": [
+    {
+      "tablename": "waitlist",
+      "policyname": "Allow public insert",
+      "roles": "{public}",
+      "cmd": "INSERT",
+      "qual": null,
+      "with_check": "true"
+    }
+  ],
+  "grants": [
+    {
+      "grantee": "anon",
+      "table_name": "admin_actions",
+      "privileges": "{DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE}"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "admin_actions",
+      "privileges": "{DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE}"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "feedbacks",
+      "privileges": "{DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE}"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "feedbacks",
+      "privileges": "{DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE}"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "ngo_verification_requests",
+      "privileges": "{DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE}"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "ngo_verification_requests",
+      "privileges": "{DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE}"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "ngos",
+      "privileges": "{DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE}"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "ngos",
+      "privileges": "{DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE}"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "posts",
+      "privileges": "{DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE}"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "posts",
+      "privileges": "{DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE}"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "reports",
+      "privileges": "{DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE}"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "reports",
+      "privileges": "{DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE}"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "sessions",
+      "privileges": "{DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE}"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "sessions",
+      "privileges": "{DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE}"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "users",
+      "privileges": "{DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE}"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "users",
+      "privileges": "{DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE}"
+    },
+    {
+      "grantee": "anon",
+      "table_name": "waitlist",
+      "privileges": "{DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE}"
+    },
+    {
+      "grantee": "authenticated",
+      "table_name": "waitlist",
+      "privileges": "{DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE}"
+    }
+  ],
+  "triggers": [],
+  "functions": [
+    {
+      "name": "rls_auto_enable",
+      "security_definer": true,
+      "acl": "{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}"
+    }
+  ],
+  "counts": [
+    {
+      "name": "users",
+      "rows": 6
+    },
+    {
+      "name": "posts",
+      "rows": 1
+    },
+    {
+      "name": "ngos",
+      "rows": 0
+    },
+    {
+      "name": "reports",
+      "rows": 0
+    },
+    {
+      "name": "sessions",
+      "rows": 24
+    },
+    {
+      "name": "admin_actions",
+      "rows": 0
+    },
+    {
+      "name": "ngo_verification_requests",
+      "rows": 0
+    },
+    {
+      "name": "feedbacks",
+      "rows": 1
+    },
+    {
+      "name": "waitlist",
+      "rows": 4
+    }
+  ],
+  "postConsistency": [
+    {
+      "overdue_active": 0,
+      "expired_drafts": 0,
+      "active_without_owner": 0,
+      "vulnerable_needs_with_exact_coordinates": 0,
+      "incomplete_public_coordinates": 0,
+      "unknown_categories": 0
+    }
+  ],
+  "reportCounts": [
+    {
+      "mismatched_posts": 0
+    }
+  ],
+  "ngoConsistency": [
+    {
+      "duplicate_owner_groups": 0,
+      "verified_ngos_with_unverified_user": 0,
+      "badges_without_active_verified_ngo": 0
+    }
+  ],
+  "authConsistency": [
+    {
+      "users_missing_auth_identity": 0,
+      "mfa_without_secret": 0,
+      "expired_sessions": 21,
+      "users_without_identity": 0
+    }
+  ],
+  "duplicateDrafts": [
+    {
+      "duplicate_token_groups": 0
+    }
+  ],
+  "migrations": [
+    {
+      "version": "20260409144318",
+      "name": "create_waitlist_table"
+    },
+    {
+      "version": "20260409152653",
+      "name": "waitlist_email_only"
+    },
+    {
+      "version": "20260409202625",
+      "name": "add_mfa_columns"
+    },
+    {
+      "version": "20260409204843",
+      "name": "add_session_mfa_verified"
+    },
+    {
+      "version": "20260410152059",
+      "name": "drop_otp_sms"
+    }
+  ],
+  "schemaComparison": {
+    "expectedTables": [
+      "users",
+      "posts",
+      "ngos",
+      "reports",
+      "admin_actions",
+      "sessions",
+      "ngo_verification_requests",
+      "feedbacks"
+    ],
+    "columnAndNullabilityDrift": [],
+    "unmanagedTables": [
+      "waitlist"
+    ]
+  },
+  "anonVisibility": [
+    {
+      "users": 0,
+      "posts": 0,
+      "sessions": 0,
+      "waitlist": 0
+    }
+  ],
+  "authenticatedVisibilityWithoutJwt": [
+    {
+      "users": 0,
+      "posts": 0,
+      "sessions": 0
+    }
+  ]
+}
