@@ -41,7 +41,6 @@ Copy the root `.env.example` into the package directories that need runtime conf
 ```powershell
 Copy-Item .env.example artifacts/api-server/.env
 Copy-Item .env.example artifacts/maakon-web/.env
-Copy-Item .env.example artifacts/waitlist/.env
 Copy-Item .env.example lib/db/.env
 ```
 
@@ -49,7 +48,6 @@ Adjust values per package:
 
 - `artifacts/api-server/.env`: `DATABASE_URL`, `PORT=3001`, Supabase keys, and session settings
 - `artifacts/maakon-web/.env`: `PORT=5173`, `BASE_PATH`, `API_URL`, `VITE_SUPABASE_*`
-- `artifacts/waitlist/.env`: `NEXT_PUBLIC_SUPABASE_*`
 - `lib/db/.env`: `DATABASE_URL`
 
 > `DEV_FIREBASE_BYPASS=true` is only for local development and should never be enabled in production.
@@ -79,7 +77,6 @@ Run packages individually:
 ```bash
 pnpm dev:api                  # Express API -> http://localhost:3001
 pnpm dev:web                  # Vite web app -> http://localhost:5173
-pnpm --filter waitlist dev    # Next.js waitlist -> http://localhost:3000
 ```
 
 ### 6. Build for production
@@ -94,8 +91,7 @@ pnpm build
 Maakon/
 ├── artifacts/
 │   ├── api-server/       # Express 5 API
-│   ├── maakon-web/       # React + Vite frontend
-│   └── waitlist/         # Next.js waitlist page
+│   └── maakon-web/       # React + Vite frontend
 ├── lib/
 │   ├── api-client-react/ # Generated React hooks from OpenAPI
 │   ├── api-spec/         # OpenAPI spec + Orval codegen config
@@ -124,7 +120,6 @@ Package-specific scripts:
 
 - `pnpm --filter @workspace/api-server run dev`
 - `pnpm --filter @workspace/maakon-web run dev`
-- `pnpm --filter waitlist dev`
 - `pnpm --filter @workspace/api-spec run codegen`
 - `pnpm --filter @workspace/db run push`
 - `pnpm --filter @workspace/scripts run migrate`
