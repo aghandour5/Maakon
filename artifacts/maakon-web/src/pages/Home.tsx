@@ -39,19 +39,19 @@ export default function Home() {
   return (
     <div
       className="min-h-dvh flex flex-col relative home-bg-container"
-      style={{
-        backgroundImage: `
-          linear-gradient(135deg, rgba(1,15,10,0.85) 0%, rgba(5, 46, 35, 0.8) 50%, rgba(1,15,10,0.9) 100%),
-          url('/Lebanon-Background.png')
-        `,
-        backgroundSize: "200% 200%, cover",
-        backgroundRepeat: "no-repeat",
-        animation: "homeGradient 10s ease infinite",
-        backgroundBlendMode: "multiply",
-      }}
     >
+      {/*
+        Performance: the background is static on purpose. Animating background-position
+        on a blended image forced a full-viewport repaint on every frame.
+        The 960px WebP is served on mobile, the 1920px WebP on larger screens.
+      */}
       <style>{`
         .home-bg-container {
+          --home-bg-overlay: linear-gradient(135deg, rgba(1,15,10,0.85) 0%, rgba(5, 46, 35, 0.8) 50%, rgba(1,15,10,0.9) 100%);
+          background-image: var(--home-bg-overlay), url('/Lebanon-Background-1920.webp');
+          background-size: 200% 200%, cover;
+          background-repeat: no-repeat;
+          background-blend-mode: multiply;
           background-position: 0% 0%, center;
           position: relative;
         }
@@ -65,25 +65,22 @@ export default function Home() {
         }
         @media (max-width: 640px) {
           .home-bg-container {
+            background-image: var(--home-bg-overlay), url('/Lebanon-Background-960.webp');
             background-position: 0% 0%, 60% center;
           }
         }
-        @keyframes homeGradient {
-          0%   { background-position: 0% 0%, center; }
-          50%  { background-position: 100% 100%, center; }
-          100% { background-position: 0% 0%, center; }
-        }
+        /* transform-only animation runs on the GPU compositor (no per-frame repaint) */
         @keyframes pulse-subtle {
-          0%, 100% { transform: scale(1); box-shadow: 0 8px 32px rgba(220, 38, 38, 0.3); }
-          50% { transform: scale(1.02); box-shadow: 0 12px 48px rgba(220, 38, 38, 0.5); }
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.02); }
         }
         .animate-pulse-subtle {
-          animation: pulse-subtle 3s ease-in-out infinite;
+          box-shadow: 0 10px 40px rgba(220, 38, 38, 0.4);
         }
-        .glass-premium {
-          backdrop-filter: blur(16px);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        @media (prefers-reduced-motion: no-preference) {
+          .animate-pulse-subtle {
+            animation: pulse-subtle 3s ease-in-out infinite;
+          }
         }
         .home-nav-logo .logo-cls-1,
         .home-nav-logo .logo-cls-2,
