@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { TopNav } from "@/components/layout/TopNav";
 import { useListPosts, useListNgos, useGetMetadata } from "@workspace/api-client-react";
@@ -39,6 +39,17 @@ const icons = {
   selectedOfferVerified: makeIcon('marker-offer marker-selected', SHIELD_SVG, 32),
   selectedOfferUnverified: makeIcon('marker-offer marker-selected bg-green-600', '<div style="position:absolute;top:-1px;right:-1px;width:12px;height:12px;background-color:#f97316;border-radius:50%;border:2px solid white;z-index:10"></div>', 32),
 };
+
+/** Picks the marker icon for a post based on its type, NGO verification and selection state. */
+function getPostIcon(post: PostPublic, isSelected: boolean): L.DivIcon {
+  if (post.postType === 'offer' && post.providerType === 'ngo') {
+    const isVerified = post.verifiedBadgeType === 'ngo';
+    if (isSelected) return isVerified ? icons.selectedOfferVerified : icons.selectedOfferUnverified;
+    return isVerified ? icons.offerVerified : icons.offerUnverified;
+  }
+  if (post.postType === 'need') return isSelected ? icons.selectedNeed : icons.need;
+  return isSelected ? icons.selectedOffer : icons.offer;
+}
 
 const createClusterCustomIcon = (
   cluster: Parameters<NonNullable<Parameters<typeof MarkerClusterGroup>[0]['iconCreateFunction']>>[0]
@@ -164,7 +175,7 @@ function ModernMapControls() {
         <button
           type="button"
           onClick={() => map.zoomIn()}
-          className="w-10 h-10 bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.12)] border border-slate-200/50 flex flex-col items-center justify-center text-slate-700 hover:bg-white hover:text-emerald-600 transition-all hover:scale-105 active:scale-95"
+          className="w-10 h-10 bg-white/95 rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.12)] border border-slate-200/50 flex flex-col items-center justify-center text-slate-700 hover:bg-white hover:text-emerald-600 transition-all hover:scale-105 active:scale-95"
           aria-label={t("zoom_in", "Zoom in")}
         >
           <Plus className="w-5 h-5" aria-hidden="true" />
@@ -172,7 +183,7 @@ function ModernMapControls() {
         <button
           type="button"
           onClick={() => map.zoomOut()}
-          className="w-10 h-10 bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.12)] border border-slate-200/50 flex flex-col items-center justify-center text-slate-700 hover:bg-white hover:text-emerald-600 transition-all hover:scale-105 active:scale-95"
+          className="w-10 h-10 bg-white/95 rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.12)] border border-slate-200/50 flex flex-col items-center justify-center text-slate-700 hover:bg-white hover:text-emerald-600 transition-all hover:scale-105 active:scale-95"
           aria-label={t("zoom_out", "Zoom out")}
         >
           <Minus className="w-5 h-5" aria-hidden="true" />
@@ -180,7 +191,7 @@ function ModernMapControls() {
         <button
           type="button"
           onClick={() => map.flyToBounds(LEBANON_BOUNDS, { duration: 1.2 })}
-          className="w-10 h-10 bg-white/90 backdrop-blur-md rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.12)] border border-slate-200/50 flex items-center justify-center text-slate-700 hover:bg-white hover:text-emerald-600 transition-all hover:scale-105 active:scale-95 mt-1 sm:mt-2"
+          className="w-10 h-10 bg-white/95 rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.12)] border border-slate-200/50 flex items-center justify-center text-slate-700 hover:bg-white hover:text-emerald-600 transition-all hover:scale-105 active:scale-95 mt-1 sm:mt-2"
           title={t('fit_to_screen') || "Fit to Screen"}
           aria-label={t("fit_to_screen", "Fit to Screen")}
         >
@@ -192,18 +203,18 @@ function ModernMapControls() {
           disabled={locating}
           title={t('locate_me') || "My Location"}
           aria-label={t("locate_me", "My Location")}
-          className={`w-10 h-10 backdrop-blur-md rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.12)] border flex items-center justify-center transition-all hover:scale-105 active:scale-95 ${locateStatus === 'error'
+          className={`w-10 h-10 rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.12)] border flex items-center justify-center transition-all hover:scale-105 active:scale-95 ${locateStatus === 'error'
             ? 'bg-red-50 border-red-200 text-red-500'
             : locateStatus === 'success'
               ? 'bg-blue-50 border-blue-200 text-blue-600'
-              : 'bg-white/90 border-slate-200/50 text-slate-700 hover:bg-white hover:text-blue-600'
+              : 'bg-white/95 border-slate-200/50 text-slate-700 hover:bg-white hover:text-blue-600'
             } ${locating ? 'opacity-60 cursor-wait' : ''}`}
         >
           <LocateFixed className={`w-4 h-4 sm:w-5 sm:h-5 ${locating ? 'animate-pulse text-blue-500' : ''}`} aria-hidden="true" />
         </button>
         {locateMessage && (
           <div
-            className={`max-w-64 rounded-xl border px-3 py-2 text-xs font-semibold shadow-md backdrop-blur-md ${locateStatus === 'success'
+            className={`max-w-64 rounded-xl border px-3 py-2 text-xs font-semibold shadow-md ${locateStatus === 'success'
               ? 'border-blue-200 bg-blue-50/95 text-blue-700'
               : 'border-red-200 bg-red-50/95 text-red-700'
               }`}
@@ -284,21 +295,21 @@ export default function MapPage() {
 
   // ── Selection helpers ───────────────────────────────────────────────────
 
-  const openPost = (post: PostPublic, fly = false) => {
+  const openPost = useCallback((post: PostPublic, fly = false) => {
     setSelectedItem({ item: post, type: 'post' });
     setSelectedPostId(post.id);
     if (fly && post.publicLat && post.publicLng) {
       setMapCenter([post.publicLat, post.publicLng]);
     }
-  };
+  }, []);
 
-  const openNgo = (ngo: Ngo) => {
+  const openNgo = useCallback((ngo: Ngo) => {
     setSelectedItem({ item: ngo, type: 'ngo' });
     setSelectedPostId(null);
     if (ngo.lat && ngo.lng) {
       setMapCenter([ngo.lat, ngo.lng]);
     }
-  };
+  }, []);
 
   const closeModal = () => {
     setSelectedItem(null);
@@ -323,11 +334,109 @@ export default function MapPage() {
 
   const isLoading = isLoadingPosts || isLoadingNgos;
   const isError = isErrorPosts || isErrorNgos;
-  const visibleNgos = (!filters.postType || filters.verifiedNgoOnly)
-    ? (ngos ?? []).filter(ngo => !filters.verifiedNgoOnly || !!ngo.verifiedAt)
-    : [];
+  const visibleNgos = useMemo(
+    () => (!filters.postType || filters.verifiedNgoOnly)
+      ? (ngos ?? []).filter(ngo => !filters.verifiedNgoOnly || !!ngo.verifiedAt)
+      : [],
+    [ngos, filters.postType, filters.verifiedNgoOnly]
+  );
   const totalResults = (posts?.length ?? 0) + visibleNgos.length;
   const hasResults = totalResults > 0;
+
+  // ── Markers ─────────────────────────────────────────────────────────────
+  // Memoized so unrelated UI state (filter panel, legend, FAB) doesn't rebuild
+  // every Leaflet marker and re-bind its event handlers on each render.
+
+  const postMarkers = useMemo(() => (posts ?? []).map(post => {
+    if (!post.publicLat || !post.publicLng) return null;
+    return (
+      <Marker
+        key={`post-${post.id}`}
+        position={[post.publicLat, post.publicLng]}
+        icon={getPostIcon(post, post.id === selectedPostId)}
+        eventHandlers={{ click: () => openPost(post) }}
+      >
+        <Popup className="leaflet-popup-custom">
+          <div className={`p-2 min-w-[180px] ${isRtl ? 'text-right' : 'text-left'}`}>
+            <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
+              <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${post.postType === 'need' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                {t(post.postType)}
+              </span>
+              <span className="text-[10px] font-medium text-muted-foreground uppercase">
+                {t(post.category)}
+              </span>
+              {post.urgency && post.postType === 'need' && (
+                <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${post.urgency === 'critical' ? 'bg-red-500 text-white' : 'bg-orange-100 text-orange-700'}`}>
+                  {t(post.urgency)}
+                </span>
+              )}
+              {post.providerType === 'ngo' && (
+                <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${post.verifiedBadgeType === 'ngo' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'}`}>
+                  {post.verifiedBadgeType === 'ngo' ? `✓ ${t('verified_ngo')}` : `● ${t('unverified_ngo', 'Unverified')}`}
+                </span>
+              )}
+            </div>
+            <strong className="text-sm block mb-1 leading-tight text-foreground">
+              {post.title}
+            </strong>
+            {post.district && (
+              <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
+                <MapPin className="w-3 h-3" />
+                <span>{post.district ? t(post.district) + "، " : ""}{t(post.governorate)}</span>
+              </div>
+            )}
+            <div className="text-xs text-muted-foreground mb-2">
+              {formatDistanceToNow(new Date(post.updatedAt), { addSuffix: true, locale: dateLocale })}
+            </div>
+            <button
+              onClick={() => openPost(post)}
+              className="w-full text-center py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold"
+            >
+              {t('view_details')}
+            </button>
+          </div>
+        </Popup>
+      </Marker>
+    );
+  }), [posts, selectedPostId, isRtl, t, dateLocale, openPost]);
+
+  const ngoMarkers = useMemo(() => visibleNgos.map(ngo => {
+    if (!ngo.lat || !ngo.lng) return null;
+    const isVerified = !!ngo.verifiedAt;
+    return (
+      <Marker
+        key={`ngo-${ngo.id}`}
+        position={[ngo.lat, ngo.lng]}
+        icon={isVerified ? icons.ngo : icons.ngoUnverified}
+        eventHandlers={{ click: () => openNgo(ngo) }}
+      >
+        <Popup className="leaflet-popup-custom">
+          <div className={`p-2 min-w-[160px] ${isRtl ? 'text-right' : 'text-left'}`}>
+            <span className={`text-[10px] uppercase font-bold mb-1 block ${isVerified ? 'text-blue-600' : 'text-orange-500'
+              }`}>
+              {isVerified ? `✓ ${t('verified_ngo')}` : `● ${t('unverified_ngo', 'Unverified NGO')}`}
+            </span>
+            <strong className="text-sm block mb-1 leading-tight text-foreground">
+              {ngo.name}
+            </strong>
+            {ngo.governorate && (
+              <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
+                <MapPin className="w-3 h-3" />
+                <span>{t(ngo.governorate)}</span>
+              </div>
+            )}
+            <button
+              onClick={() => openNgo(ngo)}
+              className={`w-full text-center py-1.5 rounded-lg text-white text-xs font-semibold ${isVerified ? 'bg-blue-600' : 'bg-orange-500'
+                }`}
+            >
+              {t('view_details')}
+            </button>
+          </div>
+        </Popup>
+      </Marker>
+    );
+  }), [visibleNgos, isRtl, t, openNgo]);
 
   // ── Render ──────────────────────────────────────────────────────────────
 
@@ -357,117 +466,8 @@ export default function MapPage() {
             iconCreateFunction={createClusterCustomIcon}
             maxClusterRadius={50}
           >
-            {/* Post markers */}
-            {posts?.map(post => {
-              if (!post.publicLat || !post.publicLng) return null;
-              const isSelected = post.id === selectedPostId;
-
-              let icon = isSelected
-                ? (post.postType === 'need' ? icons.selectedNeed : icons.selectedOffer)
-                : (post.postType === 'need' ? icons.need : icons.offer);
-
-              if (post.postType === 'offer' && post.providerType === 'ngo') {
-                if (isSelected) {
-                  icon = post.verifiedBadgeType === 'ngo' ? icons.selectedOfferVerified : icons.selectedOfferUnverified;
-                } else {
-                  icon = post.verifiedBadgeType === 'ngo' ? icons.offerVerified : icons.offerUnverified;
-                }
-              }
-
-              return (
-                <Marker
-                  key={`post-${post.id}`}
-                  position={[post.publicLat, post.publicLng]}
-                  icon={icon}
-                  eventHandlers={{
-                    click: () => {
-                      setSelectedPostId(post.id);
-                      setSelectedItem({ item: post, type: 'post' });
-                    }
-                  }}
-                >
-                  <Popup className="leaflet-popup-custom">
-                    <div className={`p-2 min-w-[180px] ${isRtl ? 'text-right' : 'text-left'}`}>
-                      <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
-                        <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${post.postType === 'need' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
-                          {t(post.postType)}
-                        </span>
-                        <span className="text-[10px] font-medium text-muted-foreground uppercase">
-                          {t(post.category)}
-                        </span>
-                        {post.urgency && post.postType === 'need' && (
-                          <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${post.urgency === 'critical' ? 'bg-red-500 text-white' : 'bg-orange-100 text-orange-700'}`}>
-                            {t(post.urgency)}
-                          </span>
-                        )}
-                        {post.providerType === 'ngo' && (
-                          <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${post.verifiedBadgeType === 'ngo' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'}`}>
-                            {post.verifiedBadgeType === 'ngo' ? `✓ ${t('verified_ngo')}` : `● ${t('unverified_ngo', 'Unverified')}`}
-                          </span>
-                        )}
-                      </div>
-                      <strong className="text-sm block mb-1 leading-tight text-foreground">
-                        {post.title}
-                      </strong>
-                      {post.district && (
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
-                          <MapPin className="w-3 h-3" />
-                          <span>{post.district ? t(post.district) + "، " : ""}{t(post.governorate)}</span>
-                        </div>
-                      )}
-                      <div className="text-xs text-muted-foreground mb-2">
-                        {formatDistanceToNow(new Date(post.updatedAt), { addSuffix: true, locale: dateLocale })}
-                      </div>
-                      <button
-                        onClick={() => openPost(post)}
-                        className="w-full text-center py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold"
-                      >
-                        {t('view_details')}
-                      </button>
-                    </div>
-                  </Popup>
-                </Marker>
-              );
-            })}
-
-            {/* NGO markers */}
-            {visibleNgos.map(ngo => {
-              if (!ngo.lat || !ngo.lng) return null;
-              const isVerified = !!ngo.verifiedAt;
-              return (
-                <Marker
-                  key={`ngo-${ngo.id}`}
-                  position={[ngo.lat, ngo.lng]}
-                  icon={isVerified ? icons.ngo : icons.ngoUnverified}
-                  eventHandlers={{ click: () => openNgo(ngo) }}
-                >
-                  <Popup className="leaflet-popup-custom">
-                    <div className={`p-2 min-w-[160px] ${isRtl ? 'text-right' : 'text-left'}`}>
-                      <span className={`text-[10px] uppercase font-bold mb-1 block ${isVerified ? 'text-blue-600' : 'text-orange-500'
-                        }`}>
-                        {isVerified ? `✓ ${t('verified_ngo')}` : `● ${t('unverified_ngo', 'Unverified NGO')}`}
-                      </span>
-                      <strong className="text-sm block mb-1 leading-tight text-foreground">
-                        {ngo.name}
-                      </strong>
-                      {ngo.governorate && (
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
-                          <MapPin className="w-3 h-3" />
-                          <span>{t(ngo.governorate)}</span>
-                        </div>
-                      )}
-                      <button
-                        onClick={() => openNgo(ngo)}
-                        className={`w-full text-center py-1.5 rounded-lg text-white text-xs font-semibold ${isVerified ? 'bg-blue-600' : 'bg-orange-500'
-                          }`}
-                      >
-                        {t('view_details')}
-                      </button>
-                    </div>
-                  </Popup>
-                </Marker>
-              );
-            })}
+            {postMarkers}
+            {ngoMarkers}
           </MarkerClusterGroup>
         </MapContainer>
 
