@@ -40,6 +40,7 @@ import { createDraftPost } from "@/lib/auth-api";
 import { supabase } from "@/lib/supabase";
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from "react-leaflet";
 import L from "leaflet";
+import "@/styles/map.css";
 import { GOVERNORATE_CENTERS } from "@workspace/locations";
 
 // ── Constants ──────────────────────────────────────────────────────────────

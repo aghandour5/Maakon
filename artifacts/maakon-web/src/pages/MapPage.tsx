@@ -6,6 +6,7 @@ import type { ListPostsParams, PostPublic, Ngo } from "@workspace/api-client-rea
 import { CircleMarker, MapContainer, TileLayer, Marker, Popup, ZoomControl, useMap } from "react-leaflet";
 import MarkerClusterGroup from "react-leaflet-cluster";
 import L from "leaflet";
+import "@/styles/map.css";
 import { PostDetailsModal } from "@/components/map/PostDetailsModal";
 import { Filter, X, MapPin, ChevronRight, SearchX, Plus, Minus, Maximize, AlertTriangle, LocateFixed, HeartHandshake } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";

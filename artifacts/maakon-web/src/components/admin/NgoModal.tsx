@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useGetMetadata } from "@workspace/api-client-react";
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from "react-leaflet";
 import L from "leaflet";
+import "@/styles/map.css";
 import type { AdminNgo } from "@/pages/AdminPage";
 import { Loader2, LocateFixed } from "lucide-react";
 
