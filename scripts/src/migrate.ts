@@ -2,7 +2,7 @@
  * Idempotent migration script — run before seeding after schema changes.
  * Safe to run multiple times; uses IF NOT EXISTS / IF EXISTS guards.
  */
-import { pool } from "@workspace/db";
+import { pool } from "@workspace/db/admin";
 
 async function migrate() {
   const client = await pool.connect();

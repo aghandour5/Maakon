@@ -1,4 +1,4 @@
-import { db } from "@workspace/db";
+import { db } from "@workspace/db/admin";
 import { postsTable, ngosTable } from "@workspace/db/schema";
 import { eq, isNotNull, and } from "drizzle-orm";
 

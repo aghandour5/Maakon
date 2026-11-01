@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "configure:runtime-role": "tsx ./src/configure-runtime-role.ts",
     "migrate": "tsx ./src/migrate.ts",
     "seed": "tsx ./src/seed.ts",
     "sync:ngos": "tsx ./src/sync-ngos.ts",

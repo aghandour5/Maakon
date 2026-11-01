@@ -1,5 +1,11 @@
 # Database review — 1 November 2026
 
+Remediation update: the TLS portion of DB-01 has since been implemented and verified
+with a read-only TLS 1.3 connection and server-certificate validation. The connection
+still uses `postgres`; runtime-role restrictions and the other findings remain open.
+See the [current checkpoint](D:/Maakon/docs/reviews/code-review-progress.md).
+The evidence and live counts below describe the original audit snapshot.
+
 The database has the core entities needed for the current application, but it is **not ready for production approval**. The most serious problems are a connection without TLS, exposure of non-public posts, bypassable moderation, and disclosure of MFA secrets through profile responses. The live tables and the Drizzle model agree on columns and nullability; that agreement does not establish that the application handles data safely.
 
 This is the database phase of the requested code review. It includes every database schema file, connection/configuration code, migration/seed/synchronization scripts, API database operations, and the corresponding frontend data flows. It is not a claim that every frontend line or every page's UI has been audited. The accompanying inventory records the remaining work.

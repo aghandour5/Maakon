@@ -46,22 +46,44 @@ Copy-Item .env.example lib/db/.env
 
 Adjust values per package:
 
-- `artifacts/api-server/.env`: `DATABASE_URL`, `PORT=3001`, Supabase keys, and session settings
+- `artifacts/api-server/.env`: `DATABASE_URL` for the API runtime login, `PORT=3001`, Supabase keys, and session settings
 - `artifacts/maakon-web/.env`: `PORT=5173`, `BASE_PATH`, `API_URL`, `VITE_SUPABASE_*`
-- `lib/db/.env`: `DATABASE_URL`
+- `lib/db/.env`: `DATABASE_ADMIN_URL` for the schema owner; remove `DATABASE_URL` from this file
+
+The production API rejects owner or administrative database logins at startup.
+Keep the owner URL in the maintenance environment only. See
+[database access and runtime-role setup](docs/database-access.md) before the first
+production deployment or when switching an existing environment to the new role.
+
+Remote database connections require TLS with certificate and hostname verification.
+Loopback connections such as `localhost` can use a local database without TLS.
+
+For hosted Supabase, the public root CA is included at
+`lib/db/certs/supabase-prod-ca-2021.crt`. It comes from the
+[certificate URL published by Supabase's dashboard source](https://github.com/supabase/supabase/blob/a05e7ec1d79e67cba65e3871b7caf105db27f8b1/apps/studio/hooks/custom-content/custom-content.json).
+The certificate expires on 26 April 2031; replace it when Supabase rotates its CA.
+
+Append `sslrootcert` to the runtime and admin database URLs. Its value
+must be a URL-encoded absolute path to the certificate **on the machine running
+the command**. For example, `D:/Maakon/lib/db/certs/supabase-prod-ca-2021.crt`
+becomes `D%3A%2FMaakon%2Flib%2Fdb%2Fcerts%2Fsupabase-prod-ca-2021.crt`.
+Use `?sslrootcert=...` when the URL has no query string, or `&sslrootcert=...`
+when it already has one. Deployment paths will differ from local paths.
+For another database provider, use its CA if the system trust store does not
+already trust its certificate. See [Supabase's SSL setup](https://supabase.com/docs/guides/platform/ssl-enforcement).
 
 > `DEV_FIREBASE_BYPASS=true` is only for local development and should never be enabled in production.
 
 ### 3. Prepare the database
 
 ```bash
-pnpm --filter @workspace/db run push
+pnpm --filter @workspace/db exec node --env-file=.env ./node_modules/drizzle-kit/bin.cjs push --config ./drizzle.config.ts
 ```
 
 ### 4. Seed sample data (optional)
 
 ```bash
-pnpm --filter @workspace/scripts run seed
+node --env-file=lib/db/.env --import=./scripts/node_modules/tsx/dist/loader.mjs ./scripts/src/seed.ts
 ```
 
 ### 5. Run development servers

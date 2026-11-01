@@ -20,9 +20,33 @@ The snapshot in [review-inventory.csv](D:/Maakon/docs/reviews/review-inventory.c
 
 ## Remaining phases
 
+### Remediation checkpoint: DB-01 TLS
+
+Step 1 has been applied and is awaiting the user's review. Remote connections now
+use `sslmode=verify-full` through a shared helper used by the application pool and
+Drizzle configuration. Supabase's public CA is included with its source documented
+in the README; the local API and database `.env` files were configured to use it.
+Deployment environments must supply their own certificate path.
+
+Verification: 20 TLS regression tests passed; root `pnpm.cmd run typecheck` passed;
+the helper and regression tests also passed a strict TypeScript check. A read-only
+connection using the application's pool confirmed TLS 1.3 and a verified server
+certificate. It still connected as `postgres`: runtime-role restrictions remain
+pending, so DB-01 is only partially addressed. No database schema, grants, roles,
+or application rows were changed. DB-02 and DB-03 remain pending.
+
+Re-run the TLS regression tests from the repository root:
+
+```powershell
+node --import=./scripts/node_modules/tsx/dist/loader.mjs --test ./lib/db/test/connection-config.test.ts
+```
+
+The inventory and original database report record the pre-remediation snapshot;
+their source hashes and line references should be checked against current files.
+
 | Phase | Scope | Status |
 | --- | --- | --- |
-| Database remediation | Resolve reported defects and validate migrations on a disposable database | Findings documented; fixes not applied |
+| Database remediation | Resolve reported defects and validate migrations on a disposable database | DB-01 TLS applied and verified locally; review checkpoint pending; remaining fixes pending |
 | Backend line review | Auth/MFA lifecycle, CSRF, rate limits, proxy/host controls, error handling, logging, deployment | Pending beyond database-related review |
 | Page line review | Home, Map, PostNeed, PostOffer, MyPosts, AdminPage, AuthCallback, About, Contact, FAQ, Support, NotFound | Pending full review; database flows partially traced |
 | Shared frontend review | Auth context/modal/steps, navigation, post detail modal, API fetch/cache, hooks, i18n, reusable UI, styles/assets | Pending full review |

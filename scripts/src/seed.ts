@@ -1,4 +1,4 @@
-import { db, pool, postsTable, ngosTable, usersTable, reportsTable, adminActionsTable } from "@workspace/db";
+import { db, pool, postsTable, ngosTable, usersTable, reportsTable, adminActionsTable } from "@workspace/db/admin";
 import { GOVERNORATE_CENTERS } from "@workspace/locations";
 
 function fuzz(val: number) {
