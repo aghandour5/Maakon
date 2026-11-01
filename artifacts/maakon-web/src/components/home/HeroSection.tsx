@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 15 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.4 } },
+  show: { opacity: 1, y: 0, transition: { duration: 0.5 } },
 };
 
 export default function HeroSection() {
@@ -15,16 +15,16 @@ export default function HeroSection() {
       variants={fadeUp}
       initial="hidden"
       animate="show"
-      className="text-center px-2 flex flex-col items-center"
+      className="text-center px-4 flex flex-col items-center w-full max-w-2xl"
     >
       <img
         src="/logo.svg"
         alt="Maakon Logo"
         draggable={false}
-        className="h-28 sm:h-40 md:h-56 w-auto object-contain mb-4 sm:mb-6 drop-shadow-[0_35px_60px_rgba(0,0,0,0.2)]"
+        className="h-24 sm:h-32 md:h-40 lg:h-48 w-auto object-contain mb-6 sm:mb-8"
       />
       <h1
-        className="text-2xl sm:text-3xl lg:text-4xl font-normal text-emerald-50/90 leading-none tracking-tight max-w-lg mx-auto drop-shadow-sm [&>strong]:font-bold [&>strong]:font-arabic [&>strong]:text-[#00A651] [&>strong]:[text-shadow:0_1px_4px_rgba(0,0,0,0.15)]"
+        className="text-2xl sm:text-3xl md:text-4xl lg:text-4xl font-bold text-white leading-relaxed tracking-wide [&>strong]:font-bold [&>strong]:text-[#00A651]"
         dangerouslySetInnerHTML={{ __html: t("home_tagline") }}
       />
     </motion.div>
