@@ -32,7 +32,7 @@ export default function Footer() {
               Maakon
             </span>
             <span className="text-emerald-50/70 text-[9px] font-bold tracking-widest uppercase">
-              {isRtl ? "Lebanon Crisis Response — معكن" : "Lebanon Crisis Response — معكن"}
+              Lebanon Crisis Response — <span lang="ar" className="font-arabic">معكن</span>
             </span>
           </div>
         </div>
