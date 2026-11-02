@@ -463,7 +463,7 @@ export default function MapPage() {
   // ── Render ──────────────────────────────────────────────────────────────
 
   return (
-    <div className="h-[100dvh] w-full flex flex-col bg-background overflow-hidden relative">
+    <div className="h-[calc(100dvh-var(--dev-banner-height,0px))] w-full flex flex-col bg-background overflow-hidden relative">
       <TopNav title={t('view_map')} showBack />
 
       <main className="flex-1 relative z-0">

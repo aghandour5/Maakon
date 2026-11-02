@@ -6,6 +6,7 @@ const resources = {
   ar: {
     translation: {
       app_name: "معكن",
+      dev_notice: "الموقع لا يزال قيد التطوير، والإطلاق قريباً.",
       home_subtitle: "تطبيق الاستجابة للأزمات في لبنان",
       home_tagline: "<strong>ابحث</strong> عن مساعدة. <strong>قدّم</strong> مساعدة. <span class=\"block mt-0.5 sm:mt-1 pb-2 text-3xl sm:text-4xl lg:text-5xl font-black font-arabic\" style=\"color: #00A651; text-shadow: 0 1px 4px rgba(0,0,0,0.15)\">ادعم لبنان.</span>",
       i_need_help: "أحتاج مساعدة",
@@ -345,6 +346,7 @@ const resources = {
   en: {
     translation: {
       app_name: "Maakon",
+      dev_notice: "This site is still under development. Launching soon.",
       home_subtitle: "Lebanon Crisis Response App",
       home_tagline: "<strong>Find</strong> help. <strong>Offer</strong> help. <span class=\"block mt-0.5 sm:mt-1 pb-2 text-3xl sm:text-4xl lg:text-5xl font-black font-arabic\" style=\"color: #00A651; text-shadow: 0 1px 4px rgba(0,0,0,0.15)\">Support Lebanon.</span>",
       i_need_help: "I Need Help",
