@@ -1,5 +1,5 @@
 import type {
-  FirebaseLoginBodyParams,
+  SupabaseLoginBodyParams,
   CompleteProfileBodyParams,
   CompleteNgoProfileBodyParams,
   CreateDraftPostBodyParams,
@@ -26,8 +26,8 @@ async function apiRequest(path: string, options: RequestInit = {}): Promise<Resp
   });
 }
 
-/** Exchange a Supabase ID token for a server session */
-export async function supabaseLogin(body: FirebaseLoginBodyParams) {
+/** Exchange a Supabase access token for a server session */
+export async function supabaseLogin(body: SupabaseLoginBodyParams) {
   const res = await apiRequest("/api/auth/supabase-login", {
     method: "POST",
     body: JSON.stringify(body),

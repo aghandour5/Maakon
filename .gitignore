@@ -62,5 +62,4 @@ Thumbs.db
 *.sqlite3
 *.db
 !Thumbs.db
-firebase-key.json
 *credentials*.json

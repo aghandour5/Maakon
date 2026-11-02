@@ -1,14 +1,14 @@
 import { z } from "zod";
 
-// ── Firebase Email Link auth ──────────────────────────────────────────────────
+// ── Supabase Email Link auth ──────────────────────────────────────────────────
 
-export const FirebaseLoginBody = z.object({
-  idToken: z.string().min(1, "Firebase ID token is required"),
+export const SupabaseLoginBody = z.object({
+  idToken: z.string().min(1, "Supabase access token is required"),
   accountType: z.enum(["individual", "ngo"]).optional(),
   /** Optional draft token to claim a post after email-link sign-in */
   draftToken: z.string().optional(),
 });
-export type FirebaseLoginBodyParams = z.infer<typeof FirebaseLoginBody>;
+export type SupabaseLoginBodyParams = z.infer<typeof SupabaseLoginBody>;
 
 // ── Profile completion ────────────────────────────────────────────────────────
 

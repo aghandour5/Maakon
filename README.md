@@ -72,7 +72,7 @@ when it already has one. Deployment paths will differ from local paths.
 For another database provider, use its CA if the system trust store does not
 already trust its certificate. See [Supabase's SSL setup](https://supabase.com/docs/guides/platform/ssl-enforcement).
 
-> `DEV_FIREBASE_BYPASS=true` is only for local development and should never be enabled in production.
+> `DEV_SUPABASE_BYPASS=true` is only for local development and should never be enabled in production.
 
 ### 3. Prepare the database
 

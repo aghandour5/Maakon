@@ -6,7 +6,7 @@ const supabaseAnonKey = process.env["VITE_SUPABASE_ANON_KEY"] || "";
 const supabaseServiceRoleKey = process.env["SUPABASE_SERVICE_ROLE_KEY"] || "";
 const isDevSupabaseBypassEnabled =
   process.env.NODE_ENV !== "production" &&
-  process.env["DEV_FIREBASE_BYPASS"] === "true";
+  process.env["DEV_SUPABASE_BYPASS"] === "true";
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
@@ -16,9 +16,9 @@ export const supabaseAdmin = supabaseServiceRoleKey
 
 if (
   process.env.NODE_ENV === "production" &&
-  process.env["DEV_FIREBASE_BYPASS"] === "true"
+  process.env["DEV_SUPABASE_BYPASS"] === "true"
 ) {
-  logger.warn("Ignoring DEV_FIREBASE_BYPASS because NODE_ENV=production");
+  logger.warn("Ignoring DEV_SUPABASE_BYPASS because NODE_ENV=production");
 }
 
 export interface SupabaseTokenPayload {
@@ -29,11 +29,11 @@ export interface SupabaseTokenPayload {
 
 /**
  * Verifies a Supabase access token.
- * In dev mode with DEV_FIREBASE_BYPASS=true, returns a mock payload.
+ * In dev mode with DEV_SUPABASE_BYPASS=true, returns a mock payload.
  */
 export async function verifySupabaseToken(accessToken: string): Promise<SupabaseTokenPayload> {
   if (isDevSupabaseBypassEnabled) {
-    logger.info("DEV_FIREBASE_BYPASS is enabled: skipping real token verification");
+    logger.info("DEV_SUPABASE_BYPASS is enabled: skipping real token verification");
     try {
       const mock = JSON.parse(accessToken);
       return {

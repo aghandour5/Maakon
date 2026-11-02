@@ -4,7 +4,7 @@ import { db } from "@workspace/db";
 import { usersTable, postsTable, ngosTable, sessionsTable } from "@workspace/db/schema";
 import { eq, and } from "drizzle-orm";
 import {
-  FirebaseLoginBody,
+  SupabaseLoginBody,
   CompleteProfileBody,
   CompleteNgoProfileBody,
   CreateDraftPostBody,
@@ -65,7 +65,7 @@ function isVulnerableNeedPost(
 // ── Supabase Email-Link Login ─────────────────────────────────────────────────
 
 router.post("/auth/supabase-login", loginLimiter, async (req: Request, res: Response) => {
-  const parsed = FirebaseLoginBody.safeParse(req.body);
+  const parsed = SupabaseLoginBody.safeParse(req.body);
   if (!parsed.success) {
     logger.warn({ err: parsed.error, path: req.originalUrl }, "Supabase login validation failed");
     res.status(400).json({ error: "Validation failed" });

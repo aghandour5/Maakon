@@ -1,5 +1,5 @@
 /**
- * EmailStep — collects user email and sends Firebase email-link sign-in.
+ * EmailStep — collects user email and sends a Supabase email-link sign-in.
  */
 import { useState } from "react";
 import { useTranslation } from "react-i18next";

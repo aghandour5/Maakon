@@ -78,7 +78,7 @@ LOG_LEVEL=info
 CORS_ORIGINS="http://localhost:5173,http://localhost:5174"
 JSON_BODY_LIMIT="100kb"
 URLENCODED_BODY_LIMIT="100kb"
-DEV_FIREBASE_BYPASS="false"
+DEV_SUPABASE_BYPASS="false"
 ```
 
 **`artifacts/maakon-web/.env`:**
