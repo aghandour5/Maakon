@@ -483,7 +483,7 @@ export default function MyPosts() {
                   disabled={actionLoading === editingPost.id || editTitle.length < 3 || editDescription.length < 10}
                   className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:opacity-90 transition-opacity disabled:opacity-40 shadow"
                 >
-                  {actionLoading === editingPost.id && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {actionLoading === editingPost.id && <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />}
                   {t("myposts_save_changes")}
                 </button>
               </div>
