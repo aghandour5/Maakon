@@ -1,0 +1,10 @@
+
+> @workspace/maakon-web@0.0.0 dev /app/artifacts/maakon-web
+> vite --config vite.config.ts --host 0.0.0.0
+
+
+  VITE v7.3.1  ready in 370 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: http://192.168.0.2:5173/
+ ELIFECYCLE  Command failed with exit code 143.
