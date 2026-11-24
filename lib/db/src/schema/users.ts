@@ -22,6 +22,9 @@ export const usersTable = pgTable("users", {
   // Profile fields
   displayName: text("display_name"),
   avatarUrl: text("avatar_url"),
+  governorate: text("governorate"),
+  district: text("district"),
+  phone: text("phone"),
 
   accountType: accountTypeEnum("account_type").default("individual").notNull(),
   role: userRoleEnum("role").default("user").notNull(),

@@ -223,6 +223,11 @@ const resources = {
 
       // Auth UI
       sign_in: "تسجيل الدخول",
+      auth_callback_failed: "لم يكتمل تسجيل الدخول",
+      auth_callback_service: "تعذّر على معكن بدء جلستك. انتظر قليلاً ثم حاول مجدداً.",
+      auth_callback_link: "تعذّر التحقق من رابط تسجيل الدخول. قد تكون صلاحيته انتهت أو سبق استخدامه.",
+      auth_callback_retry: "حاول مجدداً",
+      auth_callback_new_link: "اطلب رابطاً جديداً",
       logout: "تسجيل الخروج",
       sign_in_required: "تسجيل الدخول مطلوب",
       sign_in_continue: "تسجيل الدخول للمتابعة",
@@ -236,9 +241,15 @@ const resources = {
       indiv_desc: "للمواطنين والمتطوعين لطلب أو تقديم المساعدة",
       ngo_desc: "للمنظمات والجمعيات الموثقة للعمل على الأرض",
       
-      profile_name_label: "الاسم الكامل أو اسم العرض",
+      profile_name_label: "الاسم الكامل",
+      profile_email: "البريد الإلكتروني المؤكّد",
+      profile_phone: "رقم الهاتف (مع رمز البلد)",
+      profile_phone_format: "أدخل الرقم مع رمز البلد، مثلاً ‎+961 70 123 456.",
+      profile_district_optional: "القضاء (اختياري)",
+      profile_verify_email: "سجّل الخروج ثم افتح رابط تسجيل دخول جديد لتأكيد بريدك الإلكتروني.",
+      profile_private_name: "اسمك: {{name}} (لا يُرفق بالطلب)",
       profile_name_placeholder: "مثال: علي خازم",
-      profile_subtitle: "خطوة أخيرة! ماذا نناديك؟",
+      profile_subtitle: "احفظ بياناتك لتُملأ تلقائياً عند طلب المساعدة. لن يُرفق بالطلب سوى وسيلة التواصل التي تختارها.",
       complete_profile: "إكمال التسجيل",
       saving: "جاري الحفظ...",
 
@@ -614,6 +625,11 @@ const resources = {
 
       // Auth UI
       sign_in: "Sign In",
+      auth_callback_failed: "Sign-in didn’t finish",
+      auth_callback_service: "Maakon couldn’t start your session. Wait a moment, then try again.",
+      auth_callback_link: "This sign-in link couldn’t be verified. It may have expired or already been used.",
+      auth_callback_retry: "Try again",
+      auth_callback_new_link: "Request a new link",
       logout: "Logout",
       sign_in_required: "Sign In Required",
       sign_in_continue: "Sign In to Continue",
@@ -627,9 +643,15 @@ const resources = {
       indiv_desc: "For citizens and volunteers to request or offer help",
       ngo_desc: "For verified organizations to operate",
 
-      profile_name_label: "Full Name or Display Name",
+      profile_name_label: "Full name",
+      profile_email: "Verified email",
+      profile_phone: "Phone number (with country code)",
+      profile_phone_format: "Include the country code, for example +961 70 123 456.",
+      profile_district_optional: "District (optional)",
+      profile_verify_email: "Sign out and open a new sign-in link to verify your email.",
+      profile_private_name: "Your name: {{name}} (not attached to this request)",
       profile_name_placeholder: "e.g. Ali Khazem",
-      profile_subtitle: "Just one more step! What should we call you?",
+      profile_subtitle: "Save your details to prefill help requests. Only the contact method you choose will be attached.",
       complete_profile: "Complete Registration",
       saving: "Saving...",
       

@@ -6,7 +6,7 @@ import React, {
   useMemo,
   useState,
 } from "react";
-import { fetchCurrentUser, logout as apiLogout, supabaseLogin } from "@/lib/auth-api";
+import { fetchCurrentUser, LoginExchangeError, logout as apiLogout, supabaseLogin } from "@/lib/auth-api";
 import { supabase } from "@/lib/supabase";
 import { saveDraftReferral, type DraftReferral } from "@/lib/give-referral";
 import { getDraftClaimOutcome, saveDraftClaimOutcome } from "@/lib/draft-claim";
@@ -17,6 +17,9 @@ export interface AuthUser { // Represents the authenticated user object returned
   id: number;
   email: string | null;
   displayName: string | null;
+  governorate: string | null;
+  district: string | null;
+  phone: string | null;
   accountType: "individual" | "ngo";
   role: "user" | "admin" | "moderator";
   avatarUrl: string | null;
@@ -31,6 +34,7 @@ interface AuthContextType {
   user: AuthUser | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  callbackFailure: "link" | "service" | null;
   isAuthModalOpen: boolean;
   mfaStatus: "mfa_setup_required" | "mfa_challenge" | null;
   setMfaStatus: (status: "mfa_setup_required" | "mfa_challenge" | null) => void;
@@ -136,6 +140,7 @@ async function fetchWithRetry<T>(
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null); // user is the current user. It is null if the user is not logged in.
   const [isLoading, setIsLoading] = useState(true);
+  const [callbackFailure, setCallbackFailure] = useState<AuthContextType["callbackFailure"]>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [mfaStatus, setMfaStatus] = useState<MfaStatus | null>(null);
 
@@ -148,14 +153,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const handleAuthenticatedUser = useCallback((newUser: AuthUser) => {
+    setCallbackFailure(null);
     if (newUser.role === "admin" && !newUser.mfaVerified) {
       setMfaStatus(newUser.mfaEnabled ? "mfa_challenge" : "mfa_setup_required");
-      setIsAuthModalOpen(true);
     }
 
-    if (!newUser.onboardingComplete) {
-      setIsAuthModalOpen(true);
-    }
+    // AuthModal derives the required profile step from the current user.
+    setIsAuthModalOpen(false);
   }, []);
 
   const applyLoginResult = useCallback((result: SupabaseLoginResult) => {
@@ -179,7 +183,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (event.data.type === "AUTH_CHANGE") {
         // Update local state without broadcasting back
         setUser(event.data.user);
-        setIsLoading(false);
+        if (event.data.user) setCallbackFailure(null);
       }
     };
     authChannel.addEventListener("message", handleMessage);
@@ -215,13 +219,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     async function initAuth() {
+      const isCallback = window.location.pathname.replace(/\/$/, "").endsWith("/auth/callback");
       try {
         const urlParams = new URLSearchParams(window.location.search);
         const draftToken = getPendingDraftToken(urlParams);
+        const linkRejected = urlParams.has("error") || new URLSearchParams(window.location.hash.slice(1)).has("error");
 
         // 1. Kick off both checks early and in parallel
         const sessionPromise = supabase.auth.getSession();
-        const currentUserPromise = fetchWithRetry(() => fetchCurrentUser()).catch(() => null);
+        const currentUserPromise = isCallback ? Promise.resolve(null) :
+          fetchWithRetry(() => fetchCurrentUser()).catch(() => null);
 
         cleanupAuthUrlParams();
 
@@ -231,6 +238,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           currentUserPromise
         ]);
 
+        if (isCallback && (linkRejected || !session || !isLikelyJwt(session.access_token))) {
+          setCallbackFailure("link");
+          return;
+        }
         if (currentUser && (!draftToken || !session)) {
           // Fast path: identified by backend cookie
           setUser(currentUser);
@@ -245,19 +256,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const accountType = getStoredAccountType();
             const result: SupabaseLoginResult = await supabaseLogin({ idToken: session.access_token, accountType, draftToken });
 
+            if (!result.user) throw new Error("Session exchange returned no user");
             if (result.referral) saveDraftReferral(result.referral);
             else if (draftToken && result.user) saveDraftClaimOutcome(getDraftClaimOutcome(result.claimedPost));
             applyLoginResult(result);
             cleanupAuthStorage();
           } catch (authError) {
             console.error("Supabase login to backend failed:", authError);
-            await supabase.auth.signOut();
-            syncUser(currentUser);
-            if (currentUser) handleAuthenticatedUser(currentUser);
+            const rejected = authError instanceof LoginExchangeError && [401, 403].includes(authError.status);
+            if (isCallback) setCallbackFailure(rejected ? "link" : "service");
+            // A server outage does not invalidate the verified email session.
+            if (rejected) await supabase.auth.signOut({ scope: "local" });
+            if (currentUser) {
+              syncUser(currentUser);
+              handleAuthenticatedUser(currentUser);
+            }
           }
         }
       } catch (error) {
         console.error("Auth initialization error:", error);
+        if (isCallback) setCallbackFailure("service");
       } finally {
         setIsLoading(false);
       }
@@ -310,6 +328,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user,
     isLoading,
     isAuthenticated: !!user,
+    callbackFailure,
     isAuthModalOpen,
     mfaStatus,
     setMfaStatus,
@@ -320,6 +339,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     updateUser,
     refreshUser,
   }), [
+    callbackFailure,
     closeAuthModal,
     isAuthModalOpen,
     isLoading,

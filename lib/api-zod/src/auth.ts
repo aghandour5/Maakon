@@ -12,8 +12,14 @@ export type SupabaseLoginBodyParams = z.infer<typeof SupabaseLoginBody>;
 
 // ── Profile completion ────────────────────────────────────────────────────────
 
+export const profilePhonePattern = /^\+[1-9]\d{5,14}$/;
+export const normalizeProfilePhone = (phone: string) => phone.replace(/\s/g, "");
+
 export const CompleteProfileBody = z.object({
-  displayName: z.string().min(2, "Name must be at least 2 characters"),
+  displayName: z.string().trim().min(2, "Name must be at least 2 characters").max(50),
+  governorate: z.string().min(1),
+  district: z.string().optional(),
+  phone: z.string().transform(normalizeProfilePhone).pipe(z.string().regex(profilePhonePattern)),
 });
 export type CompleteProfileBodyParams = z.infer<typeof CompleteProfileBody>;
 

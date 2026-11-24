@@ -19,7 +19,7 @@ export default function AuthModal() {
   const { t } = useTranslation();
   const [location] = useLocation();
 
-  const [step, setStep] = useState<AuthStep>("email");
+  const [signInStep, setStep] = useState<"email" | "accountType" | "checkEmail">("email");
   const [email, setEmail] = useState("");
   const [accountType, setAccountType] = useState<AccountType>("individual");
   const [mfaQrCode, setMfaQrCode] = useState<string | null>(null);
@@ -33,16 +33,19 @@ export default function AuthModal() {
   const needsMfa = !!mfaStatus;
   // A retired draft can send a newly signed-in visitor to the public giving page.
   const deferOnboarding = needsOnboarding && location === "/give";
-  const isOpen = needsMfa || (!deferOnboarding && (isAuthModalOpen || needsOnboarding));
+  const isOpen = needsMfa || (!user && isAuthModalOpen) || (needsOnboarding && !deferOnboarding);
+  const step: AuthStep = mfaStatus === "mfa_setup_required" ? "mfaSetup"
+    : mfaStatus === "mfa_challenge" ? "mfaChallenge"
+    : needsOnboarding ? (user.accountType === "ngo" ? "ngoProfile" : "individualProfile")
+    : signInStep;
 
   useEffect(() => {
-    if (needsOnboarding) {
-      const targetStep = user!.accountType === "ngo" ? "ngoProfile" : "individualProfile";
-      if (step !== targetStep) {
-        setStep(targetStep);
-      }
+    if (!isOpen || user) {
+      setStep("email");
+      setEmail("");
+      setAccountType("individual");
     }
-  }, [needsOnboarding, user]);
+  }, [isOpen, user]);
 
   // When the auth context signals an MFA requirement, transition to the correct step
   useEffect(() => {
@@ -51,12 +54,9 @@ export default function AuthModal() {
       setupMfa()
         .then((data) => {
           setMfaQrCode(data.qrCodeDataUrl);
-          setStep("mfaSetup");
         })
         .catch(() => setMfaError("Failed to load QR code. Please try again."))
         .finally(() => setMfaLoading(false));
-    } else if (mfaStatus === "mfa_challenge") {
-      setStep("mfaChallenge");
     }
   }, [mfaStatus]);
 
@@ -83,18 +83,6 @@ export default function AuthModal() {
     }
   };
 
-  // Reset state when closing
-  const handleOpenChange = (open: boolean) => {
-    if (!open) {
-      closeAuthModal();
-      setTimeout(() => {
-        setStep("email");
-        setEmail("");
-        setAccountType("individual");
-      }, 300);
-    }
-  };
-
   const currentTitle = () => {
     switch (step) {
       case "email": return t("sign_in");
@@ -112,7 +100,7 @@ export default function AuthModal() {
     <Dialog open={isOpen} onOpenChange={(open) => {
       // Don't allow closing while onboarding or admin MFA is required.
       if (!open && !needsOnboarding && !needsMfa) {
-        handleOpenChange(open);
+        closeAuthModal();
       }
     }}>
       <DialogContent className="!translate-y-0 !top-[10%] sm:!translate-y-[-50%] sm:!top-[50%] sm:max-w-[425px] max-h-[85vh] overflow-y-auto overflow-x-hidden" onInteractOutside={(e) => {
@@ -165,6 +153,7 @@ export default function AuthModal() {
 
           {step === "individualProfile" && (
             <IndividualProfileStep
+              key={user?.id}
               onComplete={closeAuthModal}
             />
           )}

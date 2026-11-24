@@ -10,6 +10,13 @@ async function migrate() {
   try {
     console.log("Running migrations...");
 
+    await client.query(`
+      ALTER TABLE users
+        ADD COLUMN IF NOT EXISTS governorate text,
+        ADD COLUMN IF NOT EXISTS district text,
+        ADD COLUMN IF NOT EXISTS phone text
+    `);
+
     // Extend post_status enum with moderation states
     await client.query(`ALTER TYPE post_status ADD VALUE IF NOT EXISTS 'hidden'`);
     await client.query(`ALTER TYPE post_status ADD VALUE IF NOT EXISTS 'resolved'`);

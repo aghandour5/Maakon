@@ -27,13 +27,19 @@ async function apiRequest(path: string, options: RequestInit = {}): Promise<Resp
 }
 
 /** Exchange a Supabase access token for a server session */
+export class LoginExchangeError extends Error {
+  constructor(readonly status: number) {
+    super(`Session exchange failed (HTTP ${status})`);
+  }
+}
+
 export async function supabaseLogin(body: SupabaseLoginBodyParams) {
   const res = await apiRequest("/api/auth/supabase-login", {
     method: "POST",
     body: JSON.stringify(body),
   });
+  if (!res.ok) throw new LoginExchangeError(res.status);
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Login failed");
   return data; // Could return { status: 'success' | 'mfa_setup_required' | 'mfa_challenge', user: ... }
 }
 

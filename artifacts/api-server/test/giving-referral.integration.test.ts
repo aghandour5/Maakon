@@ -131,6 +131,36 @@ test("Release A referrals and request privacy", { skip: !testUrl }, async (t) =>
       expiresAt: index === 6 ? new Date(0) : null,
     }))).returning();
 
+  await t.test("email registration and legacy sessions require the full individual profile", async () => {
+    const login = await send("/auth/supabase-login", "POST", {
+      idToken: JSON.stringify({ uid: "profile-new", email: "new@example.test" }),
+    });
+    assert.equal(login.status, 200);
+    assert.equal(login.body.user.email, "new@example.test");
+    assert.equal(login.body.user.onboardingComplete, false);
+    const me = () => send("/auth/me", "GET", undefined, individualHeaders);
+    assert.equal((await me()).body.user.onboardingComplete, false);
+    assert.equal((await send("/auth/me", "GET", undefined, ngoHeaders)).body.user.onboardingComplete, true);
+
+    const path = "/auth/complete-profile";
+    const name = { displayName: "Test Requester" };
+    const details = { ...name, ...area, phone: "+961 70 123 456" };
+    for (const invalid of [name, { ...details, phone: "not a phone" }, { ...details, district: "Halba" }]) {
+      assert.equal((await send(path, "POST", invalid, individualHeaders)).status, 400);
+    }
+    assert.equal((await send(path, "POST", details, ngoHeaders)).status, 400);
+    const saved = await send(path, "POST", { ...details, email: "not-the-login@example.test" }, individualHeaders);
+    assert.equal(saved.status, 200);
+    assert.equal(saved.body.user.onboardingComplete, true);
+    assert.equal(saved.body.user.email, individual.email);
+    assert.equal(saved.body.user.phone, "+96170123456");
+    assert.equal(saved.body.user.displayName, name.displayName);
+    assert.equal(saved.body.user.governorate, area.governorate);
+    assert.equal(saved.body.user.district, area.district);
+    assert.equal("mfaSecret" in saved.body.user, false);
+    assert.deepEqual((await me()).body.user, saved.body.user);
+  });
+
   await t.test("offer restrictions leave request creation and owner management available", async () => {
     for (const input of [offerData, { ...offerData, providerType: "ngo" }]) {
       const result = await send("/posts", "POST", input, individualHeaders);

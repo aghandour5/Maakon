@@ -1,7 +1,7 @@
 import { Router, type Request, type Response } from "express";
 import crypto from "node:crypto";
 import { db } from "@workspace/db";
-import { usersTable, postsTable, ngosTable, sessionsTable } from "@workspace/db/schema";
+import { usersTable, postsTable, ngosTable, sessionsTable, type User } from "@workspace/db/schema";
 import { eq, and, isNull } from "drizzle-orm";
 import {
   SupabaseLoginBody,
@@ -58,6 +58,29 @@ const draftPostLimiter = customRateLimit(
 );
 
 // ── Supabase Email-Link Login ─────────────────────────────────────────────────
+
+function sessionUser(user: User, mfaVerified: boolean) {
+  // Older individual accounts could finish onboarding with a display name alone.
+  const onboardingComplete = user.onboardingComplete && (user.accountType === "ngo" ||
+    Boolean(user.displayName?.trim() && user.emailVerified && user.email && user.phone &&
+      isValidLocation(user.governorate, user.district)));
+  return {
+    id: user.id,
+    email: user.email,
+    displayName: user.displayName,
+    governorate: user.governorate,
+    district: user.district,
+    phone: user.phone,
+    avatarUrl: user.avatarUrl,
+    accountType: user.accountType,
+    role: user.role,
+    onboardingComplete,
+    emailVerified: user.emailVerified,
+    ngoVerificationStatus: user.ngoVerificationStatus,
+    mfaEnabled: user.mfaEnabled,
+    mfaVerified,
+  };
+}
 
 router.post("/auth/supabase-login", loginLimiter, async (req: Request, res: Response) => {
   const parsed = SupabaseLoginBody.safeParse(req.body);
@@ -132,12 +155,13 @@ router.post("/auth/supabase-login", loginLimiter, async (req: Request, res: Resp
     }
   } else {
     // Existing user — update email verification status
-    if (email_verified && !user.emailVerified) {
+    if (!user.email || !user.emailVerified) {
       await db.update(usersTable).set({
+        email: user.email ?? email,
         emailVerified: true,
         updatedAt: new Date(),
       }).where(eq(usersTable.id, user.id));
-      user = { ...user, emailVerified: true };
+      user = { ...user, email: user.email ?? email, emailVerified: true };
     }
   }
 
@@ -188,18 +212,7 @@ router.post("/auth/supabase-login", loginLimiter, async (req: Request, res: Resp
 
   res.json({
     status: mfaStatus,
-    user: {
-      id: user.id,
-      email: user.email,
-      displayName: user.displayName,
-      accountType: user.accountType,
-      role: user.role,
-      onboardingComplete: user.onboardingComplete,
-      emailVerified: user.emailVerified,
-      ngoVerificationStatus: user.ngoVerificationStatus,
-      mfaEnabled: user.mfaEnabled,
-      mfaVerified: false,
-    },
+    user: sessionUser(user, false),
     isNew,
     ...(claimedPost ? { claimedPost } : {}),
     ...(referral ? { referral } : {}),
@@ -388,13 +401,25 @@ router.post("/auth/complete-profile", requireAuth, async (req: Request, res: Res
   }
 
   const user = req.user!;
+  if (user.accountType !== "individual" || !user.email || !user.emailVerified) {
+    res.status(400).json({ error: "A verified individual account is required" });
+    return;
+  }
+  const { displayName, phone, governorate, district } = parsed.data;
+  if (!isValidLocation(governorate, district)) {
+    res.status(400).json({ error: "Invalid governorate or district" });
+    return;
+  }
   const updated = await db.update(usersTable).set({
-    displayName: parsed.data.displayName,
+    displayName,
+    phone,
+    governorate,
+    district: district || null,
     onboardingComplete: true,
     updatedAt: new Date(),
   }).where(eq(usersTable.id, user.id)).returning();
 
-  res.json({ success: true, user: updated[0] });
+  res.json({ success: true, user: sessionUser(updated[0], req.mfaVerified ?? false) });
 });
 
 router.post("/auth/complete-ngo-profile", requireAuth, async (req: Request, res: Response) => {
@@ -448,7 +473,7 @@ router.post("/auth/complete-ngo-profile", requireAuth, async (req: Request, res:
     updatedAt: new Date(),
   }).where(eq(usersTable.id, user.id)).returning();
 
-  res.json({ success: true, message: "Verification request submitted", user: updated[0] });
+  res.json({ success: true, message: "Verification request submitted", user: sessionUser(updated[0], req.mfaVerified ?? false) });
 });
 
 // ── Session management ────────────────────────────────────────────────────────
@@ -465,21 +490,7 @@ router.post("/auth/logout", requireAuth, async (req: Request, res: Response) => 
 
 router.get("/auth/me", requireAuth, async (req: Request, res: Response) => {
   const user = req.user!;
-  res.json({
-    user: {
-      id: user.id,
-      email: user.email,
-      displayName: user.displayName,
-      accountType: user.accountType,
-      role: user.role,
-      avatarUrl: user.avatarUrl,
-      onboardingComplete: user.onboardingComplete,
-      emailVerified: user.emailVerified,
-      ngoVerificationStatus: user.ngoVerificationStatus,
-      mfaEnabled: user.mfaEnabled,
-      mfaVerified: req.mfaVerified ?? false,
-    }
-  });
+  res.json({ user: sessionUser(user, req.mfaVerified ?? false) });
 });
 
 export default router;
