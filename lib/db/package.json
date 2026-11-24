@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./admin": "./src/admin.ts",
+    "./referrals": "./src/referrals.ts",
     "./schema": "./src/schema/index.ts"
   },
   "scripts": {

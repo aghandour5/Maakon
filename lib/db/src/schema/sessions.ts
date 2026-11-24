@@ -27,6 +27,6 @@ export const sessionsTable = pgTable("sessions", {
 
   // Step-up authentication status
   mfaVerified: boolean("mfa_verified").default(false).notNull(),
-});
+}).enableRLS();
 
 export type Session = typeof sessionsTable.$inferSelect;

@@ -65,7 +65,7 @@ export default function Contact() {
     return (
       <div className="min-h-dvh flex flex-col bg-slate-50">
         <TopNav title={t("contact_us_title")} showBack />
-        <div className="flex-1 flex items-center justify-center px-5 pt-16">
+        <div className="flex-1 flex items-center justify-center px-5 py-10">
           <motion.div
             initial={{ scale: 0.85, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -113,7 +113,7 @@ export default function Contact() {
       <main className="flex-1">
         {/* Header */}
         <section
-          className="px-5 pt-24 pb-12 text-center"
+          className="px-5 pt-12 pb-12 text-center"
           style={{ background: "linear-gradient(140deg, #021c13 0%, #064e3b 45%, #022c22 100%)" }}
         >
           <motion.div

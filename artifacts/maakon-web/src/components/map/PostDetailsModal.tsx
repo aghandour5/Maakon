@@ -3,15 +3,19 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useTranslation } from "react-i18next";
+import { Link } from "wouter";
 import {
   AlertTriangle, MapPin, Phone, ShieldCheck, Clock, Flag,
-  CheckCircle2, Globe, XCircle, ExternalLink, Tag
+  CheckCircle2, Globe, XCircle, ExternalLink, Tag, Lock,
 } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 import { ar, enUS } from "date-fns/locale";
-import type { PostPublic, Ngo, CreateReportInputReason } from "@workspace/api-client-react";
-import { useCreateReport, CreateReportInputReason as ReasonEnum } from "@workspace/api-client-react";
+import type { PostPublic, Ngo, CreateReportInputReason, PostContact } from "@workspace/api-client-react";
+import { accessPostContact, useCreateReport, CreateReportInputReason as ReasonEnum } from "@workspace/api-client-react";
+import { useAuth } from "@/contexts/AuthContext";
 import { useAuthGate } from "@/hooks/useAuthGate";
+import { getContactHref } from "@/lib/contact-links";
+import { getGiveHref } from "@/lib/give-referral";
 
 interface PostDetailsModalProps {
   item: PostPublic | Ngo | null;
@@ -29,44 +33,6 @@ const STATUS_COLORS: Record<string, string> = {
   expired: 'bg-muted text-muted-foreground border-border',
 };
 
-function extractEmail(value: string): string | null {
-  const match = value.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
-  return match?.[0] ?? null;
-}
-
-function extractPhone(value: string): string {
-  return value.replace(/[^\d+]/g, "");
-}
-
-function getContactHref(
-  method: string | null | undefined,
-  value: string,
-): string | null {
-  const trimmed = value.trim();
-
-  if (!trimmed) {
-    return null;
-  }
-
-  const email = extractEmail(trimmed);
-  const phone = extractPhone(trimmed);
-
-  switch (method) {
-    case "email":
-      return email ? `mailto:${email}` : null;
-    case "whatsapp":
-      return phone ? `https://wa.me/${phone.replace(/^\+/, "")}` : null;
-    case "phone":
-      return phone ? `tel:${phone}` : null;
-    default:
-      if (email) {
-        return `mailto:${email}`;
-      }
-
-      return phone ? `tel:${phone}` : null;
-  }
-}
-
 export function PostDetailsModal({ item, isOpen, onClose, type, onViewNgo }: PostDetailsModalProps) {
   const { t, i18n } = useTranslation();
   const isRtl = i18n.dir() === "rtl";
@@ -79,6 +45,7 @@ export function PostDetailsModal({ item, isOpen, onClose, type, onViewNgo }: Pos
 
   const createReport = useCreateReport();
   const { requireAuth } = useAuthGate();
+  const { user } = useAuth();
 
   if (!item) return null;
 
@@ -94,8 +61,9 @@ export function PostDetailsModal({ item, isOpen, onClose, type, onViewNgo }: Pos
   const district = post ? post.district : ngo?.district;
   const contactInfo = post ? post.contactInfo : ngo?.phone;
   const contactMethod = post ? post.contactMethod : 'phone';
-  const contactHref = contactInfo ? getContactHref(contactMethod, contactInfo) : null;
-  const contactLinkIsExternal = Boolean(contactHref?.startsWith('https://'));
+  const isIndividualRequest = post?.postType === "need" && post.providerType !== "ngo";
+  const isOpenRequest = post?.status === "active" &&
+    (!post.expiresAt || new Date(post.expiresAt).getTime() > Date.now());
   const timestamp = post ? new Date(post.updatedAt) : ngo ? new Date(ngo.createdAt) : new Date();
 
   const handleClose = () => {
@@ -255,37 +223,27 @@ export function PostDetailsModal({ item, isOpen, onClose, type, onViewNgo }: Pos
               )}
 
               {/* Contact info */}
-              {contactInfo && (
-                <div className="flex items-start gap-3 pt-3 border-t border-border/50">
+              {isIndividualRequest ? (
+                <div className="flex items-start gap-3 border-t border-border/50 pt-3">
                   <DetailIcon>
-                    <Phone className="h-4 w-4" />
+                    <Lock className="h-4 w-4" aria-hidden="true" />
                   </DetailIcon>
-                  <div className="flex-1">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">{t('contact_info')}</p>
-                    {contactHref ? (
-                      <a
-                        href={contactHref}
-                        target={contactLinkIsExternal ? "_blank" : undefined}
-                        rel={contactLinkIsExternal ? "noopener noreferrer" : undefined}
-                        className="block text-sm font-semibold text-slate-800 hover:text-slate-950 hover:underline"
-                        dir="ltr"
-                      >
-                        {contactInfo}
-                      </a>
-                    ) : (
-                      <p
-                        className="block text-sm font-semibold text-slate-800"
-                        dir="ltr"
-                      >
-                        {contactInfo}
-                      </p>
-                    )}
-                    {contactMethod && (
-                      <p className="mt-0.5 text-xs capitalize text-slate-500">{contactMethod}</p>
+                  <div className="flex min-w-0 flex-1 flex-col items-start gap-2 text-sm">
+                    <p className="text-muted-foreground">{t("request_contact_private")}</p>
+                    <Link href={getGiveHref(post.governorate, post.district)}
+                      className="font-semibold text-emerald-800 underline underline-offset-2">
+                      {t("request_contact_referral")}
+                    </Link>
+                    {isOpen && isOpenRequest && user?.accountType === "ngo" && (
+                      <RequestContactAccess key={`${user.id}:${post.id}`} postId={post.id} />
                     )}
                   </div>
                 </div>
-              )}
+              ) : contactInfo ? (
+                <div className="border-t border-border/50 pt-3">
+                  <ContactDetails value={contactInfo} method={contactMethod} />
+                </div>
+              ) : null}
 
               {/* NGO website */}
               {isNgo && ngo?.website && (
@@ -415,6 +373,64 @@ export function PostDetailsModal({ item, isOpen, onClose, type, onViewNgo }: Pos
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function RequestContactAccess({ postId }: { postId: number }) {
+  const { t } = useTranslation();
+  const [contact, setContact] = useState<PostContact | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function viewContact() {
+    setLoading(true);
+    setError(null);
+    try {
+      setContact(await accessPostContact(postId, { cache: "no-store" }));
+    } catch (err) {
+      setError(err instanceof Error && "status" in err && err.status === 403
+        ? "request_contact_forbidden"
+        : "request_contact_error");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (contact) {
+    return contact.contactInfo
+      ? <ContactDetails value={contact.contactInfo} method={contact.contactMethod} />
+      : <p role="status">{t("request_contact_unavailable")}</p>;
+  }
+  return (
+    <>
+      <Button type="button" variant="outline" size="sm" onClick={viewContact} disabled={loading} aria-busy={loading}>
+        {t("request_contact_view")}
+      </Button>
+      {error && <p role="alert" className="text-destructive">{t(error)}</p>}
+    </>
+  );
+}
+
+function ContactDetails({ value, method }: { value: string; method?: string | null }) {
+  const { t } = useTranslation();
+  const href = getContactHref(method, value);
+  const external = href?.startsWith("https://");
+  return (
+    <div className="flex min-w-0 items-start gap-3">
+      <DetailIcon><Phone className="h-4 w-4" aria-hidden="true" /></DetailIcon>
+      <div className="min-w-0">
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t("contact_info")}</p>
+        {href ? (
+          <a href={href} target={external ? "_blank" : undefined} rel={external ? "noopener noreferrer" : undefined}
+            className="block wrap-break-word text-sm font-semibold text-slate-800 hover:underline" dir="ltr">
+            {value}
+          </a>
+        ) : (
+          <p className="wrap-break-word text-sm font-semibold text-slate-800" dir="ltr">{value}</p>
+        )}
+        {method && <p className="mt-0.5 text-xs capitalize text-slate-500">{t(method)}</p>}
+      </div>
+    </div>
   );
 }
 

@@ -2,6 +2,7 @@ import {
   clampLocationCoordinates,
   getLocationCenter,
 } from "@workspace/locations";
+import { isVulnerableNeedPost } from "./post-serializers";
 
 type NullableString = string | null | undefined;
 type NullableNumber = number | null | undefined;
@@ -30,7 +31,7 @@ export function getPublicCoordinates(
   providedLng?: NullableNumber,
   providerType?: NullableString,
 ) {
-  if (postType === "need" && providerType !== "ngo") {
+  if (isVulnerableNeedPost(postType, providerType)) {
     const center = getLocationCenter(governorate, district);
 
     return {

@@ -1,9 +1,10 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { ngosTable } from "@workspace/db/schema";
-import { eq } from "drizzle-orm";
-import { ListNgosQueryParams } from "@workspace/api-zod";
-import { getLocationCenter, isValidGovernorate } from "@workspace/locations";
+import { and, eq, isNotNull } from "drizzle-orm";
+import { ListNearbyNgosQueryParams, ListNgosQueryParams } from "@workspace/api-zod";
+import { getLocationCenter, isValidGovernorate, isValidLocation } from "@workspace/locations";
+import { rankReferralPartners } from "../lib/partner-referrals";
 
 function fuzzCoordinate(coord: number): number {
   const jitter = (Math.random() - 0.5) * 0.1;
@@ -61,6 +62,21 @@ router.get("/ngos", async (req, res) => {
   });
 
   res.json(mapped);
+});
+
+router.get("/ngos/nearby", async (req, res) => {
+  const query = ListNearbyNgosQueryParams.safeParse(req.query);
+  if (!query.success || !isValidLocation(query.data.governorate, query.data.district)) {
+    return void res.status(400).json({ error: "Invalid governorate or district" });
+  }
+
+  const ngos = await db.select().from(ngosTable).where(and(
+    eq(ngosTable.status, "active"),
+    isNotNull(ngosTable.verifiedAt),
+    isNotNull(ngosTable.referralApprovedAt),
+  ));
+
+  res.json(rankReferralPartners(ngos, query.data));
 });
 
 export default router;

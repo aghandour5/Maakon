@@ -35,6 +35,6 @@ export const ngoVerificationRequestsTable = pgTable("ngo_verification_requests",
 
   // Optional note from the admin reviewer
   reviewNote: text("review_note"),
-});
+}).enableRLS();
 
 export type NgoVerificationRequest = typeof ngoVerificationRequestsTable.$inferSelect;

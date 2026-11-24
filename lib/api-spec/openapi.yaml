@@ -38,7 +38,7 @@ paths:
     get:
       operationId: listPosts
       tags: [posts]
-      summary: List active posts (public map data)
+      summary: List public map posts
       parameters:
         - name: postType
           in: query
@@ -64,6 +64,7 @@ paths:
             enum: [critical, high, medium, low]
         - name: activeOnly
           in: query
+          description: Set to false to include resolved and expired posts.
           schema:
             type: boolean
             default: true
@@ -97,7 +98,7 @@ paths:
     post:
       operationId: createPost
       tags: [posts]
-      summary: Create a need or offer post
+      summary: Create a request or an organization offer
       requestBody:
         required: true
         content:
@@ -113,6 +114,12 @@ paths:
                 $ref: "#/components/schemas/PostPublic"
         "400":
           description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Offer publishing requires an organization account.
           content:
             application/json:
               schema:
@@ -183,7 +190,11 @@ paths:
               schema:
                 $ref: "#/components/schemas/PostPrivate"
         "403":
-          description: Forbidden
+          description: Activating an offer requires an organization account.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "404":
           description: Not found
     delete:
@@ -204,11 +215,47 @@ paths:
         "404":
           description: Not found
 
+  /posts/{id}/contact-access:
+    post:
+      operationId: accessPostContact
+      tags: [posts]
+      summary: Retrieve and audit contact details for an open individual request
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 2147483647
+      responses:
+        "200":
+          description: Contact details for a verified, active organization account
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                enum: [no-store]
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PostContact"
+        "400":
+          description: Invalid post ID
+        "401":
+          description: Authentication required
+        "403":
+          description: Verified organization access and a valid CSRF token are required.
+        "404":
+          description: Open individual request not found
+        "429":
+          description: Too many contact views
+
   /ngos:
     get:
       operationId: listNgos
       tags: [ngos]
-      summary: List verified NGOs
+      summary: List active NGOs in the map directory
       parameters:
         - name: governorate
           in: query
@@ -216,13 +263,45 @@ paths:
             type: string
       responses:
         "200":
-          description: List of verified NGOs
+          description: List of active NGOs
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: "#/components/schemas/Ngo"
+
+  /ngos/nearby:
+    get:
+      operationId: listNearbyNgos
+      tags: [ngos]
+      summary: List organizations approved for referrals near a district
+      parameters:
+        - name: governorate
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 1
+        - name: district
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 1
+      responses:
+        "200":
+          description: Distance and area matches, each capped at five organizations
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NearbyNgosResponse"
+        "400":
+          description: Invalid governorate or district
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /reports:
     post:
@@ -346,12 +425,14 @@ components:
         contactMethod:
           type: string
           nullable: true
+          description: Null in public responses for individual requests.
         contactInfo:
           type: string
           nullable: true
+          description: Null in public responses for individual requests.
         status:
           type: string
-          enum: [pending, active, expired, removed]
+          enum: [pending, active, hidden, resolved, expired, removed]
         reportCount:
           type: integer
         createdAt:
@@ -401,6 +482,78 @@ components:
             exactAddressPrivate:
               type: string
               nullable: true
+
+    PostContact:
+      type: object
+      required: [postId, contactMethod, contactInfo]
+      properties:
+        postId:
+          type: integer
+        contactMethod:
+          type: string
+          nullable: true
+        contactInfo:
+          type: string
+          nullable: true
+
+    NearbyNgosResponse:
+      type: object
+      required: [distanceMatches, areaMatches]
+      properties:
+        distanceMatches:
+          type: array
+          maxItems: 5
+          items:
+            $ref: "#/components/schemas/ReferralPartner"
+        areaMatches:
+          type: array
+          maxItems: 5
+          items:
+            $ref: "#/components/schemas/ReferralPartner"
+
+    ReferralPartner:
+      type: object
+      required: [id, name, description, governorate, district, phone, website, match]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        governorate:
+          type: string
+        district:
+          type: string
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        website:
+          type: string
+          nullable: true
+        match:
+          oneOf:
+            - type: object
+              required: [type, distanceKm]
+              properties:
+                type:
+                  type: string
+                  enum: [distance]
+                distanceKm:
+                  type: number
+                  minimum: 0
+                  description: Approximate distance from the selected district center in kilometers.
+            - type: object
+              required: [type, level]
+              properties:
+                type:
+                  type: string
+                  enum: [area]
+                level:
+                  type: string
+                  enum: [district, governorate]
 
     CreatePostInput:
       type: object
@@ -598,6 +751,8 @@ components:
       type: object
       properties:
         error:
+          type: string
+        code:
           type: string
         details:
           type: string

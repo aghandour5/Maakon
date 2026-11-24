@@ -14,6 +14,19 @@ import { assertRuntimeDatabaseRole } from "../src/runtime-role";
 
 const testUrl = process.env.MAAKON_ROLE_TEST_DATABASE_URL;
 
+test("schema generation preserves existing row-level security", async () => {
+  const desired = generateDrizzleJson(schema);
+  const previous = structuredClone(desired);
+  for (const table of Object.values(previous.tables)) table.isRLSEnabled = true;
+  const statements = await generateMigration(previous, desired);
+  assert.equal(
+    statements.some((statement) =>
+      statement.includes("DISABLE ROW LEVEL SECURITY"),
+    ),
+    false,
+  );
+});
+
 test(
   "runtime permissions against disposable PostgreSQL",
   { skip: !testUrl },
@@ -88,20 +101,6 @@ test(
         generateDrizzleJson(schema),
       );
       for (const sql of statements) await owner.query(sql);
-      for (const table of [
-        "users",
-        "posts",
-        "ngos",
-        "reports",
-        "sessions",
-        "admin_actions",
-        "feedbacks",
-        "ngo_verification_requests",
-      ]) {
-        await owner.query(
-          `ALTER TABLE public.${table} ENABLE ROW LEVEL SECURITY`,
-        );
-      }
       await owner.query(`
       CREATE SCHEMA auth;
       CREATE TABLE auth.users (id text PRIMARY KEY);
@@ -276,6 +275,22 @@ test(
         },
       );
 
+      await t.test("contact access is append-only", async () => {
+        const [entry] = await db
+          .insert(schema.contactAccessLogTable)
+          .values({ viewerUserId: userId, ngoId: 1, postId })
+          .returning();
+        const entries = await db.select().from(schema.contactAccessLogTable);
+        assert.deepEqual(entries, [entry]);
+        for (const sql of [
+          "UPDATE contact_access_log SET post_id=2",
+          "DELETE FROM contact_access_log",
+          "TRUNCATE contact_access_log",
+        ]) {
+          await assert.rejects(() => runtime!.query(sql), { code: "42501" });
+        }
+      });
+
       await t.test("feedback is insert-only", async () => {
         await db
           .insert(schema.feedbacksTable)
@@ -314,6 +329,10 @@ test(
             (await owner!.query("SELECT count(*)::int AS n FROM sessions"))
               .rows[0].n,
             0,
+          );
+          assert.equal(
+            (await db.select().from(schema.contactAccessLogTable)).length,
+            1,
           );
         },
       );

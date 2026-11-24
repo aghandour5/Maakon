@@ -6,9 +6,10 @@ import { useToast } from "@/hooks/use-toast";
 import { TopNav } from "@/components/layout/TopNav";
 import { Link } from "wouter";
 import { withCsrfHeader } from "@/lib/csrf";
+import { readDraftClaimState, type DraftClaimOutcome } from "@/lib/draft-claim";
 import {
   Loader2, Trash2, Eye, EyeOff, CheckCircle2, Clock,
-  MapPin, AlertTriangle, Edit2, Plus, ClipboardList,
+  MapPin, AlertTriangle, Edit2, Plus, ClipboardList, X,
 } from "lucide-react";
 import Footer from "@/components/layout/Footer";
 import {
@@ -87,9 +88,12 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.
 // ── Component ──────────────────────────────────────────────────────────────────
 
 export default function MyPosts() {
-  const { isAuthenticated, isLoading: authLoading, openAuthModal } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading, openAuthModal } = useAuth();
   const { t } = useTranslation();
   const { toast } = useToast();
+  const canPublishOffer = user?.accountType === "ngo";
+  const offerHref = canPublishOffer ? "/offer/new" : "/give";
+  const offerLabel = t(canPublishOffer ? "create_offer" : "give_through_organization");
 
   const [posts, setPosts] = useState<MyPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -99,6 +103,12 @@ export default function MyPosts() {
   const [postToDelete, setPostToDelete] = useState<MyPost | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
+  const [draftClaim, setDraftClaim] = useState<DraftClaimOutcome | null>(readDraftClaimState);
+
+  // Show the email-link outcome once; a reload or back navigation shouldn't repeat it.
+  useEffect(() => {
+    if (window.history.state?.draftClaim) window.history.replaceState(null, "");
+  }, []);
 
   const fetchPosts = useCallback(async () => {
     try {
@@ -192,7 +202,7 @@ export default function MyPosts() {
     return (
       <>
         <TopNav showBack />
-        <main className="min-h-screen flex flex-col items-center justify-center bg-slate-50 pt-20 px-4">
+        <main className="min-h-screen flex flex-col items-center justify-center bg-slate-50 py-10 px-4">
           <div className="text-center max-w-md">
             <ClipboardList className="w-16 h-16 text-slate-300 mx-auto mb-4" />
             <h1 className="text-2xl font-bold text-slate-800 mb-2">{t("myposts_title")}</h1>
@@ -215,8 +225,61 @@ export default function MyPosts() {
   return (
     <>
       <TopNav showBack title={t("myposts_title")} />
-      <main className="min-h-screen bg-gradient-to-b from-slate-50 to-white pt-24 sm:pt-28 pb-12 px-4 sm:px-6">
+      <main className="min-h-screen bg-gradient-to-b from-slate-50 to-white pt-10 sm:pt-14 pb-12 px-4 sm:px-6">
         <div className="max-w-3xl mx-auto">
+          {draftClaim && (
+            <div
+              role="status"
+              className={`mb-6 flex items-start gap-3 rounded-2xl border p-4 ${
+                draftClaim === "failed"
+                  ? "bg-amber-50 border-amber-200 text-amber-950"
+                  : "bg-emerald-50 border-emerald-200 text-emerald-950"
+              }`}
+            >
+              {draftClaim === "failed" ? (
+                <AlertTriangle className="w-5 h-5 mt-0.5 shrink-0 text-amber-700" aria-hidden="true" />
+              ) : (
+                <CheckCircle2 className="w-5 h-5 mt-0.5 shrink-0 text-emerald-700" aria-hidden="true" />
+              )}
+              <div className="flex-1 min-w-0">
+                <h2 className="font-bold">
+                  {t(
+                    draftClaim === "failed"
+                      ? "need_publish_failed_title"
+                      : draftClaim === "need_published"
+                        ? "need_published_title"
+                        : "success_title",
+                  )}
+                </h2>
+                <p className="text-sm mt-1">
+                  {t(
+                    draftClaim === "failed"
+                      ? "need_publish_failed_desc"
+                      : draftClaim === "need_published"
+                        ? "need_success_desc"
+                        : "success_desc",
+                  )}
+                </p>
+                {draftClaim === "failed" && (
+                  <Link
+                    href="/need/new"
+                    className="inline-flex items-center min-h-11 mt-2 font-bold text-sm underline underline-offset-2 focus-ring-on-light"
+                  >
+                    {t("need_publish_retry")}
+                  </Link>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setDraftClaim(null)}
+                className="w-11 h-11 -m-2 shrink-0 flex items-center justify-center rounded-xl hover:bg-black/5 transition-colors focus-ring-on-light"
+                aria-label={t("dismiss")}
+              >
+                <X className="w-4 h-4" aria-hidden="true" />
+              </button>
+            </div>
+          )}
+
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <div>
@@ -234,11 +297,12 @@ export default function MyPosts() {
                 <span className="hidden sm:inline">{t("create_need")}</span>
               </Link>
               <Link
-                href="/offer/new"
+                href={offerHref}
+                aria-label={offerLabel}
                 className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-bold text-sm bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-all no-underline"
               >
                 <Plus className="w-4 h-4" aria-hidden="true" />
-                <span className="hidden sm:inline">{t("create_offer")}</span>
+                <span className="hidden sm:inline">{offerLabel}</span>
               </Link>
             </div>
           </div>
@@ -270,10 +334,10 @@ export default function MyPosts() {
                   {t("i_need_help")}
                 </Link>
                 <Link
-                  href="/offer/new"
+                  href={offerHref}
                   className="px-6 py-3 rounded-2xl font-bold text-white bg-gradient-to-r from-emerald-500 to-green-500 shadow-lg hover:opacity-90 transition-opacity no-underline"
                 >
-                  {t("Offer Help")}
+                  {offerLabel}
                 </Link>
               </div>
             </motion.div>
@@ -286,6 +350,7 @@ export default function MyPosts() {
                 {posts.map((post) => {
                   const statusInfo = STATUS_CONFIG[post.status] ?? STATUS_CONFIG.active;
                   const isBeingActioned = actionLoading === post.id;
+                  const retiredOffer = post.status === "hidden" && post.postType === "offer" && !canPublishOffer;
 
                   return (
                     <motion.div
@@ -328,6 +393,14 @@ export default function MyPosts() {
                           <span>{t("myposts_created_time")} {timeAgo(post.createdAt, t)}</span>
                           <span>{daysUntil(post.expiresAt, t)}</span>
                         </div>
+                        {retiredOffer && (
+                          <p className="mt-3 text-sm text-slate-600">
+                            {t("myposts_retired_offer")}{" "}
+                            <Link href="/give" className="font-semibold text-emerald-800 underline underline-offset-2">
+                              {t("give_through_organization")}
+                            </Link>
+                          </p>
+                        )}
                       </div>
 
                       {/* Actions bar */}
@@ -350,7 +423,7 @@ export default function MyPosts() {
                             {t("myposts_hide")}
                           </button>
                         )}
-                        {post.status === "hidden" && (
+                        {post.status === "hidden" && !retiredOffer && (
                           <button
                             onClick={() => handleStatusChange(post.id, "active")}
                             disabled={isBeingActioned}

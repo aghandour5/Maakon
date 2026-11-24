@@ -11,7 +11,7 @@ export const adminActionsTable = pgTable("admin_actions", {
   action: text("action").notNull(), // 'approve' | 'remove' | 'verify' | 'dismiss_report' | etc
   note: text("note"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-});
+}).enableRLS();
 
 export const insertAdminActionSchema = createInsertSchema(adminActionsTable).omit({
   id: true,

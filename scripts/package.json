@@ -4,9 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "approve:referrals": "tsx ./src/approve-referral-partners.ts",
     "configure:runtime-role": "tsx ./src/configure-runtime-role.ts",
     "migrate": "tsx ./src/migrate.ts",
+    "retire:offers": "tsx ./src/retire-individual-offers.ts",
     "seed": "tsx ./src/seed.ts",
+    "set:sole-admin": "tsx ./src/set-sole-admin.ts",
     "sync:ngos": "tsx ./src/sync-ngos.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },

@@ -157,10 +157,11 @@ Public routes:
 |--------|------|-------------|
 | GET | `/api/healthz` | Health check |
 | GET | `/api/metadata` | Filter options |
-| GET | `/api/posts` | List filtered posts |
-| GET | `/api/posts/:id` | Post detail |
+| GET | `/api/posts` | List public posts with private contact fields redacted. `activeOnly=false` includes resolved and expired posts |
+| GET | `/api/posts/:id` | Public detail for an open post |
 | GET | `/api/ngos` | NGO list |
-| POST | `/api/posts/draft` | Create unauthenticated draft post |
+| GET | `/api/ngos/nearby?governorate=&district=` | List approved referral organizations ranked from the selected district |
+| POST | `/api/posts/draft` | Create an unauthenticated request draft |
 
 Authenticated routes:
 
@@ -174,9 +175,10 @@ Authenticated routes:
 | POST | `/api/auth/mfa-setup` | Admin MFA setup |
 | POST | `/api/auth/mfa-verify` | Admin MFA verification |
 | POST | `/api/auth/mfa-challenge` | Admin MFA challenge |
-| POST | `/api/posts` | Create need or offer |
+| POST | `/api/posts` | Create a request or publish an offer with an organization account |
 | GET | `/api/posts/me` | Current user's posts |
-| PATCH | `/api/posts/:id` | Update own post |
+| PATCH | `/api/posts/:id` | Update own post. Activating an offer requires an organization account |
+| POST | `/api/posts/:id/contact-access` | Retrieve and audit private contact details for an open request. Requires a verified, active linked NGO and a CSRF token |
 | DELETE | `/api/posts/:id` | Delete own post |
 | POST | `/api/reports` | Report a post |
 | POST | `/api/feedback` | Submit feedback |
@@ -198,16 +200,52 @@ Admin routes:
 | DELETE | `/api/admin/ngos/:id` |
 | PATCH | `/api/admin/ngos/:id/verify` |
 | DELETE | `/api/admin/ngos/:id/verify` |
+| PATCH | `/api/admin/ngos/:id/referral` |
+| DELETE | `/api/admin/ngos/:id/referral` |
 | POST | `/api/admin/cleanup` |
 
 Admin routes require an `admin` role, an active session, and MFA. In production they are additionally guarded by subdomain and optional IP whitelist checks.
 
 ## Database Scripts
 
+These aliases require `DATABASE_ADMIN_URL` in the shell environment. For commands
+that load `lib/db/.env` explicitly, see [database access](docs/database-access.md).
+
 ```bash
 pnpm --filter @workspace/db run push          # push schema to DB
 pnpm --filter @workspace/scripts run migrate  # idempotent migration
 pnpm --filter @workspace/scripts run seed     # seed sample data
+```
+
+For Release A, run the additive migration before applying the runtime-role grants.
+Use `pnpm --filter @workspace/scripts run approve:referrals <id> [<id> ...]`
+to approve the organizations reviewed for launch. The admin console also supports
+approval and revocation for individual organizations.
+
+`pnpm --filter @workspace/scripts run retire:offers` lists the individual offers
+and pending offer drafts that would be retired. Pass `--apply` after the offer
+restriction is live to retire and audit those posts. Pass `--rollback` to restore
+eligible posts from the audited changes.
+
+`pnpm --filter @workspace/scripts run set:sole-admin <email>` lists the admins
+that would lose access and whether the email would be promoted. Pass `--apply`
+to make that email the only admin; the changes are audited in `admin_actions`.
+If the email has no account yet, an admin row is created and linked on first sign-in.
+
+### Verify Release A locally
+
+Point the development API and maintenance command at a local database. Run the
+migration, start `pnpm dev`, and open `/give`. Use the admin console or
+`approve:referrals` to approve a test organization and see it in the results.
+
+The API integration suite uses an empty database named `maakon_release_a_test`
+with the current schema on a disposable loopback PostgreSQL cluster. Set
+`MAAKON_API_TEST_DATABASE_URL` to its `db02_test_owner` connection. The suite uses
+synthetic users and clears its fixtures on exit. Without the test URL, the
+command runs the unit tests.
+
+```powershell
+node --import=./scripts/node_modules/tsx/dist/loader.mjs --test ./lib/locations/test/geo.test.ts ./artifacts/api-server/test/*.test.ts
 ```
 
 ## PostgreSQL via Docker (optional)
@@ -224,7 +262,9 @@ docker run -d \
   postgres:16-alpine
 ```
 
-Then use `postgresql://postgres:postgres@localhost:5432/maakon` as `DATABASE_URL`.
+Use `postgresql://postgres:postgres@localhost:5432/maakon` as
+`DATABASE_ADMIN_URL` for local maintenance. It can also serve as `DATABASE_URL`
+during initial local development; production requires the restricted runtime login.
 
 ## Codegen (API client)
 

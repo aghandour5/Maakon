@@ -2,7 +2,7 @@ import { Router, type Request, type Response } from "express";
 import crypto from "node:crypto";
 import { db } from "@workspace/db";
 import { usersTable, postsTable, ngosTable, sessionsTable } from "@workspace/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 import {
   SupabaseLoginBody,
   CompleteProfileBody,
@@ -30,6 +30,8 @@ import { rateLimit as customRateLimit } from "../middlewares/rateLimit";
 import { rateLimit as expressRateLimit } from "express-rate-limit";
 import { logger } from "../lib/logger";
 import { getPublicCoordinates } from "../lib/post-location";
+import { canPublishOffer, OFFER_REFERRAL_REQUIRED } from "../lib/offer-policy";
+import { isVulnerableNeedPost } from "../lib/post-serializers";
 import { isValidLocation } from "@workspace/locations";
 import { generateSecret, generateURI, verify as verifyTotp } from "otplib";
 import qrcode from "qrcode";
@@ -54,13 +56,6 @@ const draftPostLimiter = customRateLimit(
   20,
   "Too many draft post submissions, please try again later.",
 );
-
-function isVulnerableNeedPost(
-  postType: "need" | "offer",
-  providerType?: string | null,
-): boolean {
-  return postType === "need" && providerType !== "ngo";
-}
 
 // ── Supabase Email-Link Login ─────────────────────────────────────────────────
 
@@ -147,8 +142,10 @@ router.post("/auth/supabase-login", loginLimiter, async (req: Request, res: Resp
   }
 
   // 2. Claim draft post if draftToken was provided
+  let referral: { governorate: string; district: string | null } | undefined;
+  let claimedPost: { id: number; postType: string } | undefined;
   if (draftToken) {
-    await db.update(postsTable).set({
+    const [claimed] = await db.update(postsTable).set({
       userId: user.id,
       draftToken: null,
       status: "active",
@@ -158,9 +155,21 @@ router.post("/auth/supabase-login", loginLimiter, async (req: Request, res: Resp
       and(
         eq(postsTable.draftToken, draftToken),
         eq(postsTable.status, "pending"),
+        isNull(postsTable.userId),
+        canPublishOffer(user) ? undefined : eq(postsTable.postType, "need"),
       )
-    );
-    logger.info({ userId: user.id }, "Draft post claimed after email-link sign-in");
+    ).returning({ id: postsTable.id, postType: postsTable.postType });
+    if (claimed) {
+      claimedPost = claimed;
+      logger.info({ userId: user.id }, "Draft post claimed after email-link sign-in");
+    } else {
+      [referral] = await db.select({
+        governorate: postsTable.governorate,
+        district: postsTable.district,
+      }).from(postsTable)
+        .where(and(eq(postsTable.draftToken, draftToken), eq(postsTable.postType, "offer")))
+        .limit(1);
+    }
   }
 
   // 3. Create session (Always, even for admins)
@@ -192,6 +201,8 @@ router.post("/auth/supabase-login", loginLimiter, async (req: Request, res: Resp
       mfaVerified: false,
     },
     isNew,
+    ...(claimedPost ? { claimedPost } : {}),
+    ...(referral ? { referral } : {}),
   });
 });
 
@@ -302,6 +313,10 @@ router.post("/posts/draft", draftPostLimiter, async (req: Request, res: Response
     logger.warn({ err: parsed.error, path: req.originalUrl }, "Draft post validation failed");
     res.status(400).json({ error: "Validation failed" });
     return;
+  }
+
+  if (parsed.data.postType === "offer") {
+    return void res.status(403).json(OFFER_REFERRAL_REQUIRED);
   }
 
   const draftToken = crypto.randomBytes(32).toString("hex");

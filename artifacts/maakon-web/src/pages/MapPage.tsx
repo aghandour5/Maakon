@@ -13,6 +13,7 @@ import { formatDistanceToNow } from "date-fns";
 import { ar, enUS } from "date-fns/locale";
 import { useLocation } from "wouter";
 import { useAuthGate } from "@/hooks/useAuthGate";
+import { useAuth } from "@/contexts/AuthContext";
 
 // ─── Icons ──────────────────────────────────────────────────────────────────
 
@@ -281,6 +282,8 @@ export default function MapPage() {
   );
   const { data: metadata } = useGetMetadata();
   const { requireAuth } = useAuthGate();
+  const { user } = useAuth();
+  const canPublishOffer = user?.accountType === "ngo";
 
   // Trigger Leaflet resize after mount
   useEffect(() => {
@@ -463,7 +466,7 @@ export default function MapPage() {
   // ── Render ──────────────────────────────────────────────────────────────
 
   return (
-    <div className="h-[calc(100dvh-var(--dev-banner-height,0px))] w-full flex flex-col bg-background overflow-hidden relative">
+    <div className="h-dvh w-full flex flex-col bg-background overflow-hidden relative">
       <TopNav title={t('view_map')} showBack />
 
       <main className="flex-1 relative z-0">
@@ -571,7 +574,7 @@ export default function MapPage() {
           {showFab && (
             <>
               <button
-                onClick={requireAuth(() => setLocation('/offer/new'))}
+                onClick={() => setLocation(canPublishOffer ? '/offer/new' : '/give')}
                 className="flex items-center gap-2.5 px-4 py-3 rounded-2xl font-bold text-sm text-white active:scale-95 transition-all duration-150 whitespace-nowrap"
                 style={{
                   background: 'linear-gradient(135deg, #059669, #10b981)',
@@ -579,7 +582,7 @@ export default function MapPage() {
                 }}
               >
                 <HeartHandshake className="w-5 h-5" />
-                {t('create_offer', 'Create Offer')}
+                {canPublishOffer ? t('create_offer') : t('give_through_organization')}
               </button>
               <button
                 onClick={requireAuth(() => setLocation('/need/new'))}

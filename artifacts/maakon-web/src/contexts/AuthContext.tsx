@@ -8,21 +8,23 @@ import React, {
 } from "react";
 import { fetchCurrentUser, logout as apiLogout, supabaseLogin } from "@/lib/auth-api";
 import { supabase } from "@/lib/supabase";
+import { saveDraftReferral, type DraftReferral } from "@/lib/give-referral";
+import { getDraftClaimOutcome, saveDraftClaimOutcome } from "@/lib/draft-claim";
 
 // Aligned with what the backend /api/auth/me returns
 // interface is a way to define the shape of an object. It is like a blueprint for an object.
-export interface AuthUser {
+export interface AuthUser { // Represents the authenticated user object returned by the backend.
   id: number;
   email: string | null;
   displayName: string | null;
   accountType: "individual" | "ngo";
   role: "user" | "admin" | "moderator";
   avatarUrl: string | null;
-  onboardingComplete: boolean;
+  onboardingComplete: boolean; // whether the user has completed the onboarding process
   emailVerified: boolean;
   ngoVerificationStatus: string | null;
-  mfaEnabled: boolean;
-  mfaVerified: boolean;
+  mfaEnabled: boolean; // Extra security checks for admins and moderators.
+  mfaVerified: boolean; // Extra security checks for admins and moderators.
 }
 
 interface AuthContextType {
@@ -40,11 +42,13 @@ interface AuthContextType {
   refreshUser: () => Promise<void>;
 }
 
+
+
 // AuthContext is a context that is used to store the authentication state of the user.
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Broadcast channel for sync
-const authChannel = typeof window !== "undefined" ? new BroadcastChannel("maakon_auth") : null; // authChannel is a broadcast channel that is used to sync the authentication state of the user across different tabs.
+const authChannel = typeof window !== "undefined" ? new BroadcastChannel("maakon_auth") : null; // authChannel is a broadcast channel that is used to sync the authentication state of the user across different tabs. maakon_auth is the channel name used for this purpose.
 const PENDING_DRAFT_TOKEN_KEY = "pendingDraftToken";
 
 type MfaStatus = "mfa_setup_required" | "mfa_challenge";
@@ -52,6 +56,8 @@ type MfaStatus = "mfa_setup_required" | "mfa_challenge";
 type SupabaseLoginResult = {
   status?: "success" | MfaStatus;
   user?: AuthUser;
+  referral?: DraftReferral;
+  claimedPost?: { id: number; postType: "need" | "offer" };
 };
 
 function isValidAccountType(value: string | null): value is "individual" | "ngo" {
@@ -225,26 +231,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           currentUserPromise
         ]);
 
-        if (currentUser) {
+        if (currentUser && (!draftToken || !session)) {
           // Fast path: identified by backend cookie
           setUser(currentUser);
           handleAuthenticatedUser(currentUser);
         } else if (session) {
-          // Slow path: identified by Supabase but needs backend sync
+          // Exchange the Supabase session to complete sign-in or handle a draft link.
           try {
             if (!isLikelyJwt(session.access_token)) {
               throw new Error("Invalid Supabase session token");
             }
 
             const accountType = getStoredAccountType();
-            const result = await supabaseLogin({ idToken: session.access_token, accountType, draftToken });
+            const result: SupabaseLoginResult = await supabaseLogin({ idToken: session.access_token, accountType, draftToken });
 
+            if (result.referral) saveDraftReferral(result.referral);
+            else if (draftToken && result.user) saveDraftClaimOutcome(getDraftClaimOutcome(result.claimedPost));
             applyLoginResult(result);
             cleanupAuthStorage();
           } catch (authError) {
             console.error("Supabase login to backend failed:", authError);
             await supabase.auth.signOut();
-            syncUser(null);
+            syncUser(currentUser);
+            if (currentUser) handleAuthenticatedUser(currentUser);
           }
         }
       } catch (error) {

@@ -25,40 +25,40 @@ export default function QuickLinks() {
 
   const links = [
     {
-      icon: <MapPin className="w-5 h-5 sm:w-6 sm:h-6" />,
+      icon: <MapPin className="w-6 h-6 sm:w-7 sm:h-7" />,
       label: isRtl ? "الخريطة" : "Map",
       href: "/map",
-      color: "from-blue-600 to-blue-500",
+      color: "#00a651",
     },
     {
-      icon: <Book className="w-5 h-5 sm:w-6 sm:h-6" />,
+      icon: <Book className="w-6 h-6 sm:w-7 sm:h-7" />,
       label: isRtl ? "حول" : "About",
       href: "/about",
-      color: "from-purple-600 to-purple-500",
+      color: "#ed1c24",
     },
     {
-      icon: <Mail className="w-5 h-5 sm:w-6 sm:h-6" />,
+      icon: <Mail className="w-6 h-6 sm:w-7 sm:h-7" />,
       label: isRtl ? "تواصل" : "Contact",
       href: "/contact",
-      color: "from-pink-600 to-pink-500",
+      color: "#00a651",
     },
     {
-      icon: <LifeBuoy className="w-5 h-5 sm:w-6 sm:h-6" />,
+      icon: <LifeBuoy className="w-6 h-6 sm:w-7 sm:h-7" />,
       label: isRtl ? "الدعم" : "Support",
       href: "/support",
-      color: "from-orange-600 to-orange-500",
+      color: "#ed1c24",
     },
     {
-      icon: <Shield className="w-5 h-5 sm:w-6 sm:h-6" />,
+      icon: <Shield className="w-6 h-6 sm:w-7 sm:h-7" />,
       label: isRtl ? "الخصوصية" : "Privacy",
       href: "/privacy",
-      color: "from-green-600 to-green-500",
+      color: "#00a651",
     },
     {
-      icon: <HandHeart className="w-5 h-5 sm:w-6 sm:h-6" />,
+      icon: <HandHeart className="w-6 h-6 sm:w-7 sm:h-7" />,
       label: isRtl ? "ادعمنا" : "Support Us",
       href: "/support",
-      color: "from-red-600 to-red-500",
+      color: "#ed1c24",
     },
   ];
 
@@ -68,21 +68,29 @@ export default function QuickLinks() {
       initial="hidden"
       whileInView="show"
       viewport={{ once: true, margin: "-100px" }}
-      className="w-full max-w-2xl px-4 py-8 sm:py-12"
+      className="w-full max-w-5xl px-4 py-12 sm:py-16 lg:py-20"
     >
-      <motion.h2 variants={itemVariants} className="text-center text-xl sm:text-2xl font-bold text-white mb-8 sm:mb-10">
+      <motion.h2 
+        variants={itemVariants} 
+        className="text-center text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-12 sm:mb-14 lg:mb-16"
+      >
         {isRtl ? "روابط سريعة" : "Quick Links"}
       </motion.h2>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-6 lg:gap-5">
         {links.map((link, index) => (
           <motion.div key={index} variants={itemVariants}>
-            <Link href={link.href} className="block focus:outline-none focus:ring-2 focus:ring-white/50 rounded-xl">
+            <Link href={link.href} className="block focus:outline-none focus:ring-2 focus:ring-white/50 rounded-xl h-full">
               <div
-                className={`h-full flex flex-col items-center justify-center gap-2 sm:gap-3 p-4 sm:p-6 rounded-xl bg-gradient-to-br ${link.color} text-white font-semibold text-sm sm:text-base hover:shadow-lg transition-shadow hover:scale-105 transform`}
+                className="h-full flex flex-col items-center justify-center gap-3 p-5 sm:p-6 lg:p-7 rounded-xl text-white font-semibold text-xs sm:text-sm lg:text-base hover:shadow-xl transition-all hover:scale-105 transform"
+                style={{
+                  background: `linear-gradient(135deg, ${link.color}99 0%, ${link.color}66 100%)`,
+                  border: `2px solid ${link.color}40`,
+                  boxShadow: `0 8px 24px ${link.color}30`
+                }}
               >
-                <div className="opacity-90">{link.icon}</div>
-                <span className="text-center text-xs sm:text-sm font-bold">{link.label}</span>
+                <div style={{ opacity: 0.95, color: link.color }}>{link.icon}</div>
+                <span className="text-center font-bold">{link.label}</span>
               </div>
             </Link>
           </motion.div>

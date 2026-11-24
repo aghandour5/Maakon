@@ -49,11 +49,12 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE
   TO maakon_api;
 -- Existing user deletion removes actions authored by that user (DB-12).
 GRANT SELECT, INSERT, DELETE ON TABLE public.admin_actions TO maakon_api;
+GRANT SELECT, INSERT ON TABLE public.contact_access_log TO maakon_api;
 GRANT INSERT ON TABLE public.feedbacks TO maakon_api;
 GRANT USAGE ON SEQUENCE
   public.users_id_seq, public.posts_id_seq, public.ngos_id_seq,
   public.reports_id_seq, public.sessions_id_seq, public.admin_actions_id_seq,
-  public.feedbacks_id_seq TO maakon_api;
+  public.feedbacks_id_seq, public.contact_access_log_id_seq TO maakon_api;
 
 -- No automatic access to future tables, unused verification requests, waitlist,
 -- Supabase Auth/Storage schemas, persistent DDL, TRUNCATE, or grant options.
@@ -63,6 +64,7 @@ ALTER TABLE public.ngos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.reports ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.admin_actions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.contact_access_log ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.feedbacks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ngo_verification_requests ENABLE ROW LEVEL SECURITY;
 
@@ -88,6 +90,10 @@ DROP POLICY IF EXISTS maakon_api_insert ON public.admin_actions;
 CREATE POLICY maakon_api_insert ON public.admin_actions FOR INSERT TO maakon_api WITH CHECK (true);
 DROP POLICY IF EXISTS maakon_api_delete ON public.admin_actions;
 CREATE POLICY maakon_api_delete ON public.admin_actions FOR DELETE TO maakon_api USING (true);
+DROP POLICY IF EXISTS maakon_api_select ON public.contact_access_log;
+CREATE POLICY maakon_api_select ON public.contact_access_log FOR SELECT TO maakon_api USING (true);
+DROP POLICY IF EXISTS maakon_api_insert ON public.contact_access_log;
+CREATE POLICY maakon_api_insert ON public.contact_access_log FOR INSERT TO maakon_api WITH CHECK (true);
 DROP POLICY IF EXISTS maakon_api_insert ON public.feedbacks;
 CREATE POLICY maakon_api_insert ON public.feedbacks FOR INSERT TO maakon_api WITH CHECK (true);
 COMMIT;

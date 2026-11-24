@@ -34,6 +34,8 @@ export type PostPublicStatus =
 export const PostPublicStatus = {
   pending: "pending",
   active: "active",
+  hidden: "hidden",
+  resolved: "resolved",
   expired: "expired",
   removed: "removed",
 } as const;
@@ -43,7 +45,7 @@ export const PostPublicStatus = {
  */
 export interface PostPublic {
   id: number;
-  /** True only when the authenticated viewer owns this post; false for unauthenticated/public viewers */
+  /** True only when the authenticated viewer owns this post; false for unauthenticated/public viewers. */
   isOwnPost: boolean;
   /** ID of the NGO if the provider is an NGO */
   ngoId?: number | null;
@@ -60,7 +62,9 @@ export interface PostPublic {
   publicLng?: number | null;
   providerType?: string | null;
   verifiedBadgeType?: string | null;
+  /** Null in public responses for individual requests. */
   contactMethod?: string | null;
+  /** Null in public responses for individual requests. */
   contactInfo?: string | null;
   status: PostPublicStatus;
   reportCount: number;
@@ -74,11 +78,49 @@ export interface PostPublic {
  * A post that includes exact private coordinates and address, returned only to its owner
  */
 export type PostPrivate = PostPublic & {
-  userId: number;
+  userId?: number;
   privateLat?: number | null;
   privateLng?: number | null;
   exactAddressPrivate?: string | null;
 };
+
+export interface PostContact {
+  postId: number;
+  contactMethod: string | null;
+  contactInfo: string | null;
+}
+
+export type ReferralPartnerMatch =
+  | {
+      type: "distance";
+      /**
+       * Approximate distance from the selected district center in kilometers.
+       * @minimum 0
+       */
+      distanceKm: number;
+    }
+  | {
+      type: "area";
+      level: "district" | "governorate";
+    };
+
+export interface ReferralPartner {
+  id: number;
+  name: string;
+  description: string | null;
+  governorate: string;
+  district: string | null;
+  phone: string | null;
+  website: string | null;
+  match: ReferralPartnerMatch;
+}
+
+export interface NearbyNgosResponse {
+  /** @maxItems 5 */
+  distanceMatches: ReferralPartner[];
+  /** @maxItems 5 */
+  areaMatches: ReferralPartner[];
+}
 
 export type CreatePostInputPostType =
   (typeof CreatePostInputPostType)[keyof typeof CreatePostInputPostType];
@@ -208,7 +250,26 @@ export interface Metadata {
 
 export interface ErrorResponse {
   error: string;
+  code?: string;
   details?: string | null;
+}
+
+export type SubmitFeedbackInputType =
+  (typeof SubmitFeedbackInputType)[keyof typeof SubmitFeedbackInputType];
+
+export const SubmitFeedbackInputType = {
+  general: "general",
+  bug: "bug",
+  feature: "feature",
+  complaint: "complaint",
+  other: "other",
+} as const;
+
+export interface SubmitFeedbackInput {
+  type: SubmitFeedbackInputType;
+  name?: string | null;
+  email?: string | null;
+  message: string;
 }
 
 export type ListPostsParams = {
@@ -217,9 +278,19 @@ export type ListPostsParams = {
   governorate?: string;
   district?: string;
   urgency?: ListPostsUrgency;
+  /**
+   * Set to false to include resolved and expired posts.
+   */
   activeOnly?: boolean;
   verifiedNgoOnly?: boolean;
+  /**
+   * @minimum 1
+   */
   page?: number;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
   limit?: number;
 };
 
@@ -243,4 +314,19 @@ export const ListPostsUrgency = {
 
 export type ListNgosParams = {
   governorate?: string;
+};
+
+export type ListNearbyNgosParams = {
+  /**
+   * @minLength 1
+   */
+  governorate: string;
+  /**
+   * @minLength 1
+   */
+  district: string;
+};
+
+export type SubmitFeedback200 = {
+  success?: boolean;
 };

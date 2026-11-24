@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import AccountTypeStep from "./AccountTypeStep";
@@ -16,6 +17,7 @@ export type AccountType = "individual" | "ngo";
 export default function AuthModal() {
   const { isAuthModalOpen, closeAuthModal, user, mfaStatus, setMfaStatus, login } = useAuth();
   const { t } = useTranslation();
+  const [location] = useLocation();
 
   const [step, setStep] = useState<AuthStep>("email");
   const [email, setEmail] = useState("");
@@ -27,11 +29,11 @@ export default function AuthModal() {
   const mfaSetupErrorId = "mfa-setup-error";
   const mfaChallengeErrorId = "mfa-challenge-error";
 
-  // If the user is logged in but onboarding is not complete, force the modal open
-  // and set the correct step — regardless of isAuthModalOpen.
   const needsOnboarding = !!user && !user.onboardingComplete;
   const needsMfa = !!mfaStatus;
-  const isOpen = isAuthModalOpen || needsOnboarding || needsMfa;
+  // A retired draft can send a newly signed-in visitor to the public giving page.
+  const deferOnboarding = needsOnboarding && location === "/give";
+  const isOpen = needsMfa || (!deferOnboarding && (isAuthModalOpen || needsOnboarding));
 
   useEffect(() => {
     if (needsOnboarding) {

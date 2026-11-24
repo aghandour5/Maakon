@@ -11,7 +11,7 @@ import type { PostPublic } from "./postPublic";
  * A post that includes exact private coordinates and address, returned only to its owner
  */
 export type PostPrivate = PostPublic & {
-  userId: number;
+  userId?: number;
   privateLat?: number | null;
   privateLng?: number | null;
   exactAddressPrivate?: string | null;

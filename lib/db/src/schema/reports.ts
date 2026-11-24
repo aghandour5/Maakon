@@ -14,7 +14,7 @@ export const reportsTable = pgTable("reports", {
   reportedAt: timestamp("reported_at", { withTimezone: true }).defaultNow().notNull(),
   resolvedAt: timestamp("resolved_at", { withTimezone: true }),
   status: reportStatusEnum("status").default("pending").notNull(),
-});
+}).enableRLS();
 
 export const insertReportSchema = createInsertSchema(reportsTable).omit({
   id: true,

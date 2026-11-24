@@ -1,21 +1,24 @@
 import { Router, type IRouter } from "express";
+import { rateLimit as expressRateLimit } from "express-rate-limit";
 import { optionalAuth, requireAuth } from "../middlewares/auth";
 import { rateLimit } from "../middlewares/rateLimit";
 import { db } from "@workspace/db";
-import { postsTable, ngosTable } from "@workspace/db/schema";
-import { and, eq, gt, isNull, or, desc } from "drizzle-orm";
+import { contactAccessLogTable, postsTable, ngosTable, type Post } from "@workspace/db/schema";
+import { and, eq, gt, inArray, isNotNull, isNull, or, asc, desc } from "drizzle-orm";
 import {
+  AccessPostContactParams,
   ListPostsQueryParams,
   CreatePostBody,
   GetPostParams,
   UpdatePostBody,
 } from "@workspace/api-zod";
 import {
-  clampLocationCoordinates,
   isValidGovernorate,
   isValidLocation,
 } from "@workspace/locations";
 import { getPublicCoordinates } from "../lib/post-location";
+import { canPublishOffer, OFFER_REFERRAL_REQUIRED } from "../lib/offer-policy";
+import { isVulnerableNeedPost, toPrivatePost, toPublicPost } from "../lib/post-serializers";
 import { logger } from "../lib/logger";
 
 const DEFAULT_EXPIRY_DAYS = 30;
@@ -28,66 +31,16 @@ const createPostRateLimiter = rateLimit(
   "Too many post submissions, please try again after 15 minutes.",
 );
 
-function isVulnerableNeedPost(
-  postType: "need" | "offer",
-  providerType?: string | null,
-): boolean {
-  return postType === "need" && providerType !== "ngo";
-}
+const contactAccessRateLimiter = expressRateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 20,
+  keyGenerator: (req) => String(req.user!.id),
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many contact views. Try again in 15 minutes." },
+});
 
-function toPublicPost(
-  post: typeof postsTable.$inferSelect,
-  viewerUserId?: number | null,
-) {
-  const { lat: publicLat, lng: publicLng } =
-    post.publicLat != null && post.publicLng != null
-      ? clampLocationCoordinates(
-          post.publicLat,
-          post.publicLng,
-          post.governorate,
-          post.district,
-        )
-      : { lat: null, lng: null };
-
-  return {
-    id: post.id,
-    isOwnPost: viewerUserId != null && post.userId === viewerUserId,
-    postType: post.postType,
-    title: post.title,
-    category: post.category,
-    description: post.description,
-    urgency: post.urgency ?? null,
-    governorate: post.governorate,
-    district: post.district ?? null,
-    publicLat: publicLat ?? null,
-    publicLng: publicLng ?? null,
-    providerType: post.providerType ?? null,
-    verifiedBadgeType: post.verifiedBadgeType ?? null,
-    contactMethod: post.contactMethod ?? null,
-    contactInfo: post.contactInfo ?? null,
-    status: post.status,
-    reportCount: post.reportCount,
-    createdAt: post.createdAt,
-    updatedAt: post.updatedAt,
-    expiresAt: post.expiresAt ?? null,
-    lastConfirmedAt: post.lastConfirmedAt ?? null,
-  };
-}
-
-function toPrivatePost(
-  post: typeof postsTable.$inferSelect,
-  viewerUserId?: number | null,
-) {
-  return {
-    ...toPublicPost(post, viewerUserId),
-    userId: post.userId,
-    privateLat: post.privateLat ?? null,
-    privateLng: post.privateLng ?? null,
-    exactAddressPrivate: post.exactAddressPrivate ?? null,
-  };
-}
-
-function isPubliclyVisiblePost(post: typeof postsTable.$inferSelect): boolean {
+function isPubliclyVisiblePost(post: Pick<Post, "status" | "expiresAt">): boolean {
   if (post.status !== "active") {
     return false;
   }
@@ -96,7 +49,11 @@ function isPubliclyVisiblePost(post: typeof postsTable.$inferSelect): boolean {
 }
 
 router.get("/posts", optionalAuth, async (req, res) => {
-  const query = ListPostsQueryParams.safeParse(req.query);
+  // Boolean coercion treats the query string "false" as true.
+  const query = ListPostsQueryParams.safeParse({
+    ...req.query,
+    activeOnly: req.query.activeOnly !== "false",
+  });
   if (!query.success) {
     logger.warn({ err: query.error, path: req.originalUrl }, "Invalid list-posts query");
     res.status(400).json({ error: "Validation failed" });
@@ -136,6 +93,8 @@ router.get("/posts", optionalAuth, async (req, res) => {
     filters.push(eq(postsTable.status, "active"));
     const now = new Date();
     filters.push(or(isNull(postsTable.expiresAt), gt(postsTable.expiresAt, now))!);
+  } else {
+    filters.push(inArray(postsTable.status, ["active", "resolved", "expired"]));
   }
 
   const rows = await db
@@ -184,6 +143,10 @@ router.post("/posts", requireAuth, createPostRateLimiter, async (req, res) => {
   if (!isValidLocation(governorate, district)) {
     res.status(400).json({ error: "Invalid governorate or district" });
     return;
+  }
+
+  if (postType === "offer" && !canPublishOffer(req.user)) {
+    return void res.status(403).json(OFFER_REFERRAL_REQUIRED);
   }
 
   const storePrivateLocation = !isVulnerableNeedPost(postType, providerType);
@@ -307,6 +270,8 @@ router.patch("/posts/:id", requireAuth, async (req, res) => {
   }
 
   const { title, description, status } = body.data;
+  const ownedPost = and(eq(postsTable.id, params.data.id), eq(postsTable.userId, req.user!.id));
+  const needsOfferCheck = status === "active" && !canPublishOffer(req.user);
 
   // Single atomic UPDATE: ownership check is part of the WHERE clause,
   // eliminating the SELECT → UPDATE race condition (TOCTOU).
@@ -318,11 +283,15 @@ router.patch("/posts/:id", requireAuth, async (req, res) => {
       ...(status !== undefined ? { status } : {}),
       updatedAt: new Date(),
     })
-    .where(and(eq(postsTable.id, params.data.id), eq(postsTable.userId, req.user!.id)))
+    .where(and(ownedPost, needsOfferCheck ? eq(postsTable.postType, "need") : undefined))
     .returning();
 
   if (!updatedPost) {
-    // Could not find a post with this id owned by this user.
+    if (needsOfferCheck) {
+      const [offer] = await db.select({ id: postsTable.id }).from(postsTable)
+        .where(and(ownedPost, eq(postsTable.postType, "offer")));
+      if (offer) return void res.status(403).json(OFFER_REFERRAL_REQUIRED);
+    }
     return void res.status(404).json({ error: "Post not found or forbidden" });
   }
 
@@ -378,5 +347,66 @@ router.get("/posts/:id", optionalAuth, async (req, res) => {
     ngoId: row.post.providerType === "ngo" ? row.ngoId : null,
   });
 });
+
+router.post(
+  "/posts/:id/contact-access",
+  (_req, res, next) => {
+    res.set("Cache-Control", "no-store");
+    next();
+  },
+  requireAuth,
+  contactAccessRateLimiter,
+  async (req, res) => {
+    const user = req.user!;
+    const forbidden = { error: "Only verified organizations can view contact details." };
+    if (user.accountType !== "ngo") return void res.status(403).json(forbidden);
+
+    const params = AccessPostContactParams.safeParse(req.params);
+    if (!params.success || !Number.isInteger(params.data.id)) {
+      return void res.status(400).json({ error: "Invalid post ID" });
+    }
+
+    const result = await db.transaction(async (tx) => {
+      // Keep authorization and request visibility stable through the audit write.
+      const [ngo] = await tx.select({ id: ngosTable.id }).from(ngosTable)
+        .where(and(
+          eq(ngosTable.userId, user.id),
+          eq(ngosTable.status, "active"),
+          isNotNull(ngosTable.verifiedAt),
+        ))
+        .orderBy(asc(ngosTable.id))
+        .limit(1)
+        .for("share");
+      if (!ngo) return { status: 403, body: forbidden };
+
+      const [post] = await tx.select({
+        id: postsTable.id,
+        status: postsTable.status,
+        expiresAt: postsTable.expiresAt,
+        postType: postsTable.postType,
+        providerType: postsTable.providerType,
+        contactMethod: postsTable.contactMethod,
+        contactInfo: postsTable.contactInfo,
+      }).from(postsTable)
+        .where(eq(postsTable.id, params.data.id))
+        .for("share");
+      if (!post || !isPubliclyVisiblePost(post) || !isVulnerableNeedPost(post.postType, post.providerType)) {
+        return { status: 404, body: { error: "Post not found" } };
+      }
+
+      await tx.insert(contactAccessLogTable).values({
+        viewerUserId: user.id,
+        ngoId: ngo.id,
+        postId: post.id,
+      });
+      return {
+        status: 200,
+        body: { postId: post.id, contactMethod: post.contactMethod, contactInfo: post.contactInfo },
+      };
+    });
+
+    res.status(result.status).json(result.body);
+  },
+);
 
 export default router;

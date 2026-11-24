@@ -71,6 +71,7 @@ export interface AdminNgo {
   phone: string | null;
   website: string | null;
   verifiedAt: string | null;
+  referralApprovedAt: string | null;
   status: string;
   createdAt: string;
 }
@@ -379,6 +380,7 @@ function ReportActions({ report, onUpdate }: { report: AdminReport; onUpdate: ()
 // ── NGO actions ────────────────────────────────────────────────────────────────
 
 function NgoActions({ ngo, onUpdate, onEdit }: { ngo: AdminNgo; onUpdate: () => void; onEdit: (ngo: AdminNgo) => void }) {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const { toast } = useToast();
@@ -392,6 +394,23 @@ function NgoActions({ ngo, onUpdate, onEdit }: { ngo: AdminNgo; onUpdate: () => 
       onUpdate();
     } catch (e) {
       toast({ variant: "destructive", title: "Error", description: `Failed: ${e instanceof Error ? e.message : e}` });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleReferral = async () => {
+    setLoading(true);
+    try {
+      const method = ngo.referralApprovedAt ? "DELETE" : "PATCH";
+      await apiFetch(`/admin/ngos/${ngo.id}/referral`, { method });
+      onUpdate();
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: t("error"),
+        description: formatAdminFetchError(error, t("error")),
+      });
     } finally {
       setLoading(false);
     }
@@ -413,7 +432,7 @@ function NgoActions({ ngo, onUpdate, onEdit }: { ngo: AdminNgo; onUpdate: () => 
 
   return (
     <>
-      <div className="flex gap-2 justify-end">
+      <div className="flex flex-wrap justify-end gap-2">
         <button
           onClick={() => setDeleteDialogOpen(true)}
           disabled={loading}
@@ -446,6 +465,14 @@ function NgoActions({ ngo, onUpdate, onEdit }: { ngo: AdminNgo; onUpdate: () => 
             <Shield className="w-3.5 h-3.5" aria-hidden="true" />
           )}
           {ngo.verifiedAt ? "Unverify" : "Verify Logo"}
+        </button>
+        <button
+          type="button"
+          onClick={toggleReferral}
+          disabled={loading || (!ngo.referralApprovedAt && (!ngo.verifiedAt || ngo.status !== "active"))}
+          className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+        >
+          {t(ngo.referralApprovedAt ? "admin_referral_revoke" : "admin_referral_approve")}
         </button>
       </div>
 
@@ -502,7 +529,7 @@ export default function AdminPage() {
   const [userDeleteLoading, setUserDeleteLoading] = useState(false);
   const { user, isAuthenticated, isLoading: authLoading, mfaStatus, setMfaStatus, openAuthModal } = useAuth();
   const { toast } = useToast();
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const toggleLanguage = () => {
     i18n.changeLanguage(i18n.language.startsWith("ar") ? "en" : "ar");
@@ -980,6 +1007,7 @@ export default function AdminPage() {
           {/* NGOs Table */}
           {tab === "ngos" && (
             <div className="overflow-x-auto">
+              <p className="px-6 py-3 text-sm text-slate-600">{t("admin_referral_check")}</p>
               <table className="w-full text-sm text-left align-middle">
                 <thead className="bg-slate-50/50 border-b border-slate-200/60 text-slate-500 font-semibold uppercase text-[11px] tracking-wider">
                   <tr>
@@ -1023,6 +1051,9 @@ export default function AdminPage() {
                             <span className="font-medium text-xs">Unverified</span>
                           </div>
                         )}
+                        <p className="mt-2 text-xs text-slate-600">
+                          {t(ngo.referralApprovedAt ? "admin_referral_approved" : "admin_referral_unapproved")}
+                        </p>
                       </td>
                       <td className="px-6 py-4 text-right">
                         <NgoActions ngo={ngo} onUpdate={refresh} onEdit={(n) => { setEditingNgo(n); setNgoModalOpen(true); }} />
