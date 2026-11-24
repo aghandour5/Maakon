@@ -80,6 +80,15 @@ already trust its certificate. See [Supabase's SSL setup](https://supabase.com/d
 pnpm --filter @workspace/db exec node --env-file=.env ./node_modules/drizzle-kit/bin.cjs push --config ./drizzle.config.ts
 ```
 
+For an existing installation, apply the reviewed [migration](scripts/src/migrate.ts)
+before deploying the updated API and website (see [database maintenance](docs/database-access.md#maintenance-commands)).
+It adds nullable profile fields without replacing existing accounts. After email
+sign-in, individuals missing details are asked for their full name, governorate
+(district optional), and international phone number; their verified email is
+already filled in. Individual help requests use the saved location and only
+the chosen contact detail. The full name is not attached to the post. NGO
+registration remains separate.
+
 ### 4. Seed sample data (optional)
 
 ```bash

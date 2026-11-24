@@ -41,6 +41,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { createDraftPost } from "@/lib/auth-api";
 import { supabase } from "@/lib/supabase";
+import { normalizeProfilePhone, profilePhonePattern } from "@workspace/api-zod";
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -122,17 +123,25 @@ export default function PostNeed() {
   const { data: metadata } = useGetMetadata();
   const createPost = useCreatePost();
   const { toast } = useToast();
-  const { isAuthenticated, openAuthModal } = useAuth();
+  const { isAuthenticated, openAuthModal, user } = useAuth();
 
   const [step, setStep] = useState(1);
   const [dir, setDir] = useState(1);
   const [expiresInDays, setExpiresInDays] = useState<number | null>(null);
-  const [formData, setFormData] = useState<Partial<CreatePostInput>>({
+  const [inputs, setFormData] = useState<Partial<CreatePostInput>>({
     postType: "need",
     contactMethod: "phone",
   });
+  const profile = inputs.providerType === "individual" && user?.accountType === "individual" ? user : null;
+  const formData = {
+    ...inputs,
+    governorate: inputs.governorate ?? profile?.governorate ?? undefined,
+    district: inputs.district ?? profile?.district ?? undefined,
+    contactInfo: inputs.contactInfo ?? (inputs.contactMethod === "email" ? profile?.email : undefined) ?? "",
+  };
   const [countryCode, setCountryCode] = useState("+961");
-  const [phoneNumber, setPhoneNumber] = useState("");
+  const [enteredPhone, setPhoneNumber] = useState<string>();
+  const phoneNumber = enteredPhone ?? profile?.phone ?? "";
   const [ngoData, setNgoData] = useState({
     ngoName: "",
     contactPerson: "",
@@ -188,6 +197,8 @@ export default function PostNeed() {
         const rawNum = phoneNumber.replace(/\s/g, "");
         if (!rawNum) {
           e.contactInfo = t("required");
+        } else if (profile) {
+          if (!profilePhonePattern.test(normalizeProfilePhone(phoneNumber))) e.contactInfo = t("profile_phone_format");
         } else if (countryCode === "+961" && !/^(03|3|70|71|76|78|79|81|0[1-9])[0-9]{6}$/.test(rawNum)) {
           e.contactInfo = t("invalid_lb_phone");
         } else if (rawNum.length < 5 || rawNum.length > 15) {
@@ -213,7 +224,8 @@ export default function PostNeed() {
 
   const buildFinalData = () => {
     const isPhoneContact = ["phone", "whatsapp", "signal"].includes(formData.contactMethod || "");
-    const parsedContactInfo = isPhoneContact ? `${countryCode} ${phoneNumber.trim()}` : formData.contactInfo!;
+    const phoneContact = profile ? normalizeProfilePhone(phoneNumber) : `${countryCode} ${phoneNumber.trim()}`;
+    const parsedContactInfo = isPhoneContact ? phoneContact : formData.contactInfo;
 
     if (formData.providerType === "ngo") {
       return {
@@ -422,7 +434,14 @@ export default function PostNeed() {
                           <button
                             key={prov}
                             type="button"
-                            onClick={() => patch({ providerType: prov, category: undefined })}
+                            onClick={() => {
+                              if (selected) return;
+                              // Never carry personal contact or address edits into a public NGO post.
+                              patch({ providerType: prov, category: undefined, governorate: undefined, district: undefined,
+                                exactAddressPrivate: undefined, contactMethod: "phone", contactInfo: undefined });
+                              setPhoneNumber(undefined);
+                              setCountryCode("+961");
+                            }}
                             className="p-4 rounded-2xl text-start flex items-center gap-4 transition-all duration-150 active:scale-95 border-2"
                             style={
                               selected
@@ -635,6 +654,7 @@ export default function PostNeed() {
                     <div>
                       <h2 className="text-xl font-black text-gray-900 mb-0.5">{t("step_3_loc")}</h2>
                       <p className="text-sm text-gray-400">{t("where_located_contact")}</p>
+                      {profile && <p className="mt-2 text-sm text-gray-600">{t("profile_private_name", { name: profile.displayName })}</p>}
                     </div>
 
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -646,7 +666,7 @@ export default function PostNeed() {
                            onChange={(e) => patch({ governorate: e.target.value, district: "" })}
                          >
                            <option value="" disabled>{t("select_placeholder")}</option>
-                           {metadata?.governorates.map((g) => <option key={g} value={g}>{t(g)}</option>)}
+                           {metadata?.governorates.map((g) => <option key={g} value={g}>{isRtl ? t(g) : g}</option>)}
                          </select>
                          <FieldError msg={errors.governorate} />
                        </div>
@@ -659,7 +679,7 @@ export default function PostNeed() {
                              onChange={(e) => patch({ district: e.target.value })}
                            >
                              <option value="" disabled>{t("select_placeholder")}</option>
-                             {metadata.districts[formData.governorate].map((d) => <option key={d} value={d}>{t(d)}</option>)}
+                             {metadata.districts[formData.governorate].map((d) => <option key={d} value={d}>{isRtl ? t(d) : d}</option>)}
                            </select>
                            <FieldError msg={errors.district} />
                          </div>
@@ -739,7 +759,7 @@ export default function PostNeed() {
                         <select
                           className="w-full px-4 py-3.5 rounded-2xl bg-slate-50 border-2 border-slate-200 focus:border-red-400 outline-none text-sm font-medium text-gray-700"
                           value={formData.contactMethod ?? ""}
-                          onChange={(e) => patch({ contactMethod: e.target.value })}
+                          onChange={(e) => patch({ contactMethod: e.target.value, contactInfo: undefined })}
                         >
                           <option value="" disabled>{t("select_placeholder")}</option>
                           {metadata?.contactMethods.map((c) => <option key={c} value={c}>{c}</option>)}
@@ -749,7 +769,12 @@ export default function PostNeed() {
                       <div>
                         <FieldLabel>{t("contact_info")}</FieldLabel>
                         {["phone", "whatsapp", "signal"].includes(formData.contactMethod || "") ? (
-                          <div className="flex gap-2">
+                          profile ? <input
+                            type="tel" dir="ltr" aria-label={t("profile_phone")}
+                            className="w-full px-4 py-3.5 rounded-2xl bg-slate-50 border-2 border-slate-200 focus:border-red-400 outline-none text-sm font-medium"
+                            value={phoneNumber}
+                            onChange={(e) => setPhoneNumber(e.target.value)}
+                          /> : <div className="flex gap-2">
                             <select
                               className="px-2 py-3.5 rounded-2xl bg-slate-50 border-2 border-slate-200 focus:border-red-400 outline-none text-sm font-bold text-gray-700 w-[100px] sm:w-[110px] shrink-0"
                               value={countryCode}

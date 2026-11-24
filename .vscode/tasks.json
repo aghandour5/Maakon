@@ -1,0 +1,15 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Maakon: run local API and website",
+			"type": "shell",
+			"command": "pnpm.cmd",
+			"args": [
+				"dev"
+			],
+			"isBackground": true,
+			"problemMatcher": []
+		}
+	]
+}

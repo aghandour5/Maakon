@@ -293,6 +293,15 @@ API_URL="http://localhost:3002"
 
 ### Database Connection Error
 
+If the email link reaches `/auth/callback` but Maakon cannot start a session,
+check the API terminal. A healthy `/api/healthz` does not test database access.
+Supabase pooler error `ECIRCUITBREAKER` means new connections are temporarily
+blocked after repeated authentication failures. Stop retrying, verify the
+API's `DATABASE_URL` (pooler host, username including the project suffix, and
+URL-encoded database password), and restart the API after correcting it and
+allowing the block to clear. Do not substitute an Auth key for a DB password
+or enable the development auth bypass. See [runtime database setup](docs/database-access.md).
+
 ```
 Error: connect ECONNREFUSED 127.0.0.1:5432
 ```

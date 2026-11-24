@@ -49,13 +49,18 @@ function OfferRoute() {
   return user?.accountType === "ngo" ? <PostOffer /> : <Redirect to="/give" replace />;
 }
 
+function NeedRoute() {
+  const { user, isLoading } = useAuth();
+  return isLoading ? <PageFallback /> : <PostNeed key={user?.id ?? "guest"} />;
+}
+
 function Router() {
   return (
     <Suspense fallback={<PageFallback />}>
       <Switch>
         <Route path="/" component={Home} />
         <Route path="/map" component={MapPage} />
-        <Route path="/need/new" component={PostNeed} />
+        <Route path="/need/new" component={NeedRoute} />
         <Route path="/offer/new" component={OfferRoute} />
         <Route path="/give" component={GiveReferral} />
         <Route path="/auth/callback" component={AuthCallback} />
