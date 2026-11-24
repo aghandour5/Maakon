@@ -22,7 +22,7 @@ The snapshot in [review-inventory.csv](D:/Maakon/docs/reviews/review-inventory.c
 
 ### Remediation checkpoint: DB-01 TLS
 
-Step 1 has been applied and is awaiting the user's review. Remote connections now
+Step 1 has been applied and accepted at the user's continuation checkpoint. Remote connections now
 use `sslmode=verify-full` through a shared helper used by the application pool and
 Drizzle configuration. Supabase's public CA is included with its source documented
 in the README; the local API and database `.env` files were configured to use it.
@@ -44,9 +44,44 @@ node --import=./scripts/node_modules/tsx/dist/loader.mjs --test ./lib/db/test/co
 The inventory and original database report record the pre-remediation snapshot;
 their source hashes and line references should be checked against current files.
 
+### Remediation checkpoint: DB-01 runtime role
+
+Step 2's code and SQL are prepared; live application is awaiting explicit approval.
+The versioned `lib/db/sql/runtime-role.sql` defines the restricted `maakon_api`
+role, explicit table/sequence grants, and backend-scoped RLS policies. New roles
+remain NOLOGIN until activation; the SQL does not generate or change passwords.
+The API still has its existing local connection URL, and no live role, grants,
+policies, or application rows were changed in this step.
+
+Maintenance code now imports `@workspace/db/admin` and requires
+`DATABASE_ADMIN_URL`. The local maintenance `.env` key was renamed while preserving
+its owner credentials and CA path. Production API startup rejects a privileged or
+owner login; deploy the role/credential change before deploying this new guard.
+
+All eight Drizzle table declarations now enable RLS. A generated-migration check
+confirmed that the earlier declarations would disable it; the regression test
+ensures schema generation preserves the enabled state. SQL-managed policies still
+require the explicit migration workflow described in `docs/database-access.md`.
+
+Verification passed: 48 combined tests, including 22 connection/admin-configuration
+tests, a schema/RLS regression, and 24 permission scenarios plus their parent test
+on an isolated PostgreSQL 18 cluster; API/library/script typechecks; strict TypeScript checks for the tests;
+and the API production build. The latest whole-workspace typecheck fails in a
+concurrently changed frontend file, `NavigationBar.tsx:13`, with TS2503 (missing
+`JSX` namespace); that frontend file was not modified by this step.
+The integration test uses the actual Drizzle schema,
+a non-superuser schema owner, real RLS/grants, and the maintenance CLI. Its fixtures
+and temporary roles were removed afterward. The live PostgreSQL 17.6 role setup
+has not been applied or tested as a runtime login yet.
+
+See [database-access.md](D:/Maakon/docs/database-access.md) for the privilege matrix,
+activation sequence, commands, and rollback considerations. The new database role
+does not implement per-user SQL identity; Express remains responsible for the
+public visibility and moderation rules addressed next by DB-02 and DB-03.
+
 | Phase | Scope | Status |
 | --- | --- | --- |
-| Database remediation | Resolve reported defects and validate migrations on a disposable database | DB-01 TLS applied and verified locally; review checkpoint pending; remaining fixes pending |
+| Database remediation | Resolve reported defects and validate migrations on a disposable database | DB-01 TLS accepted; runtime-role setup tested locally and awaiting live activation approval; other fixes pending |
 | Backend line review | Auth/MFA lifecycle, CSRF, rate limits, proxy/host controls, error handling, logging, deployment | Pending beyond database-related review |
 | Page line review | Home, Map, PostNeed, PostOffer, MyPosts, AdminPage, AuthCallback, About, Contact, FAQ, Support, NotFound | Pending full review; database flows partially traced |
 | Shared frontend review | Auth context/modal/steps, navigation, post detail modal, API fetch/cache, hooks, i18n, reusable UI, styles/assets | Pending full review |

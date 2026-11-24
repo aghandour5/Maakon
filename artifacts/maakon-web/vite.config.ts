@@ -31,7 +31,7 @@ for (const envKey of forbiddenClientEnvKeys) {
 }
 
 export default defineConfig({
-  base: basePath,
+  base: basePath, // defaults to "/"
   envPrefix: "VITE_",
   plugins: [react(), tailwindcss()],
   resolve: {
@@ -40,7 +40,8 @@ export default defineConfig({
     },
     dedupe: ["react", "react-dom", "@tanstack/react-query"],
   },
-  root: path.resolve(import.meta.dirname),
+  root: path.resolve(import.meta.dirname), // "artifacts/maakon-web"
+    // publicDir is omitted, so it defaults to path.resolve(root, "public")
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,

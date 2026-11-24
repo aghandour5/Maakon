@@ -23,6 +23,7 @@ needed by that service. DB-02 and DB-03 still require route/state-transition fix
 | --- | --- |
 | `users`, `posts`, `ngos`, `reports`, `sessions` | SELECT, INSERT, UPDATE, DELETE |
 | `admin_actions` | SELECT, INSERT, DELETE; no UPDATE |
+| `contact_access_log` | SELECT, INSERT; USAGE on the ID sequence |
 | `feedbacks` | INSERT only |
 | The seven corresponding serial sequences | USAGE only; no sequence resets |
 | `ngo_verification_requests`, `waitlist`, future tables | No grants |
@@ -84,6 +85,15 @@ application cutover, roll back code and credentials together: the new production
 startup check intentionally refuses an owner login.
 
 ## Maintenance commands
+
+All eight Drizzle table declarations enable RLS, matching the hosted database.
+The grants and backend policies are maintained by `runtime-role.sql` separately
+from the ORM schema. A direct schema push can drop policies absent from the
+Drizzle declarations. Use reviewed migrations for an existing hosted database,
+preserve its policies, and reapply the runtime-role configuration after relevant
+schema changes. The commands below are for initial/disposable setup or a reviewed
+maintenance plan, not an instruction to push an unchecked diff to the live server.
+DB-05 still tracks the full versioned migration baseline.
 
 The package scripts also work with an already exported `DATABASE_ADMIN_URL`.
 These root-level commands explicitly load the local maintenance environment:

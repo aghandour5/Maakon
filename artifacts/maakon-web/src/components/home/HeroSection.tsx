@@ -7,8 +7,7 @@ const fadeUp = {
 };
 
 export default function HeroSection() {
-  const { t, i18n } = useTranslation();
-  const isRtl = i18n.dir() === "rtl";
+  const { t } = useTranslation();
 
   return (
     <motion.div
@@ -17,16 +16,16 @@ export default function HeroSection() {
       animate="show"
       className="text-center px-4 flex flex-col items-center w-full max-w-2xl"
     >
+      {/* Decorative: the header already names the brand. Kept small on phones so the actions stay above the fold. */}
       <img
         src="/logo.svg"
-        alt="Maakon Logo"
+        alt=""
         draggable={false}
-        className="h-24 sm:h-32 md:h-40 lg:h-48 w-auto object-contain mb-6 sm:mb-8"
+        className="h-16 sm:h-20 lg:h-24 w-auto object-contain mb-4 md:mb-6"
       />
-      <h1
-        className="text-2xl sm:text-3xl md:text-4xl lg:text-4xl font-bold text-white leading-relaxed tracking-wide [&>strong]:font-bold [&>strong]:text-[#00A651]"
-        dangerouslySetInnerHTML={{ __html: t("home_tagline") }}
-      />
+      <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white leading-tight">
+        {t("home_heading")}
+      </h1>
     </motion.div>
   );
 }

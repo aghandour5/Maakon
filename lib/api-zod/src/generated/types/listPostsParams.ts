@@ -14,8 +14,18 @@ export type ListPostsParams = {
   governorate?: string;
   district?: string;
   urgency?: ListPostsUrgency;
+  /**
+   * Set to false to include resolved and expired posts.
+   */
   activeOnly?: boolean;
   verifiedNgoOnly?: boolean;
+  /**
+   * @minimum 1
+   */
   page?: number;
+  /**
+   * @minimum 1
+   * @maximum 100
+   */
   limit?: number;
 };

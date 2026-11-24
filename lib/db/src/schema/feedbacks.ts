@@ -11,7 +11,7 @@ export const feedbacksTable = pgTable("feedbacks", {
   email: text("email"),
   message: text("message").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-});
+}).enableRLS();
 
 export const insertFeedbackSchema = createInsertSchema(feedbacksTable).omit({
   id: true,

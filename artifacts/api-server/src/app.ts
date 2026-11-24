@@ -140,7 +140,7 @@ app.use((err: unknown, req: Request, res: Response, _next: NextFunction) => {
   }
 
   logger.error(
-    { err, method: req.method, url: req.originalUrl },
+    { err, method: req.method, url: req.path },
     "Unhandled request error",
   );
   res.status(500).json({ error: "Internal server error" });

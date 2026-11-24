@@ -6,3 +6,4 @@ export * from "./admin_actions";
 export * from "./sessions";
 export * from "./ngo_verification_requests";
 export * from "./feedbacks";
+export * from "./contact_access_log";

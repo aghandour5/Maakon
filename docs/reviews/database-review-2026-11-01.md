@@ -2,7 +2,8 @@
 
 Remediation update: the TLS portion of DB-01 has since been implemented and verified
 with a read-only TLS 1.3 connection and server-certificate validation. The connection
-still uses `postgres`; runtime-role restrictions and the other findings remain open.
+still uses `postgres`; runtime-role restrictions are prepared and tested locally,
+with live activation awaiting approval. The other findings remain open.
 See the [current checkpoint](D:/Maakon/docs/reviews/code-review-progress.md).
 The evidence and live counts below describe the original audit snapshot.
 

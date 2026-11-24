@@ -15,7 +15,7 @@ export function rateLimit(
     message: { error: message },
     handler: (req, res, _next, options) => {
       logger.warn(
-        { ip: req.ip, path: req.originalUrl },
+        { ip: req.ip, path: req.path },
         "Rate limit exceeded",
       );
       res.status(options.statusCode).json(options.message);

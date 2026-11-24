@@ -51,6 +51,9 @@ export const PROVIDER_TYPES = ["individual", "organization", "business", "ngo"] 
 export const CONTACT_METHODS = ["phone", "whatsapp", "email", "signal", "in-person"] as const;
 
 export const DEFAULT_LEBANON_CENTER: Coordinates = { lat: 33.8547, lng: 35.8623 };
+export const LEBANON_BOUNDS: Bounds = {
+  minLat: 33.05, maxLat: 34.70, minLng: 35.1, maxLng: 36.65,
+};
 
 export const GOVERNORATE_CENTERS = {
   Beirut: { lat: 33.8938, lng: 35.5018 },
@@ -147,6 +150,37 @@ export function getLocationCenter(
   }
 
   return DEFAULT_LEBANON_CENTER;
+}
+
+export function haversineKm(a: Coordinates, b: Coordinates): number {
+  const radians = Math.PI / 180;
+  const lat = (b.lat - a.lat) * radians;
+  const lng = (b.lng - a.lng) * radians;
+  const haversine = Math.sin(lat / 2) ** 2 +
+    Math.cos(a.lat * radians) * Math.cos(b.lat * radians) * Math.sin(lng / 2) ** 2;
+  return 2 * 6371 * Math.asin(Math.sqrt(Math.min(haversine, 1)));
+}
+
+export function findNearestDistrict(point: Coordinates): {
+  governorate: Governorate;
+  district: (typeof DISTRICTS)[Governorate][number];
+} {
+  let nearest: ReturnType<typeof findNearestDistrict> = {
+    governorate: "Beirut", district: "Beirut City",
+  };
+  let nearestDistance = Infinity;
+
+  for (const governorate of GOVERNORATES) {
+    for (const district of DISTRICTS[governorate]) {
+      const distance = haversineKm(point, DISTRICT_CENTERS[district]);
+      if (distance < nearestDistance) {
+        nearest = { governorate, district };
+        nearestDistance = distance;
+      }
+    }
+  }
+
+  return nearest;
 }
 
 export function clampLocationCoordinates(

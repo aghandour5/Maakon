@@ -15,9 +15,10 @@ export const ngosTable = pgTable("ngos", {
   phone: text("phone"),
   website: text("website"),
   verifiedAt: timestamp("verified_at", { withTimezone: true }),
+  referralApprovedAt: timestamp("referral_approved_at", { withTimezone: true }),
   status: text("status").default("active").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-});
+}).enableRLS();
 
 export const insertNgoSchema = createInsertSchema(ngosTable).omit({ id: true, createdAt: true });
 export type InsertNgo = z.infer<typeof insertNgoSchema>;

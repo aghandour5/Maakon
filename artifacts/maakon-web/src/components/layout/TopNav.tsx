@@ -1,11 +1,12 @@
-import { useState } from "react";
 import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
-import { Globe, ArrowRight, ArrowLeft, Menu, X, LogOut, User as UserIcon, Heart } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { ArrowLeft, LogOut, Heart } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { getHeaderNavItems } from "@/lib/nav-links";
 import { Logo } from "./Logo";
 import { LogoRtl } from "./LogoRtl";
+import { LanguageToggle } from "./LanguageToggle";
+import { MobileMenu } from "./MobileMenu";
 
 interface TopNavProps {
   title?: string;
@@ -15,165 +16,112 @@ interface TopNavProps {
 export function TopNav({ title, showBack = false }: TopNavProps) {
   const { t, i18n } = useTranslation();
   const isRtl = i18n.dir() === "rtl";
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { isAuthenticated, user, openAuthModal, logout } = useAuth();
-
-  const toggleLanguage = () => {
-    i18n.changeLanguage(i18n.language.startsWith("ar") ? "en" : "ar");
-  };
-
-  const navLinks = [
-    { label: isRtl ? "الرئيسية" : "Home", href: "/" },
-    { label: isRtl ? "الخريطة" : "Map", href: "/map" },
-    ...(isAuthenticated ? [{ label: isRtl ? "منشوراتي" : "My Posts", href: "/my-posts" }] : []),
-    { label: isRtl ? "حول" : "About", href: "/about" },
-    { label: isRtl ? "تواصل معنا" : "Contact Us", href: "/contact" },
-    { label: isRtl ? "ادعمنا" : "Support Us", href: "/support", icon: <Heart className="w-3.5 h-3.5 mr-1 inline-block" aria-hidden="true" /> },
-  ];
+  const navItems = getHeaderNavItems(isAuthenticated);
+  const accountName = user?.displayName || t(user?.accountType === "ngo" ? "account_ngo" : "account_individual");
 
   return (
     <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-black/[0.03] shadow-sm transition-all">
-      <div className="max-w-6xl mx-auto px-6 sm:px-8 h-16 sm:h-20 flex items-center justify-between gap-3">
-        {/* Left: back + Brand */}
-        <div className="flex items-center gap-3 sm:gap-4 shrink-0">
+      {/* Wraps instead of clipping when text is enlarged; the mobile menu panel is positioned against <header>. */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-8 py-2 min-h-16 sm:min-h-20 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0 min-w-0">
           {showBack && (
             <button
+              type="button"
               onClick={() => window.history.back()}
-              className="w-8 h-8 rounded-xl flex items-center justify-center text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-all shrink-0"
-              aria-label="Back"
+              className="w-11 h-11 rounded-xl flex items-center justify-center text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-colors shrink-0 focus-ring-on-light"
+              aria-label={t("back")}
             >
-              {isRtl ? <ArrowRight className="h-4 w-4" aria-hidden="true" /> : <ArrowLeft className="h-4 w-4" aria-hidden="true" />}
+              <ArrowLeft className="h-4 w-4 rtl:rotate-180" aria-hidden="true" />
             </button>
           )}
-          <span dir="ltr" className="shrink-0">
-            <Link href="/" className="no-underline mr-2 sm:mr-4 flex items-center gap-2 sm:gap-3 group">
-              {isRtl ? (
-                <LogoRtl className="h-7 sm:h-12 w-auto group-hover:scale-105 transition-transform" />
-              ) : (
-                <Logo className="h-7 sm:h-12 w-auto group-hover:scale-105 transition-transform" />
-              )}
-            </Link>
-          </span>
+          <Link
+            href="/"
+            aria-label={t("app_name")}
+            className="no-underline shrink-0 flex items-center min-h-11 rounded-lg group focus-ring-on-light"
+          >
+            {isRtl ? (
+              <LogoRtl className="h-7 sm:h-12 w-auto group-hover:scale-105 transition-transform" />
+            ) : (
+              <Logo className="h-7 sm:h-12 w-auto group-hover:scale-105 transition-transform" />
+            )}
+          </Link>
           {title && (
-            <span className="font-bold text-sm text-slate-500 truncate border-s border-slate-300 ps-3 hidden lg:inline-block">
+            <span className="font-bold text-sm text-slate-500 truncate max-w-56 border-s border-slate-300 ps-3 hidden md:inline-block xl:hidden">
               {title}
             </span>
           )}
         </div>
 
-        {/* Desktop: Nav links */}
-        <nav className="hidden sm:flex items-center gap-1 shrink-0">
-          {navLinks.map((link) => (
+        <nav aria-label={t("main_nav_label")} className="hidden xl:flex items-center gap-1 shrink-0">
+          {navItems.map((item) => (
             <Link
-              key={link.href}
-              href={link.href}
-              className="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all duration-150 whitespace-nowrap flex items-center gap-1.5"
+              key={item.href}
+              href={item.href}
+              className="min-h-11 px-3 rounded-xl text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors whitespace-nowrap flex items-center gap-1.5 focus-ring-on-light"
             >
-              {link.icon}
-              {link.label}
+              {item.withHeartIcon && <Heart className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />}
+              {t(item.labelKey)}
             </Link>
           ))}
         </nav>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0 ms-auto xl:ms-0">
           {!isAuthenticated ? (
             <button
+              type="button"
               onClick={openAuthModal}
-              className="hidden sm:flex items-center gap-1.5 px-3 h-8 rounded-xl font-bold text-sm bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
+              className="hidden xl:flex items-center min-h-11 px-4 rounded-xl font-bold text-sm text-white bg-action-need hover:bg-action-need-hover transition-colors focus-ring-on-light"
             >
               {t("sign_in")}
             </button>
           ) : (
             <button
+              type="button"
               onClick={logout}
-              className="hidden sm:flex items-center gap-1.5 px-3 h-8 rounded-xl font-bold text-xs bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
-              title="Logout"
-              aria-label="Logout"
+              className="hidden xl:flex items-center gap-1.5 min-h-11 px-3 rounded-xl font-bold text-xs bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors focus-ring-on-light"
+              aria-label={`${t("logout")} (${accountName})`}
+              title={t("logout")}
             >
-              <LogOut className="w-3.5 h-3.5" aria-hidden="true" />
-              <span className="hidden sm:inline-block">{user?.displayName || (user?.accountType === "ngo" ? "NGO" : t("account_individual"))}</span>
-              <span className="inline-block sm:hidden">{t("logout")}</span>
+              <LogOut className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+              <span className="max-w-[6rem] truncate">{accountName}</span>
             </button>
           )}
 
-          {/* Language toggle */}
-          <button
-            onClick={toggleLanguage}
-            className="flex items-center gap-1.5 px-3 h-8 rounded-xl text-slate-700 hover:text-slate-900 text-xs sm:text-sm font-semibold border border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition-all shrink-0"
-            aria-label={isRtl ? "Switch to English" : "تغيير اللغة إلى العربية"}
-          >
-            <Globe className="w-3.5 h-3.5 sm:w-4 sm:h-4" aria-hidden="true" />
-            <span className="hidden sm:inline-block">{i18n.language.startsWith("ar") ? "English" : "عربي"}</span>
-            <span className="inline-block sm:hidden">{i18n.language.startsWith("ar") ? "EN" : "عربي"}</span>
-          </button>
+          <LanguageToggle variant="light" />
 
-          {/* Mobile menu toggle */}
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="sm:hidden flex items-center justify-center w-8 h-8 rounded-xl text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-all"
-            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
-            aria-expanded={mobileMenuOpen}
-          >
-            {mobileMenuOpen ? <X className="w-5 h-5" aria-hidden="true" /> : <Menu className="w-5 h-5" aria-hidden="true" />}
-          </button>
+          <MobileMenu
+            items={navItems}
+            variant="light"
+            renderFooter={(close) =>
+              !isAuthenticated ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    close();
+                    openAuthModal();
+                  }}
+                  className="w-full min-h-11 px-4 rounded-xl text-sm font-bold text-white bg-action-need hover:bg-action-need-hover transition-colors focus-ring-on-light"
+                >
+                  {t("sign_in")}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    close();
+                    logout();
+                  }}
+                  className="w-full min-h-11 flex items-center justify-center gap-2 px-4 rounded-xl text-sm font-bold text-action-need bg-red-50 hover:bg-red-100 transition-colors focus-ring-on-light"
+                >
+                  <LogOut className="w-4 h-4" aria-hidden="true" />
+                  {t("logout")}
+                </button>
+              )
+            }
+          />
         </div>
       </div>
-
-      {/* Mobile dropdown menu */}
-      <AnimatePresence>
-        {mobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -10, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.95 }}
-            transition={{ duration: 0.15 }}
-            className="absolute top-full left-4 right-4 mt-2 p-2 rounded-2xl bg-white sm:hidden border border-black/5"
-            style={{
-              boxShadow: "0 10px 40px rgba(0,0,0,0.1)",
-            }}
-          >
-            <nav className="flex flex-col gap-1">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="px-4 py-3 rounded-xl text-sm font-bold text-slate-700 hover:text-slate-900 hover:bg-slate-50 transition-all text-center flex items-center justify-center gap-2"
-                >
-                  {link.icon}
-                  {link.label}
-                </Link>
-              ))}
-
-              <div className="border-t border-slate-100 mt-2 pt-2">
-                {!isAuthenticated ? (
-                  <button
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      openAuthModal();
-                    }}
-                    className="w-full px-4 py-3 rounded-xl text-sm font-bold bg-primary text-primary-foreground text-center"
-                  >
-                    {t("sign_in")}
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      logout();
-                    }}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold text-destructive bg-destructive/10 text-center"
-                    aria-label="Logout"
-                  >
-                    <LogOut className="w-4 h-4" aria-hidden="true" />
-                    {t("logout")}
-                  </button>
-                )}
-              </div>
-            </nav>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </header>
   );
 }

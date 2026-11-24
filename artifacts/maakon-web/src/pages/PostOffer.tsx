@@ -325,8 +325,6 @@ export default function PostOffer() {
     );
   }
 
-  // Auth gate removed — individuals can fill form first, then sign in on submit
-
   // ── Form ─────────────────────────────────────────────────────────────────
 
   return (

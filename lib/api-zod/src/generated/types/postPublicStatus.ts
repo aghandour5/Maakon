@@ -12,6 +12,8 @@ export type PostPublicStatus =
 export const PostPublicStatus = {
   pending: "pending",
   active: "active",
+  hidden: "hidden",
+  resolved: "resolved",
   expired: "expired",
   removed: "removed",
 } as const;

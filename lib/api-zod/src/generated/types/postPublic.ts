@@ -14,7 +14,7 @@ import type { PostPublicUrgency } from "./postPublicUrgency";
  */
 export interface PostPublic {
   id: number;
-  /** True only when the authenticated viewer owns this post; false for unauthenticated/public viewers */
+  /** True only when the authenticated viewer owns this post; false for unauthenticated/public viewers. */
   isOwnPost: boolean;
   /** ID of the NGO if the provider is an NGO */
   ngoId?: number | null;
@@ -31,7 +31,9 @@ export interface PostPublic {
   publicLng?: number | null;
   providerType?: string | null;
   verifiedBadgeType?: string | null;
+  /** Null in public responses for individual requests. */
   contactMethod?: string | null;
+  /** Null in public responses for individual requests. */
   contactInfo?: string | null;
   status: PostPublicStatus;
   reportCount: number;

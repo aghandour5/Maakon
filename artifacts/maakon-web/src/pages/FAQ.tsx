@@ -11,48 +11,48 @@ const FAQS = [
     categoryAr: "الأساسيات",
     questionEn: "What is Maakon?",
     questionAr: "ما هي معكن؟",
-    answerEn: "Maakon is a community crisis-response platform for Lebanon. It helps people post urgent needs, offer resources, and find help through an interactive map.",
-    answerAr: "معكن هي منصة مجتمعية للاستجابة للأزمات في لبنان. تساعد الناس على نشر الاحتياجات العاجلة، وتقديم الموارد، والعثور على المساعدة عبر خريطة تفاعلية.",
+    answerEn: "Maakon helps people in Lebanon post urgent requests for help and find organizations on the map. If you want to give, Maakon can help you find an approved organization near you.",
+    answerAr: "تساعد معكن الناس في لبنان على نشر طلبات المساعدة العاجلة والعثور على المنظمات على الخريطة. وإذا أردت تقديم المساعدة، يمكنك العثور على منظمة قريبة معتمدة للإحالة.",
   },
   {
     categoryEn: "Basics",
     categoryAr: "الأساسيات",
     questionEn: "Is Maakon free to use?",
     questionAr: "هل استخدام معكن مجاني؟",
-    answerEn: "Yes. Posting a need, offering help, browsing the map, and contacting people through listed contact details are free.",
-    answerAr: "نعم. نشر طلب مساعدة، تقديم عرض، تصفح الخريطة، والتواصل عبر معلومات الاتصال المنشورة كلها مجانية.",
+    answerEn: "Yes. You can post a request, browse the map, and look up organizations to give through for free.",
+    answerAr: "نعم. يمكنك نشر طلب مساعدة وتصفّح الخريطة والبحث عن منظمات لتقديم المساعدة من خلالها مجاناً.",
   },
   {
     categoryEn: "Aid",
     categoryAr: "المساعدة",
     questionEn: "Does Maakon deliver aid directly?",
     questionAr: "هل تقدم معكن المساعدات مباشرة؟",
-    answerEn: "No. Maakon is a coordination platform. It connects people who need help with individuals and organizations that may be able to provide it.",
-    answerAr: "لا. معكن هي منصة تنسيق. تربط الأشخاص الذين يحتاجون إلى مساعدة بأفراد ومنظمات قد تتمكن من تقديمها.",
+    answerEn: "Maakon connects people who need help with organizations that may be able to provide it. Each organization coordinates its own contributions.",
+    answerAr: "تربط معكن الأشخاص الذين يحتاجون إلى المساعدة بمنظمات قد تتمكن من تقديمها. وتتولّى كل منظمة تنسيق المساهمات الخاصة بها.",
   },
   {
     categoryEn: "Posting",
     categoryAr: "النشر",
     questionEn: "Who can post a need or offer?",
     questionAr: "من يمكنه نشر طلب أو عرض؟",
-    answerEn: "Individuals and organizations can post. You may need to sign in so you can manage your posts and keep contact information up to date.",
-    answerAr: "يمكن للأفراد والمنظمات النشر. قد تحتاج إلى تسجيل الدخول حتى تتمكن من إدارة منشوراتك وتحديث معلومات التواصل.",
+    answerEn: "Individuals and organizations can post requests for help. Organization accounts can also publish offers. Individuals who want to give can contact an approved organization through the “I Want to Help” page.",
+    answerAr: "يمكن للأفراد والمنظمات نشر طلبات المساعدة. ويمكن لحسابات المنظمات أيضاً نشر عروض المساعدة. ويستطيع الأفراد الراغبون في تقديم المساعدة التواصل مع منظمة معتمدة عبر صفحة «أريد أن أساعد».",
   },
   {
     categoryEn: "Privacy",
     categoryAr: "الخصوصية",
     questionEn: "Will my exact location be public?",
     questionAr: "هل سيظهر موقعي الدقيق للعلن؟",
-    answerEn: "For people requesting help, exact locations are protected and shown only approximately. Organizations and help offers may choose to provide a more exact public location.",
-    answerAr: "بالنسبة للأشخاص الذين يطلبون المساعدة، تتم حماية المواقع الدقيقة وتظهر بشكل تقريبي فقط. يمكن للمنظمات وعروض المساعدة اختيار نشر موقع أكثر دقة.",
+    answerEn: "The map shows an approximate location for an individual request. Organizations can choose to share a more precise public location for their posts.",
+    answerAr: "تعرض الخريطة موقعاً تقريبياً لطلبات الأفراد. ويمكن للمنظمات اختيار مشاركة موقع عام أكثر دقة في منشوراتها.",
   },
   {
     categoryEn: "Contact",
     categoryAr: "التواصل",
     questionEn: "How do people contact each other?",
     questionAr: "كيف يتواصل الناس مع بعضهم؟",
-    answerEn: "Each post can include the contact method chosen by the person or organization posting it, such as a phone number, email, or other public contact detail.",
-    answerAr: "يمكن لكل منشور أن يتضمن طريقة التواصل التي يختارها صاحب المنشور، مثل رقم هاتف أو بريد إلكتروني أو وسيلة تواصل عامة أخرى.",
+    answerEn: "Individual requests keep contact details private. Verified organizations can view them for open requests, and Maakon records each view. To give, use the public contact details listed for approved organizations.",
+    answerAr: "تبقى بيانات التواصل في طلبات الأفراد خاصة. يمكن للمنظمات الموثّقة الاطّلاع عليها للطلبات المفتوحة، وتسجّل معكن كل عملية اطّلاع. ولتقديم المساعدة، استخدم بيانات التواصل العامة للمنظمات المعتمدة للإحالة.",
   },
   {
     categoryEn: "Trust",
@@ -85,7 +85,7 @@ export default function FAQ() {
     <div className="min-h-dvh flex flex-col bg-slate-50">
       <TopNav title={isRtl ? "الأسئلة الشائعة" : "FAQs"} showBack />
 
-      <main className="flex-1 pt-20 md:pt-28">
+      <main className="flex-1 pt-10 md:pt-14">
         <section className="px-5 pb-10 text-center max-w-3xl mx-auto">
           <motion.div initial="hidden" animate="show" variants={fadeUp}>
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold mb-6 bg-emerald-50 text-emerald-700 border border-emerald-100">

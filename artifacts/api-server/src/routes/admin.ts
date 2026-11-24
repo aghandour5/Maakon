@@ -3,7 +3,7 @@
  * Requires an authenticated user with the 'admin' role.
  * Exposes moderation views without private requester coordinates.
  */
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type RequestHandler } from "express";
 import { requireAuth, requireAdmin, requireMfa } from "../middlewares/auth";
 import { db } from "@workspace/db";
 import { postsTable, reportsTable, ngosTable, adminActionsTable, usersTable } from "@workspace/db/schema";
@@ -13,6 +13,7 @@ import { logger } from "../lib/logger";
 import { rateLimit } from "express-rate-limit";
 import { adminSubdomainCheck, adminIpWhitelist } from "../middlewares/adminSecurity";
 import { isValidLocation } from "@workspace/locations";
+import { getReferralApprovalError } from "@workspace/db/referrals";
 
 const router: IRouter = Router();
 const INTERNAL_SERVER_ERROR = { error: "Internal server error" };
@@ -105,6 +106,7 @@ function toAdminNgo(ngo: typeof ngosTable.$inferSelect) {
     phone: ngo.phone ?? null,
     website: ngo.website ?? null,
     verifiedAt: ngo.verifiedAt ?? null,
+    referralApprovedAt: ngo.referralApprovedAt ?? null,
     status: ngo.status,
     createdAt: ngo.createdAt,
   };
@@ -560,26 +562,78 @@ router.patch("/admin/ngos/:id/verify", async (req, res) => {
 
 router.delete("/admin/ngos/:id/verify", async (req, res) => {
   const id = Number(req.params.id);
-  const [ngo] = await db
-    .update(ngosTable)
-    .set({ verifiedAt: null })
-    .where(eq(ngosTable.id, id))
-    .returning();
-
-  if (!ngo) {
-    res.status(404).json({ error: "NGO not found" });
-    return;
+  if (!Number.isInteger(id) || id < 1 || id > 2147483647) {
+    return void res.status(400).json({ error: "Invalid NGO ID" });
   }
 
-  if ((ngo as any).userId) {
-    await db
-      .update(postsTable)
-      .set({ verifiedBadgeType: null })
-      .where(and(eq(postsTable.userId, (ngo as any).userId), eq(postsTable.providerType, "ngo")));
-  }
+  const ngo = await db.transaction(async (tx) => {
+    const [existing] = await tx.select().from(ngosTable)
+      .where(eq(ngosTable.id, id)).for("update");
+    if (!existing) return null;
 
+    const [updated] = await tx.update(ngosTable)
+      .set({ verifiedAt: null, referralApprovedAt: null })
+      .where(eq(ngosTable.id, id))
+      .returning();
+
+    if (existing.userId !== null) {
+      await tx.update(postsTable)
+        .set({ verifiedBadgeType: null })
+        .where(and(eq(postsTable.userId, existing.userId), eq(postsTable.providerType, "ngo")));
+    }
+    if (existing.referralApprovedAt) {
+      await tx.insert(adminActionsTable).values({
+        adminId: req.user!.id,
+        targetType: "ngo",
+        targetId: id,
+        action: "referral:revoke",
+        note: "Organization verification removed",
+      });
+    }
+    return updated;
+  });
+
+  if (!ngo) return void res.status(404).json({ error: "NGO not found" });
   res.json(toAdminNgo(ngo));
 });
+
+const manageReferralApproval: RequestHandler<{ id: string }> = async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id < 1 || id > 2147483647) {
+    return void res.status(400).json({ error: "Invalid NGO ID" });
+  }
+
+  const approve = req.method === "PATCH";
+  const result = await db.transaction(async (tx) => {
+    const [ngo] = await tx.select().from(ngosTable)
+      .where(eq(ngosTable.id, id)).for("update");
+    if (!ngo) return { status: 404, body: { error: "NGO not found" } };
+
+    const error = approve ? getReferralApprovalError(ngo) : null;
+    if (error) return { status: 400, body: { error } };
+    if (Boolean(ngo.referralApprovedAt) === approve) {
+      return { status: 200, body: toAdminNgo(ngo) };
+    }
+
+    const [updated] = await tx.update(ngosTable)
+      .set({ referralApprovedAt: approve ? new Date() : null })
+      .where(eq(ngosTable.id, id))
+      .returning();
+    await tx.insert(adminActionsTable).values({
+      adminId: req.user!.id,
+      targetType: "ngo",
+      targetId: id,
+      action: approve ? "referral:approve" : "referral:revoke",
+    });
+    return { status: 200, body: toAdminNgo(updated) };
+  });
+
+  res.status(result.status).json(result.body);
+};
+
+router.route("/admin/ngos/:id/referral")
+  .patch(manageReferralApproval)
+  .delete(manageReferralApproval);
 
 // ── Stale post cleanup ─────────────────────────────────────────────────────────
 

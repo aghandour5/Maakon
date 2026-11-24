@@ -15,10 +15,14 @@ export const HealthCheckResponse = zod.object({
 });
 
 /**
- * @summary List active posts (public map data)
+ * @summary List public map posts
  */
 export const listPostsQueryActiveOnlyDefault = true;
 export const listPostsQueryVerifiedNgoOnlyDefault = false;
+export const listPostsQueryPageDefault = 1;
+
+export const listPostsQueryLimitDefault = 20;
+export const listPostsQueryLimitMax = 100;
 
 export const ListPostsQueryParams = zod.object({
   postType: zod.enum(["need", "offer"]).optional(),
@@ -26,20 +30,19 @@ export const ListPostsQueryParams = zod.object({
   governorate: zod.coerce.string().optional(),
   district: zod.coerce.string().optional(),
   urgency: zod.enum(["critical", "high", "medium", "low"]).optional(),
-  activeOnly: zod
-    .preprocess(
-      (value) => (value === "false" ? false : value === "true" ? true : value),
-      zod.boolean(),
-    )
-    .default(listPostsQueryActiveOnlyDefault),
-  verifiedNgoOnly: zod
-    .preprocess(
-      (value) => (value === "false" ? false : value === "true" ? true : value),
-      zod.boolean(),
-    )
+  activeOnly: zod.coerce
+    .boolean()
+    .default(listPostsQueryActiveOnlyDefault)
+    .describe("Set to false to include resolved and expired posts."),
+  verifiedNgoOnly: zod.coerce
+    .boolean()
     .default(listPostsQueryVerifiedNgoOnlyDefault),
-  page: zod.coerce.number().min(1).default(1),
-  limit: zod.coerce.number().min(1).max(100).default(20),
+  page: zod.coerce.number().min(1).default(listPostsQueryPageDefault),
+  limit: zod.coerce
+    .number()
+    .min(1)
+    .max(listPostsQueryLimitMax)
+    .default(listPostsQueryLimitDefault),
 });
 
 export const ListPostsResponseItem = zod
@@ -48,7 +51,7 @@ export const ListPostsResponseItem = zod
     isOwnPost: zod
       .boolean()
       .describe(
-        "True only when the authenticated viewer owns this post; false for unauthenticated/public viewers",
+        "True only when the authenticated viewer owns this post; false for unauthenticated\/public viewers.",
       ),
     ngoId: zod
       .number()
@@ -71,9 +74,22 @@ export const ListPostsResponseItem = zod
       .describe("Fuzzed district-level longitude (never exact for need posts)"),
     providerType: zod.string().nullish(),
     verifiedBadgeType: zod.string().nullish(),
-    contactMethod: zod.string().nullish(),
-    contactInfo: zod.string().nullish(),
-    status: zod.enum(["pending", "active", "expired", "removed"]),
+    contactMethod: zod
+      .string()
+      .nullish()
+      .describe("Null in public responses for individual requests."),
+    contactInfo: zod
+      .string()
+      .nullish()
+      .describe("Null in public responses for individual requests."),
+    status: zod.enum([
+      "pending",
+      "active",
+      "hidden",
+      "resolved",
+      "expired",
+      "removed",
+    ]),
     reportCount: zod.number(),
     createdAt: zod.date(),
     updatedAt: zod.date(),
@@ -84,7 +100,7 @@ export const ListPostsResponseItem = zod
 export const ListPostsResponse = zod.array(ListPostsResponseItem);
 
 /**
- * @summary Create a need or offer post
+ * @summary Create a request or an organization offer
  */
 export const createPostBodyTitleMin = 3;
 export const createPostBodyTitleMax = 120;
@@ -122,7 +138,6 @@ export const CreatePostBody = zod.object({
     .describe("Exact user-provided longitude from the map"),
   expiresInDays: zod
     .number()
-    .int()
     .min(1)
     .max(createPostBodyExpiresInDaysMax)
     .nullish()
@@ -138,9 +153,8 @@ export const ListMyPostsResponseItem = zod
     isOwnPost: zod
       .boolean()
       .describe(
-        "True only when the authenticated viewer owns this post; false for unauthenticated/public viewers",
+        "True only when the authenticated viewer owns this post; false for unauthenticated\/public viewers.",
       ),
-    userId: zod.number(),
     ngoId: zod
       .number()
       .nullish()
@@ -162,9 +176,22 @@ export const ListMyPostsResponseItem = zod
       .describe("Fuzzed district-level longitude (never exact for need posts)"),
     providerType: zod.string().nullish(),
     verifiedBadgeType: zod.string().nullish(),
-    contactMethod: zod.string().nullish(),
-    contactInfo: zod.string().nullish(),
-    status: zod.enum(["pending", "active", "expired", "removed"]),
+    contactMethod: zod
+      .string()
+      .nullish()
+      .describe("Null in public responses for individual requests."),
+    contactInfo: zod
+      .string()
+      .nullish()
+      .describe("Null in public responses for individual requests."),
+    status: zod.enum([
+      "pending",
+      "active",
+      "hidden",
+      "resolved",
+      "expired",
+      "removed",
+    ]),
     reportCount: zod.number(),
     createdAt: zod.date(),
     updatedAt: zod.date(),
@@ -174,6 +201,7 @@ export const ListMyPostsResponseItem = zod
   .describe("A post with no private location data exposed")
   .and(
     zod.object({
+      userId: zod.number().optional(),
       privateLat: zod.number().nullish(),
       privateLng: zod.number().nullish(),
       exactAddressPrivate: zod.string().nullish(),
@@ -197,7 +225,7 @@ export const GetPostResponse = zod
     isOwnPost: zod
       .boolean()
       .describe(
-        "True only when the authenticated viewer owns this post; false for unauthenticated/public viewers",
+        "True only when the authenticated viewer owns this post; false for unauthenticated\/public viewers.",
       ),
     ngoId: zod
       .number()
@@ -220,9 +248,22 @@ export const GetPostResponse = zod
       .describe("Fuzzed district-level longitude (never exact for need posts)"),
     providerType: zod.string().nullish(),
     verifiedBadgeType: zod.string().nullish(),
-    contactMethod: zod.string().nullish(),
-    contactInfo: zod.string().nullish(),
-    status: zod.enum(["pending", "active", "expired", "removed"]),
+    contactMethod: zod
+      .string()
+      .nullish()
+      .describe("Null in public responses for individual requests."),
+    contactInfo: zod
+      .string()
+      .nullish()
+      .describe("Null in public responses for individual requests."),
+    status: zod.enum([
+      "pending",
+      "active",
+      "hidden",
+      "resolved",
+      "expired",
+      "removed",
+    ]),
     reportCount: zod.number(),
     createdAt: zod.date(),
     updatedAt: zod.date(),
@@ -264,9 +305,8 @@ export const UpdatePostResponse = zod
     isOwnPost: zod
       .boolean()
       .describe(
-        "True only when the authenticated viewer owns this post; false for unauthenticated/public viewers",
+        "True only when the authenticated viewer owns this post; false for unauthenticated\/public viewers.",
       ),
-    userId: zod.number(),
     ngoId: zod
       .number()
       .nullish()
@@ -288,9 +328,22 @@ export const UpdatePostResponse = zod
       .describe("Fuzzed district-level longitude (never exact for need posts)"),
     providerType: zod.string().nullish(),
     verifiedBadgeType: zod.string().nullish(),
-    contactMethod: zod.string().nullish(),
-    contactInfo: zod.string().nullish(),
-    status: zod.enum(["pending", "active", "expired", "removed"]),
+    contactMethod: zod
+      .string()
+      .nullish()
+      .describe("Null in public responses for individual requests."),
+    contactInfo: zod
+      .string()
+      .nullish()
+      .describe("Null in public responses for individual requests."),
+    status: zod.enum([
+      "pending",
+      "active",
+      "hidden",
+      "resolved",
+      "expired",
+      "removed",
+    ]),
     reportCount: zod.number(),
     createdAt: zod.date(),
     updatedAt: zod.date(),
@@ -300,6 +353,7 @@ export const UpdatePostResponse = zod
   .describe("A post with no private location data exposed")
   .and(
     zod.object({
+      userId: zod.number().optional(),
       privateLat: zod.number().nullish(),
       privateLng: zod.number().nullish(),
       exactAddressPrivate: zod.string().nullish(),
@@ -317,7 +371,22 @@ export const DeletePostParams = zod.object({
 });
 
 /**
- * @summary List verified NGOs
+ * @summary Retrieve and audit contact details for an open individual request
+ */
+export const accessPostContactPathIdMax = 2147483647;
+
+export const AccessPostContactParams = zod.object({
+  id: zod.coerce.number().min(1).max(accessPostContactPathIdMax),
+});
+
+export const AccessPostContactResponse = zod.object({
+  postId: zod.number(),
+  contactMethod: zod.string().nullable(),
+  contactInfo: zod.string().nullable(),
+});
+
+/**
+ * @summary List active NGOs in the map directory
  */
 export const ListNgosQueryParams = zod.object({
   governorate: zod.coerce.string().optional(),
@@ -339,6 +408,84 @@ export const ListNgosResponseItem = zod.object({
 export const ListNgosResponse = zod.array(ListNgosResponseItem);
 
 /**
+ * @summary List organizations approved for referrals near a district
+ */
+
+export const ListNearbyNgosQueryParams = zod.object({
+  governorate: zod.coerce.string().min(1),
+  district: zod.coerce.string().min(1),
+});
+
+export const listNearbyNgosResponseDistanceMatchesItemMatchOneDistanceKmMin = 0;
+
+export const listNearbyNgosResponseDistanceMatchesMax = 5;
+
+export const listNearbyNgosResponseAreaMatchesItemMatchOneDistanceKmMin = 0;
+
+export const listNearbyNgosResponseAreaMatchesMax = 5;
+
+export const ListNearbyNgosResponse = zod.object({
+  distanceMatches: zod
+    .array(
+      zod.object({
+        id: zod.number(),
+        name: zod.string(),
+        description: zod.string().nullable(),
+        governorate: zod.string(),
+        district: zod.string().nullable(),
+        phone: zod.string().nullable(),
+        website: zod.string().nullable(),
+        match: zod.union([
+          zod.object({
+            type: zod.enum(["distance"]),
+            distanceKm: zod
+              .number()
+              .min(
+                listNearbyNgosResponseDistanceMatchesItemMatchOneDistanceKmMin,
+              )
+              .describe(
+                "Approximate distance from the selected district center in kilometers.",
+              ),
+          }),
+          zod.object({
+            type: zod.enum(["area"]),
+            level: zod.enum(["district", "governorate"]),
+          }),
+        ]),
+      }),
+    )
+    .max(listNearbyNgosResponseDistanceMatchesMax),
+  areaMatches: zod
+    .array(
+      zod.object({
+        id: zod.number(),
+        name: zod.string(),
+        description: zod.string().nullable(),
+        governorate: zod.string(),
+        district: zod.string().nullable(),
+        phone: zod.string().nullable(),
+        website: zod.string().nullable(),
+        match: zod.union([
+          zod.object({
+            type: zod.enum(["distance"]),
+            distanceKm: zod
+              .number()
+              .min(listNearbyNgosResponseAreaMatchesItemMatchOneDistanceKmMin)
+              .describe(
+                "Approximate distance from the selected district center in kilometers.",
+              ),
+          }),
+          zod.object({
+            type: zod.enum(["area"]),
+            level: zod.enum(["district", "governorate"]),
+          }),
+        ]),
+      }),
+    )
+    .max(listNearbyNgosResponseAreaMatchesMax),
+});
+
+/**
  * @summary Report a post as suspicious or unsafe
  */
 export const CreateReportBody = zod.object({
@@ -357,4 +504,18 @@ export const GetMetadataResponse = zod.object({
   urgencyLevels: zod.array(zod.string()),
   providerTypes: zod.array(zod.string()),
   contactMethods: zod.array(zod.string()),
+});
+
+/**
+ * @summary Submit user feedback or bug report
+ */
+export const SubmitFeedbackBody = zod.object({
+  type: zod.enum(["general", "bug", "feature", "complaint", "other"]),
+  name: zod.string().nullish(),
+  email: zod.string().nullish(),
+  message: zod.string(),
+});
+
+export const SubmitFeedbackResponse = zod.object({
+  success: zod.boolean().optional(),
 });

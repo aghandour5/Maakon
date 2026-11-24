@@ -58,7 +58,7 @@ export default function Support() {
     <div className="min-h-dvh flex flex-col bg-slate-50">
       <TopNav title={isRtl ? "ادعمنا" : "Support Us"} showBack />
 
-      <main className="flex-1 flex flex-col pt-20 md:pt-28">
+      <main className="flex-1 flex flex-col pt-10 md:pt-14">
         {/* Hero Section */}
         <section className="px-5 pb-12 md:pb-16 text-center max-w-3xl mx-auto w-full">
           <motion.div initial="hidden" animate="show" variants={fadeUp}>

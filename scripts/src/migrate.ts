@@ -19,6 +19,20 @@ async function migrate() {
       ALTER TABLE ngos ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'active'
     `);
 
+    await client.query(`
+      BEGIN;
+      ALTER TABLE ngos ADD COLUMN IF NOT EXISTS referral_approved_at timestamptz;
+      CREATE TABLE IF NOT EXISTS contact_access_log (
+        id serial PRIMARY KEY,
+        viewer_user_id integer NOT NULL,
+        ngo_id integer NOT NULL,
+        post_id integer NOT NULL,
+        accessed_at timestamptz NOT NULL DEFAULT now()
+      );
+      ALTER TABLE contact_access_log ENABLE ROW LEVEL SECURITY;
+      COMMIT;
+    `);
+
     console.log("Migrations complete.");
   } finally {
     client.release();

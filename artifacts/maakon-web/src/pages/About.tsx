@@ -65,7 +65,7 @@ export default function About() {
       <main className="flex-1">
         {/* Hero */}
         <section
-          className="relative overflow-hidden px-5 pt-28 pb-16 text-center"
+          className="relative overflow-hidden px-5 pt-16 pb-16 text-center"
           style={{ background: "linear-gradient(140deg, #021c13 0%, #064e3b 45%, #022c22 100%)" }}
         >
           <div
@@ -201,7 +201,7 @@ export default function About() {
               <ArrowRight className={`w-4 h-4 ${isRtl ? "rotate-180" : ""}`} />
             </Link>
             <Link
-              href="/offer/new"
+              href="/give"
               className="inline-flex w-60 max-w-full items-center justify-center gap-2 px-7 py-3.5 rounded-2xl text-white font-bold text-sm transition-transform active:scale-95"
               style={{ background: "linear-gradient(135deg, #00a651, #10b981)", boxShadow: "0 6px 20px rgba(0,166,81,0.35)" }}
             >

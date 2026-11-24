@@ -329,7 +329,7 @@ export default function PostNeed() {
             <CheckCircle2 className="w-10 h-10 text-emerald-600" />
           </div>
           <h2 className="text-2xl font-black text-gray-900 mb-2">{t("success_title")}</h2>
-          <p className="text-gray-500 text-sm mb-7">{t("success_desc")}</p>
+          <p className="text-gray-500 text-sm mb-7">{t("need_success_desc")}</p>
           <button
             onClick={() => setLocation("/map")}
             className="w-full h-12 rounded-2xl font-bold text-white text-base transition-transform active:scale-95"
@@ -714,6 +714,11 @@ export default function PostNeed() {
                       <FieldError msg={errors.expiresInDays} />
                     </div>
 
+                    {!isNgo && (
+                      <p className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                        {t("need_contact_privacy")}
+                      </p>
+                    )}
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       {isNgo && (
                         <div className="sm:col-span-2">

@@ -1,10 +1,10 @@
-import { lazy, Suspense } from "react";
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { lazy, Suspense } from "react"; // suspense is used as a fallback while lazy-loaded components are being downloaded
+import { Redirect, Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Home from "@/pages/Home";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import AuthModal from "@/components/auth/AuthModal";
 
 // Initialize i18n
@@ -15,6 +15,7 @@ import "@/lib/i18n"; // we import this file to initialize i18n before rendering 
 const MapPage = lazy(() => import("@/pages/MapPage"));
 const PostNeed = lazy(() => import("@/pages/PostNeed"));
 const PostOffer = lazy(() => import("@/pages/PostOffer"));
+const GiveReferral = lazy(() => import("@/pages/GiveReferral"));
 const AdminPage = lazy(() => import("@/pages/AdminPage"));
 const MyPosts = lazy(() => import("@/pages/MyPosts"));
 const About = lazy(() => import("@/pages/About"));
@@ -42,6 +43,12 @@ function PageFallback() {
   );
 }
 
+function OfferRoute() {
+  const { user, isLoading } = useAuth();
+  if (isLoading) return <PageFallback />;
+  return user?.accountType === "ngo" ? <PostOffer /> : <Redirect to="/give" replace />;
+}
+
 function Router() {
   return (
     <Suspense fallback={<PageFallback />}>
@@ -49,7 +56,8 @@ function Router() {
         <Route path="/" component={Home} />
         <Route path="/map" component={MapPage} />
         <Route path="/need/new" component={PostNeed} />
-        <Route path="/offer/new" component={PostOffer} />
+        <Route path="/offer/new" component={OfferRoute} />
+        <Route path="/give" component={GiveReferral} />
         <Route path="/auth/callback" component={AuthCallback} />
         <Route path="/my-posts" component={MyPosts} />
         <Route path="/admin" component={AdminPage} />
@@ -65,13 +73,19 @@ function Router() {
 
 function App() {
   return (
+    // Data layer for managing API requests and caching
     <QueryClientProvider client={queryClient}>
+      {/* User session, permission, login/logout */}
       <AuthProvider>
+        {/* UI coordination */}
         <TooltipProvider>
-          <AuthModal />
+          {/* Router (URL-matching & page display) */}
           <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+            {/* Global popup for authentication (login/logout) */}
+            <AuthModal />
             <Router />
           </WouterRouter>
+          {/* Global notification system for user feedback */}
           <Toaster />
         </TooltipProvider>
       </AuthProvider>

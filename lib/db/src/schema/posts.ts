@@ -46,7 +46,7 @@ export const postsTable = pgTable("posts", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   expiresAt: timestamp("expires_at", { withTimezone: true }),
   lastConfirmedAt: timestamp("last_confirmed_at", { withTimezone: true }),
-});
+}).enableRLS();
 
 export const insertPostSchema = createInsertSchema(postsTable).omit({
   id: true,

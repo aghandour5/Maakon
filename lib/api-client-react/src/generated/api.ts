@@ -21,13 +21,18 @@ import type {
   CreateReportInput,
   ErrorResponse,
   HealthStatus,
+  ListNearbyNgosParams,
   ListNgosParams,
   ListPostsParams,
   Metadata,
+  NearbyNgosResponse,
   Ngo,
+  PostContact,
   PostPrivate,
   PostPublic,
   ReportPublic,
+  SubmitFeedback200,
+  SubmitFeedbackInput,
   UpdatePostInput,
 } from "./api.schemas";
 
@@ -116,7 +121,7 @@ export function useHealthCheck<
 }
 
 /**
- * @summary List active posts (public map data)
+ * @summary List public map posts
  */
 export const getListPostsUrl = (params?: ListPostsParams) => {
   const normalizedParams = new URLSearchParams();
@@ -183,7 +188,7 @@ export type ListPostsQueryResult = NonNullable<
 export type ListPostsQueryError = ErrorType<unknown>;
 
 /**
- * @summary List active posts (public map data)
+ * @summary List public map posts
  */
 
 export function useListPosts<
@@ -210,7 +215,7 @@ export function useListPosts<
 }
 
 /**
- * @summary Create a need or offer post
+ * @summary Create a request or an organization offer
  */
 export const getCreatePostUrl = () => {
   return `/api/posts`;
@@ -273,7 +278,7 @@ export type CreatePostMutationBody = BodyType<CreatePostInput>;
 export type CreatePostMutationError = ErrorType<ErrorResponse>;
 
 /**
- * @summary Create a need or offer post
+ * @summary Create a request or an organization offer
  */
 export const useCreatePost = <
   TError = ErrorType<ErrorResponse>,
@@ -468,7 +473,7 @@ export const updatePost = async (
 };
 
 export const getUpdatePostMutationOptions = <
-  TError = ErrorType<void>,
+  TError = ErrorType<ErrorResponse | void>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -509,13 +514,13 @@ export type UpdatePostMutationResult = NonNullable<
   Awaited<ReturnType<typeof updatePost>>
 >;
 export type UpdatePostMutationBody = BodyType<UpdatePostInput>;
-export type UpdatePostMutationError = ErrorType<void>;
+export type UpdatePostMutationError = ErrorType<ErrorResponse | void>;
 
 /**
  * @summary Update a post owned by the authenticated user
  */
 export const useUpdatePost = <
-  TError = ErrorType<void>,
+  TError = ErrorType<ErrorResponse | void>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
@@ -619,7 +624,91 @@ export const useDeletePost = <
 };
 
 /**
- * @summary List verified NGOs
+ * @summary Retrieve and audit contact details for an open individual request
+ */
+export const getAccessPostContactUrl = (id: number) => {
+  return `/api/posts/${id}/contact-access`;
+};
+
+export const accessPostContact = async (
+  id: number,
+  options?: RequestInit,
+): Promise<PostContact> => {
+  return customFetch<PostContact>(getAccessPostContactUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getAccessPostContactMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof accessPostContact>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof accessPostContact>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["accessPostContact"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof accessPostContact>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return accessPostContact(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AccessPostContactMutationResult = NonNullable<
+  Awaited<ReturnType<typeof accessPostContact>>
+>;
+
+export type AccessPostContactMutationError = ErrorType<void>;
+
+/**
+ * @summary Retrieve and audit contact details for an open individual request
+ */
+export const useAccessPostContact = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof accessPostContact>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof accessPostContact>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getAccessPostContactMutationOptions(options));
+};
+
+/**
+ * @summary List active NGOs in the map directory
  */
 export const getListNgosUrl = (params?: ListNgosParams) => {
   const normalizedParams = new URLSearchParams();
@@ -686,7 +775,7 @@ export type ListNgosQueryResult = NonNullable<
 export type ListNgosQueryError = ErrorType<unknown>;
 
 /**
- * @summary List verified NGOs
+ * @summary List active NGOs in the map directory
  */
 
 export function useListNgos<
@@ -704,6 +793,100 @@ export function useListNgos<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getListNgosQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List organizations approved for referrals near a district
+ */
+export const getListNearbyNgosUrl = (params: ListNearbyNgosParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/ngos/nearby?${stringifiedParams}`
+    : `/api/ngos/nearby`;
+};
+
+export const listNearbyNgos = async (
+  params: ListNearbyNgosParams,
+  options?: RequestInit,
+): Promise<NearbyNgosResponse> => {
+  return customFetch<NearbyNgosResponse>(getListNearbyNgosUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListNearbyNgosQueryKey = (params?: ListNearbyNgosParams) => {
+  return [`/api/ngos/nearby`, ...(params ? [params] : [])] as const;
+};
+
+export const getListNearbyNgosQueryOptions = <
+  TData = Awaited<ReturnType<typeof listNearbyNgos>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  params: ListNearbyNgosParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listNearbyNgos>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListNearbyNgosQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listNearbyNgos>>> = ({
+    signal,
+  }) => listNearbyNgos(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listNearbyNgos>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListNearbyNgosQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listNearbyNgos>>
+>;
+export type ListNearbyNgosQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary List organizations approved for referrals near a district
+ */
+
+export function useListNearbyNgos<
+  TData = Awaited<ReturnType<typeof listNearbyNgos>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  params: ListNearbyNgosParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listNearbyNgos>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListNearbyNgosQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
@@ -870,3 +1053,89 @@ export function useGetMetadata<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Submit user feedback or bug report
+ */
+export const getSubmitFeedbackUrl = () => {
+  return `/api/feedback`;
+};
+
+export const submitFeedback = async (
+  submitFeedbackInput: SubmitFeedbackInput,
+  options?: RequestInit,
+): Promise<SubmitFeedback200> => {
+  return customFetch<SubmitFeedback200>(getSubmitFeedbackUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(submitFeedbackInput),
+  });
+};
+
+export const getSubmitFeedbackMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof submitFeedback>>,
+    TError,
+    { data: BodyType<SubmitFeedbackInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof submitFeedback>>,
+  TError,
+  { data: BodyType<SubmitFeedbackInput> },
+  TContext
+> => {
+  const mutationKey = ["submitFeedback"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof submitFeedback>>,
+    { data: BodyType<SubmitFeedbackInput> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return submitFeedback(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SubmitFeedbackMutationResult = NonNullable<
+  Awaited<ReturnType<typeof submitFeedback>>
+>;
+export type SubmitFeedbackMutationBody = BodyType<SubmitFeedbackInput>;
+export type SubmitFeedbackMutationError = ErrorType<void>;
+
+/**
+ * @summary Submit user feedback or bug report
+ */
+export const useSubmitFeedback = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof submitFeedback>>,
+    TError,
+    { data: BodyType<SubmitFeedbackInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof submitFeedback>>,
+  TError,
+  { data: BodyType<SubmitFeedbackInput> },
+  TContext
+> => {
+  return useMutation(getSubmitFeedbackMutationOptions(options));
+};
