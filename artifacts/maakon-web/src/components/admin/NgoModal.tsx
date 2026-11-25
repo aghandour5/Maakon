@@ -5,7 +5,7 @@ import { useGetMetadata } from "@workspace/api-client-react";
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from "react-leaflet";
 import L from "leaflet";
 import "@/styles/map.css";
-import type { AdminNgo } from "@/pages/AdminPage";
+import type { AdminNgo } from "./types";
 import { Loader2, LocateFixed } from "lucide-react";
 
 const SHIELD_SVG = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>';
@@ -56,6 +56,7 @@ export function NgoModal({
   const [status, setStatus] = useState("active");
   const [position, setPosition] = useState<[number, number] | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error,setError]=useState("");
   const [locating, setLocating] = useState(false);
 
   useEffect(() => {
@@ -74,6 +75,7 @@ export function NgoModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError("");
     try {
       await onSave({
         name,
@@ -86,6 +88,8 @@ export function NgoModal({
         ...(position ? { lat: position[0], lng: position[1] } : { lat: null, lng: null }),
       });
       onOpenChange(false);
+    } catch(e) {
+      setError(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
     }
@@ -110,7 +114,7 @@ export function NgoModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent dir="ltr" lang="en" className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{ngo ? "Edit NGO" : "Create NGO"}</DialogTitle>
           <DialogDescription>
@@ -183,6 +187,7 @@ export function NgoModal({
             <p className="text-xs text-slate-500">Click on the map to set or move the organization's location pin.</p>
           </div>
 
+          {error && <p role="alert">{error}</p>}
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>Cancel</Button>
             <Button type="submit" disabled={loading}>
