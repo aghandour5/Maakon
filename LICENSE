@@ -1,0 +1,28 @@
+Maakon Proprietary License
+
+Copyright (c) Ali Sallam Ghandour. All rights reserved.
+
+This notice covers Maakon-owned code, documentation, text, and artwork in this
+repository, starting with the revision that first includes this file and
+continuing in later revisions. Any rights granted under the MIT License for
+earlier revisions remain in effect under its terms.
+
+Copying, modifying, redistributing, sublicensing, selling, or making commercial
+use of the covered material requires prior written permission from Ali Sallam
+Ghandour, subject to applicable law, existing license grants, and the GitHub
+Terms of Service. This notice preserves statutory exceptions and GitHub users'
+rights to view and fork this repository on GitHub while it is public.
+
+Third-party material retains its own license terms. The MIT notice for portions
+derived from shadcn/ui is in artifacts/maakon-web/public/licenses/shadcn-ui.txt.
+User- and NGO-submitted content remains governed by the terms applicable to
+that content.
+
+You may use the hosted Maakon service as made available. Reuse of the underlying
+code and assets is governed by this notice and the rights it preserves.
+
+Ali Sallam Ghandour reserves the rights held in the Maakon name and logos. For
+images of Lebanon's national flag, this reservation covers only rights in
+Maakon's own image files. The national flag design is outside its scope.
+
+To request written permission, visit https://www.maakon.com/contact.

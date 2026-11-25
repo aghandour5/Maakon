@@ -2,6 +2,7 @@
   "name": "@workspace/scripts",
   "version": "0.0.0",
   "private": true,
+  "license": "UNLICENSED",
   "type": "module",
   "scripts": {
     "approve:referrals": "tsx ./src/approve-referral-partners.ts",
