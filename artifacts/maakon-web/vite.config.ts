@@ -45,6 +45,7 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    license: { fileName: "licenses/bundled-dependencies.md" },
   },
   server: {
     port,

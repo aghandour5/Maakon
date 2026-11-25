@@ -282,3 +282,12 @@ After changing the OpenAPI spec:
 ```bash
 pnpm --filter @workspace/api-spec run codegen
 ```
+
+## Licensing
+
+The [Maakon Proprietary License](LICENSE) covers Maakon-owned material beginning
+with the revision that introduces it. Third-party components retain their own
+terms, including the [shadcn/ui MIT notice](artifacts/maakon-web/public/licenses/shadcn-ui.txt)
+and [additional notices](artifacts/maakon-web/public/licenses/additional-notices.txt).
+The production web build ships these notices and the generated dependency
+manifest in `artifacts/maakon-web/dist/public/licenses/`.
