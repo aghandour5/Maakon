@@ -271,6 +271,63 @@ paths:
                 items:
                   $ref: "#/components/schemas/Ngo"
 
+  /ngos/me/public-contact:
+    get:
+      operationId: getMyNgoPublicContact
+      summary: Get the signed-in user's active organization contact for prefilling a request
+      responses:
+        "200":
+          description: Public profile contact or null
+          content:
+            application/json:
+              schema:
+                type: object
+                nullable: true
+                required: [phone, website]
+                properties:
+                  phone:
+                    type: string
+                    nullable: true
+                  website:
+                    type: string
+                    nullable: true
+        "401":
+          description: Sign-in required
+  /admin/posts/{id}/review:
+    post:
+      operationId: reviewPost
+      summary: Decide a submitted need as an MFA-verified administrator
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewPostInput"
+      responses:
+        "200":
+          description: Decision recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success]
+                properties:
+                  success:
+                    type: boolean
+        "400":
+          description: Invalid decision or missing required field
+        "403":
+          description: Administrator MFA and CSRF token required
+        "404":
+          description: No submitted need exists with this ID
+        "409":
+          description: Request changed or was already decided
   /ngos/nearby:
     get:
       operationId: listNearbyNgos
@@ -425,14 +482,22 @@ components:
         contactMethod:
           type: string
           nullable: true
-          description: Null in public responses for individual requests.
+          description: Null in public responses for all need posts.
         contactInfo:
           type: string
           nullable: true
-          description: Null in public responses for individual requests.
+          description: Null in public responses for all need posts.
+        publicContactMethod:
+          type: string
+          enum: [phone, email, website]
+          nullable: true
+        publicContactInfo:
+          type: string
+          maxLength: 2048
+          nullable: true
         status:
           type: string
-          enum: [pending, active, hidden, resolved, expired, removed]
+          enum: [draft, frozen, pending, active, hidden, resolved, expired, removed]
         reportCount:
           type: integer
         createdAt:
@@ -556,6 +621,7 @@ components:
                   enum: [district, governorate]
 
     CreatePostInput:
+      description: New need posts enter pending review before publication.
       type: object
       properties:
         postType:
@@ -593,6 +659,14 @@ components:
         contactInfo:
           type: string
           nullable: true
+        publicContactMethod:
+          type: string
+          enum: [phone, email, website]
+          nullable: true
+        publicContactInfo:
+          type: string
+          maxLength: 2048
+          nullable: true
         providedLat:
           type: number
           format: double
@@ -616,6 +690,22 @@ components:
         - description
         - description
         - governorate
+
+    ReviewPostInput:
+      type: object
+      required: [decision]
+      properties:
+        decision:
+          type: string
+          enum: [accept, freeze, reject]
+        expectedUpdatedAt:
+          type: string
+          format: date-time
+          description: Required for acceptance
+        reason:
+          type: string
+          maxLength: 500
+          description: Required for rejection
 
     UpdatePostInput:
       type: object

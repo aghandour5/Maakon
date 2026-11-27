@@ -291,3 +291,11 @@ terms, including the [shadcn/ui MIT notice](artifacts/maakon-web/public/licenses
 and [additional notices](artifacts/maakon-web/public/licenses/additional-notices.txt).
 The production web build ships these notices and the generated dependency
 manifest in `artifacts/maakon-web/dist/public/licenses/`.
+
+## Manual review of help requests
+
+After email confirmation, individual and NGO requests appear in the Console under **Pending review**. An admin can accept a request to publish it for the requested duration, freeze it for a later decision, or reject it with an audit reason. Requesters see pending and frozen requests as **Under review** in My posts. Changing the wording of an active or hidden request sends it back for approval.
+
+Run `pnpm --filter @workspace/scripts run migrate` before deploying the API. Deploy promptly after migration so existing email links can claim their migrated drafts. Existing active requests stay published. NGO requests display only their designated public volunteer contact. Existing requester contact details become private.
+
+To roll back, stop the new API and run `UPDATE posts SET status = 'pending' WHERE status IN ('draft', 'frozen');` before restarting the previous version. The added columns and enum values can stay. The previous API resumes its original publication and contact-visibility behavior.

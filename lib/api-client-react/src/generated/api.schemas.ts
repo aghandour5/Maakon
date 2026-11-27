@@ -28,10 +28,22 @@ export const PostPublicUrgency = {
   low: "low",
 } as const;
 
+export type PostPublicPublicContactMethod =
+  | (typeof PostPublicPublicContactMethod)[keyof typeof PostPublicPublicContactMethod]
+  | null;
+
+export const PostPublicPublicContactMethod = {
+  phone: "phone",
+  email: "email",
+  website: "website",
+} as const;
+
 export type PostPublicStatus =
   (typeof PostPublicStatus)[keyof typeof PostPublicStatus];
 
 export const PostPublicStatus = {
+  draft: "draft",
+  frozen: "frozen",
   pending: "pending",
   active: "active",
   hidden: "hidden",
@@ -62,10 +74,13 @@ export interface PostPublic {
   publicLng?: number | null;
   providerType?: string | null;
   verifiedBadgeType?: string | null;
-  /** Null in public responses for individual requests. */
+  /** Null in public responses for all need posts. */
   contactMethod?: string | null;
-  /** Null in public responses for individual requests. */
+  /** Null in public responses for all need posts. */
   contactInfo?: string | null;
+  publicContactMethod?: PostPublicPublicContactMethod;
+  /** @maxLength 2048 */
+  publicContactInfo?: string | null;
   status: PostPublicStatus;
   reportCount: number;
   createdAt: string;
@@ -141,6 +156,19 @@ export const CreatePostInputUrgency = {
   low: "low",
 } as const;
 
+export type CreatePostInputPublicContactMethod =
+  | (typeof CreatePostInputPublicContactMethod)[keyof typeof CreatePostInputPublicContactMethod]
+  | null;
+
+export const CreatePostInputPublicContactMethod = {
+  phone: "phone",
+  email: "email",
+  website: "website",
+} as const;
+
+/**
+ * New need posts enter pending review before publication.
+ */
 export interface CreatePostInput {
   postType: CreatePostInputPostType;
   /**
@@ -162,6 +190,9 @@ export interface CreatePostInput {
   providerType?: string | null;
   contactMethod?: string | null;
   contactInfo?: string | null;
+  publicContactMethod?: CreatePostInputPublicContactMethod;
+  /** @maxLength 2048 */
+  publicContactInfo?: string | null;
   /** Exact user-provided latitude from the map */
   providedLat?: number | null;
   /** Exact user-provided longitude from the map */
@@ -172,6 +203,26 @@ export interface CreatePostInput {
    * @maximum 90
    */
   expiresInDays?: number | null;
+}
+
+export type ReviewPostInputDecision =
+  (typeof ReviewPostInputDecision)[keyof typeof ReviewPostInputDecision];
+
+export const ReviewPostInputDecision = {
+  accept: "accept",
+  freeze: "freeze",
+  reject: "reject",
+} as const;
+
+export interface ReviewPostInput {
+  decision: ReviewPostInputDecision;
+  /** Required for acceptance */
+  expectedUpdatedAt?: string;
+  /**
+   * Required for rejection
+   * @maxLength 500
+   */
+  reason?: string;
 }
 
 export type UpdatePostInputStatus =
@@ -314,6 +365,15 @@ export const ListPostsUrgency = {
 
 export type ListNgosParams = {
   governorate?: string;
+};
+
+export type GetMyNgoPublicContact200 = {
+  phone: string | null;
+  website: string | null;
+} | null;
+
+export type ReviewPost200 = {
+  success: boolean;
 };
 
 export type ListNearbyNgosParams = {

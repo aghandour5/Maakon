@@ -59,8 +59,9 @@ export function PostDetailsModal({ item, isOpen, onClose, type, onViewNgo }: Pos
   const description = post ? post.description : ngo?.description;
   const governorate = post ? post.governorate : ngo?.governorate;
   const district = post ? post.district : ngo?.district;
-  const contactInfo = post ? post.contactInfo : ngo?.phone;
-  const contactMethod = post ? post.contactMethod : 'phone';
+  const isVolunteerRequest = post?.postType === "need" && post.providerType === "ngo";
+  const contactInfo = isVolunteerRequest ? post.publicContactInfo : post ? post.contactInfo : ngo?.phone;
+  const contactMethod = isVolunteerRequest ? post.publicContactMethod : post ? post.contactMethod : 'phone';
   const isIndividualRequest = post?.postType === "need" && post.providerType !== "ngo";
   const isOpenRequest = post?.status === "active" &&
     (!post.expiresAt || new Date(post.expiresAt).getTime() > Date.now());
@@ -241,7 +242,7 @@ export function PostDetailsModal({ item, isOpen, onClose, type, onViewNgo }: Pos
                 </div>
               ) : contactInfo ? (
                 <div className="border-t border-border/50 pt-3">
-                  <ContactDetails value={contactInfo} method={contactMethod} />
+                  <ContactDetails label={isVolunteerRequest ? "volunteer_contact" : "contact_info"} value={contactInfo} method={contactMethod} />
                 </div>
               ) : null}
 
@@ -411,15 +412,15 @@ function RequestContactAccess({ postId }: { postId: number }) {
   );
 }
 
-function ContactDetails({ value, method }: { value: string; method?: string | null }) {
+function ContactDetails({ value, method, label = "contact_info" }: { value: string; method?: string | null; label?: string }) {
   const { t } = useTranslation();
   const href = getContactHref(method, value);
-  const external = href?.startsWith("https://");
+  const external = href && /^https?:/.test(href);
   return (
     <div className="flex min-w-0 items-start gap-3">
       <DetailIcon><Phone className="h-4 w-4" aria-hidden="true" /></DetailIcon>
       <div className="min-w-0">
-        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t("contact_info")}</p>
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t(label)}</p>
         {href ? (
           <a href={href} target={external ? "_blank" : undefined} rel={external ? "noopener noreferrer" : undefined}
             className="block wrap-break-word text-sm font-semibold text-slate-800 hover:underline" dir="ltr">

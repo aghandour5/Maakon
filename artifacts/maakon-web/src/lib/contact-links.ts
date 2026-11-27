@@ -9,6 +9,13 @@ export function getContactHref(
   const phone = trimmed.replace(/[^\d+]/g, "");
 
   switch (method) {
+    case "website":
+      try {
+        const url = new URL(trimmed);
+        return ["https:", "http:"].includes(url.protocol) ? url.href : null;
+      } catch {
+        return null;
+      }
     case "email":
       return email ? `mailto:${email}` : null;
     case "whatsapp":

@@ -35,6 +35,16 @@ export type CompleteNgoProfileBodyParams = z.infer<typeof CompleteNgoProfileBody
 
 // ── Draft post creation (unauthenticated) ─────────────────────────────────────
 
+export function validPublicContact(method?: string | null, value?: string | null): boolean {
+  const info = value?.trim();
+  if (!method && !info) return true;
+  if (!info || info.length > 2048) return false;
+  if (method === "email") return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(info);
+  if (method === "phone") return /^\+?[\d ()-]+$/.test(info) && /^\d{6,15}$/.test(info.replace(/\D/g, ""));
+  if (method !== "website") return false;
+  return /^https?:\/\//i.test(info) && z.string().url().safeParse(info).success;
+}
+
 export const CreateDraftPostBody = z.object({
   postType: z.enum(["need", "offer"]),
   title: z.string().min(3),
@@ -47,6 +57,8 @@ export const CreateDraftPostBody = z.object({
   providerType: z.string().optional(),
   contactMethod: z.string().optional(),
   contactInfo: z.string().optional(),
+  publicContactMethod: z.enum(["phone", "email", "website"]).optional(),
+  publicContactInfo: z.string().trim().max(2048).optional(),
   expiresInDays: z.number().int().min(1).max(90).optional(),
   providedLat: z.number().optional(),
   providedLng: z.number().optional(),

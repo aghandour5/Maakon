@@ -7,7 +7,7 @@ import { Router, type IRouter, type RequestHandler } from "express";
 import { requireAuth, requireAdmin, requireMfa } from "../middlewares/auth";
 import { db } from "@workspace/db";
 import { postsTable, reportsTable, ngosTable, adminActionsTable, usersTable } from "@workspace/db/schema";
-import { eq, desc, and, sql, inArray } from "drizzle-orm";
+import { eq, ne, notInArray, desc, and, sql, inArray } from "drizzle-orm";
 import { supabaseAdmin } from "../lib/supabase-admin";
 import { logger } from "../lib/logger";
 import { rateLimit } from "express-rate-limit";
@@ -15,14 +15,16 @@ import { adminSubdomainCheck, adminIpWhitelist } from "../middlewares/adminSecur
 import { isValidLocation } from "@workspace/locations";
 import { getReferralApprovalError } from "@workspace/db/referrals";
 
+import { durationDays, isSubmittedNeed, nextPostVersion, reviewStates } from "../lib/post-review";
+
 const router: IRouter = Router();
 const INTERNAL_SERVER_ERROR = { error: "Internal server error" };
 
-type PostStatus = "pending" | "active" | "hidden" | "resolved" | "expired" | "removed";
+type PostStatus = "frozen" | "pending" | "active" | "hidden" | "resolved" | "expired" | "removed";
 type ReportStatus = "pending" | "reviewed" | "dismissed" | "actioned";
 type NgoStatus = "active" | "hidden" | "removed";
 
-const VALID_POST_STATUSES: PostStatus[] = ["pending", "active", "hidden", "resolved", "expired", "removed"];
+const VALID_POST_STATUSES: PostStatus[] = ["frozen", "pending", "active", "hidden", "resolved", "expired", "removed"];
 const VALID_REPORT_STATUSES: ReportStatus[] = ["pending", "reviewed", "dismissed", "actioned"];
 const VALID_NGO_STATUSES: NgoStatus[] = ["active", "hidden", "removed"];
 
@@ -67,8 +69,10 @@ function toAdminPost(post: typeof postsTable.$inferSelect) {
     publicLat: post.publicLat ?? null,
     publicLng: post.publicLng ?? null,
     providerType: post.providerType ?? null,
-    contactMethod: post.contactMethod ?? null,
-    contactInfo: post.contactInfo ?? null,
+    ...(post.postType === "offer" ? { contactMethod: post.contactMethod, contactInfo: post.contactInfo } : {}),
+    publicContactMethod: post.publicContactMethod,
+    publicContactInfo: post.publicContactInfo,
+    durationDays: durationDays(post),
     status: post.status,
     reportCount: post.reportCount,
     createdAt: post.createdAt,
@@ -123,6 +127,7 @@ router.get("/admin/stats", async (_req, res) => {
           count: sql<number>`count(*)::int`,
         })
         .from(postsTable)
+        .where(ne(postsTable.status, "draft"))
         .groupBy(postsTable.status),
       db
         .select({
@@ -142,6 +147,7 @@ router.get("/admin/stats", async (_req, res) => {
 
     const postStatusCounts: Record<PostStatus, number> = {
       pending: 0,
+      frozen: 0,
       active: 0,
       hidden: 0,
       resolved: 0,
@@ -178,6 +184,7 @@ router.get("/admin/stats", async (_req, res) => {
         resolved: postStatusCounts.resolved,
         expired: postStatusCounts.expired,
         pending: postStatusCounts.pending,
+        frozen: postStatusCounts.frozen,
         removed: postStatusCounts.removed,
       },
       reports: {
@@ -203,12 +210,56 @@ router.get("/admin/stats", async (_req, res) => {
 
 router.get("/admin/posts", async (_req, res) => {
   try {
-    const posts = await db.select().from(postsTable).orderBy(desc(postsTable.createdAt));
+    const posts = await db.select().from(postsTable).where(ne(postsTable.status, "draft")).orderBy(desc(postsTable.createdAt));
     res.json(posts.map(toAdminPost));
   } catch (err) {
     logger.error({ err }, "Failed to fetch posts");
     res.status(500).json(INTERNAL_SERVER_ERROR);
   }
+});
+
+router.post("/admin/posts/:id/review", async (req, res) => {
+  const id = Number(req.params.id);
+  const { decision, expectedUpdatedAt, reason } = req.body ?? {};
+  if (!Number.isSafeInteger(id) || id < 1 || id > 2147483647 || !["accept", "freeze", "reject"].includes(decision)) {
+    return void res.status(400).json({ error: "Invalid review decision" });
+  }
+  const note = typeof reason === "string" ? reason.trim() : "";
+  if (decision === "reject" && (!note || note.length > 500)) {
+    return void res.status(400).json({ error: "Enter a rejection reason of 1 to 500 characters" });
+  }
+  if (decision === "accept" && (typeof expectedUpdatedAt !== "string" || !Number.isFinite(Date.parse(expectedUpdatedAt)))) {
+    return void res.status(400).json({ error: "The reviewed version is required" });
+  }
+
+  const result = await db.transaction(async (tx) => {
+    const [post] = await tx.select().from(postsTable).where(eq(postsTable.id, id)).for("update");
+    if (!post || !isSubmittedNeed(post)) return { status: 404, body: { error: "This request no longer exists" } };
+    if (post.status !== "pending" && (post.status !== "frozen" || decision === "freeze")) {
+      return { status: 409, body: { error: "Another admin already decided this request", code: "ALREADY_DECIDED" } };
+    }
+    if (decision === "accept" && post.updatedAt.getTime() !== Date.parse(expectedUpdatedAt)) {
+      return { status: 409, body: { error: "Request changed. Review the current wording again", code: "STALE_REVIEW" } };
+    }
+    if (decision === "reject") {
+      await tx.delete(reportsTable).where(eq(reportsTable.postId, id));
+      await tx.delete(postsTable).where(eq(postsTable.id, id));
+    } else if (decision === "accept") {
+      const now = new Date();
+      await tx.update(postsTable).set({
+        status: "active", updatedAt: nextPostVersion, lastConfirmedAt: now,
+        expiresAt: new Date(now.getTime() + durationDays(post) * 86400000),
+      }).where(eq(postsTable.id, id));
+    } else {
+      await tx.update(postsTable).set({ status: "frozen", updatedAt: nextPostVersion }).where(eq(postsTable.id, id));
+    }
+    await tx.insert(adminActionsTable).values({
+      adminId: req.user!.id, targetType: "post", targetId: id,
+      action: `review:${decision}`, note: decision === "reject" ? note : null,
+    });
+    return { status: 200, body: { success: true } };
+  });
+  res.status(result.status).json(result.body);
 });
 
 router.patch("/admin/posts/:id/status", async (req, res) => {
@@ -219,18 +270,20 @@ router.patch("/admin/posts/:id/status", async (req, res) => {
   }
 
   const { status, note } = req.body ?? {};
-  if (!isPostStatus(status)) {
-    res.status(400).json({ error: `status must be one of: ${VALID_POST_STATUSES.join(", ")}` });
+  if (!isPostStatus(status) || status === "pending" || status === "frozen") {
+    res.status(400).json({ error: "Choose a visibility status outside review" });
     return;
   }
 
   const [post] = await db
     .update(postsTable)
-    .set({ status: status as any, updatedAt: new Date() })
-    .where(eq(postsTable.id, id))
+    .set({ status, updatedAt: nextPostVersion })
+    .where(and(eq(postsTable.id, id), notInArray(postsTable.status, [...reviewStates])))
     .returning();
 
   if (!post) {
+    const [existing] = await db.select({ id: postsTable.id }).from(postsTable).where(eq(postsTable.id, id));
+    if (existing) return void res.status(409).json({ error: "Use Accept, Freeze or Reject for requests in review" });
     res.status(404).json({ error: "Post not found" });
     return;
   }

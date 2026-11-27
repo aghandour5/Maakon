@@ -6,8 +6,12 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { CreatePostInputPostType } from "./createPostInputPostType";
+import type { CreatePostInputPublicContactMethod } from "./createPostInputPublicContactMethod";
 import type { CreatePostInputUrgency } from "./createPostInputUrgency";
 
+/**
+ * New need posts enter pending review before publication.
+ */
 export interface CreatePostInput {
   postType: CreatePostInputPostType;
   /**
@@ -29,6 +33,9 @@ export interface CreatePostInput {
   providerType?: string | null;
   contactMethod?: string | null;
   contactInfo?: string | null;
+  publicContactMethod?: CreatePostInputPublicContactMethod;
+  /** @maxLength 2048 */
+  publicContactInfo?: string | null;
   /** Exact user-provided latitude from the map */
   providedLat?: number | null;
   /** Exact user-provided longitude from the map */

@@ -129,11 +129,11 @@ export default function MyPosts() {
   const handleStatusChange = async (postId: number, status: "active" | "hidden" | "resolved") => {
     try {
       setActionLoading(postId);
-      await apiFetch(`/posts/${postId}`, {
+      const updated = await apiFetch<MyPost>(`/posts/${postId}`, {
         method: "PATCH",
         body: JSON.stringify({ status }),
       });
-      setPosts(posts.map(p => p.id === postId ? { ...p, status } : p));
+      setPosts(current => current.map(p => p.id === postId ? updated : p));
       toast({ title: t("toast_post_marked", { status: t(`myposts_status_${status}`) }) });
     } catch {
       toast({ title: t("toast_failed_update"), variant: "destructive" });
@@ -172,13 +172,16 @@ export default function MyPosts() {
 
   const handleSaveEdit = async () => {
     if (!editingPost) return;
+    if (editingPost.postType === "need" && ["active", "hidden"].includes(editingPost.status)
+      && (editingPost.title !== editTitle || editingPost.description !== editDescription)
+      && !window.confirm(t("confirm_request_review"))) return;
     try {
       setActionLoading(editingPost.id);
-      await apiFetch(`/posts/${editingPost.id}`, {
+      const updated = await apiFetch<MyPost>(`/posts/${editingPost.id}`, {
         method: "PATCH",
         body: JSON.stringify({ title: editTitle, description: editDescription }),
       });
-      setPosts(posts.map(p => p.id === editingPost.id ? { ...p, title: editTitle, description: editDescription } : p));
+      setPosts(current => current.map(p => p.id === updated.id ? updated : p));
       setEditingPost(null);
       toast({ title: t("toast_post_updated") });
     } catch {
@@ -246,8 +249,8 @@ export default function MyPosts() {
                   {t(
                     draftClaim === "failed"
                       ? "need_publish_failed_title"
-                      : draftClaim === "need_published"
-                        ? "need_published_title"
+                      : draftClaim === "need_submitted"
+                        ? "need_submitted_title"
                         : "success_title",
                   )}
                 </h2>
@@ -255,7 +258,7 @@ export default function MyPosts() {
                   {t(
                     draftClaim === "failed"
                       ? "need_publish_failed_desc"
-                      : draftClaim === "need_published"
+                      : draftClaim === "need_submitted"
                         ? "need_success_desc"
                         : "success_desc",
                   )}
@@ -391,7 +394,7 @@ export default function MyPosts() {
                             {t(post.governorate)}{post.district ? `, ${t(post.district)}` : ""}
                           </span>
                           <span>{t("myposts_created_time")} {timeAgo(post.createdAt, t)}</span>
-                          <span>{daysUntil(post.expiresAt, t)}</span>
+                          {post.status !== "pending" && <span>{daysUntil(post.expiresAt, t)}</span>}
                         </div>
                         {retiredOffer && (
                           <p className="mt-3 text-sm text-slate-600">
@@ -405,14 +408,14 @@ export default function MyPosts() {
 
                       {/* Actions bar */}
                       <div className="flex items-center gap-2 px-4 sm:px-5 py-3 bg-slate-50/80 border-t border-slate-100">
-                        <button
+                        {(post.postType !== "need" || !["resolved", "expired", "removed"].includes(post.status)) && <button
                           onClick={() => startEdit(post)}
                           disabled={isBeingActioned}
                           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-200/60 transition-colors disabled:opacity-40"
                         >
                           <Edit2 className="w-3.5 h-3.5" aria-hidden="true" />
                           {t("myposts_edit")}
-                        </button>
+                        </button>}
                         {post.status === "active" && (
                           <button
                             onClick={() => handleStatusChange(post.id, "hidden")}

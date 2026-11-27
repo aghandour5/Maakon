@@ -61,7 +61,7 @@ type SupabaseLoginResult = {
   status?: "success" | MfaStatus;
   user?: AuthUser;
   referral?: DraftReferral;
-  claimedPost?: { id: number; postType: "need" | "offer" };
+  claimedPost?: { id: number; postType: "need" | "offer"; status: "pending" | "active" };
 };
 
 function isValidAccountType(value: string | null): value is "individual" | "ngo" {

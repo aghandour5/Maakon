@@ -32,11 +32,12 @@ export function AdminTabs({
 }
 export function StatsStrip({ stats }: { stats: Stats }) {
   return (
-    <dl className="grid grid-cols-2 divide-x divide-slate-200 rounded-lg border bg-white sm:grid-cols-3 lg:grid-cols-5">
+    <dl className="grid grid-cols-2 divide-x divide-slate-200 rounded-lg border bg-white sm:grid-cols-3 lg:grid-cols-6">
       {Object.entries({
         "Active posts": stats.posts.active,
         "Hidden posts": stats.posts.hidden,
-        "Pending drafts": stats.posts.pending,
+        "Pending review": stats.posts.pending,
+        Frozen: stats.posts.frozen,
         "Open reports": stats.reports.open,
         "Verified NGOs": stats.ngos.verified,
       }).map(([label, value]) => (

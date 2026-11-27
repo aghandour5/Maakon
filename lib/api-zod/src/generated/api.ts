@@ -45,6 +45,8 @@ export const ListPostsQueryParams = zod.object({
     .default(listPostsQueryLimitDefault),
 });
 
+export const listPostsResponsePublicContactInfoMax = 2048;
+
 export const ListPostsResponseItem = zod
   .object({
     id: zod.number(),
@@ -77,12 +79,19 @@ export const ListPostsResponseItem = zod
     contactMethod: zod
       .string()
       .nullish()
-      .describe("Null in public responses for individual requests."),
+      .describe("Null in public responses for all need posts."),
     contactInfo: zod
       .string()
       .nullish()
-      .describe("Null in public responses for individual requests."),
+      .describe("Null in public responses for all need posts."),
+    publicContactMethod: zod.enum(["phone", "email", "website"]).nullish(),
+    publicContactInfo: zod
+      .string()
+      .max(listPostsResponsePublicContactInfoMax)
+      .nullish(),
     status: zod.enum([
+      "draft",
+      "frozen",
       "pending",
       "active",
       "hidden",
@@ -108,45 +117,56 @@ export const createPostBodyTitleMax = 120;
 export const createPostBodyDescriptionMin = 10;
 export const createPostBodyDescriptionMax = 1000;
 
+export const createPostBodyPublicContactInfoMax = 2048;
+
 export const createPostBodyExpiresInDaysMax = 90;
 
-export const CreatePostBody = zod.object({
-  postType: zod.enum(["need", "offer"]),
-  title: zod.string().min(createPostBodyTitleMin).max(createPostBodyTitleMax),
-  category: zod.string(),
-  description: zod
-    .string()
-    .min(createPostBodyDescriptionMin)
-    .max(createPostBodyDescriptionMax),
-  urgency: zod.enum(["critical", "high", "medium", "low"]).nullish(),
-  governorate: zod.string(),
-  district: zod.string().nullish(),
-  exactAddressPrivate: zod
-    .string()
-    .nullish()
-    .describe("Private address — stored only, NEVER returned publicly"),
-  providerType: zod.string().nullish(),
-  contactMethod: zod.string().nullish(),
-  contactInfo: zod.string().nullish(),
-  providedLat: zod
-    .number()
-    .nullish()
-    .describe("Exact user-provided latitude from the map"),
-  providedLng: zod
-    .number()
-    .nullish()
-    .describe("Exact user-provided longitude from the map"),
-  expiresInDays: zod
-    .number()
-    .min(1)
-    .max(createPostBodyExpiresInDaysMax)
-    .nullish()
-    .describe("How many days until this post expires (default 30)"),
-});
+export const CreatePostBody = zod
+  .object({
+    postType: zod.enum(["need", "offer"]),
+    title: zod.string().min(createPostBodyTitleMin).max(createPostBodyTitleMax),
+    category: zod.string(),
+    description: zod
+      .string()
+      .min(createPostBodyDescriptionMin)
+      .max(createPostBodyDescriptionMax),
+    urgency: zod.enum(["critical", "high", "medium", "low"]).nullish(),
+    governorate: zod.string(),
+    district: zod.string().nullish(),
+    exactAddressPrivate: zod
+      .string()
+      .nullish()
+      .describe("Private address — stored only, NEVER returned publicly"),
+    providerType: zod.string().nullish(),
+    contactMethod: zod.string().nullish(),
+    contactInfo: zod.string().nullish(),
+    publicContactMethod: zod.enum(["phone", "email", "website"]).nullish(),
+    publicContactInfo: zod
+      .string()
+      .max(createPostBodyPublicContactInfoMax)
+      .nullish(),
+    providedLat: zod
+      .number()
+      .nullish()
+      .describe("Exact user-provided latitude from the map"),
+    providedLng: zod
+      .number()
+      .nullish()
+      .describe("Exact user-provided longitude from the map"),
+    expiresInDays: zod
+      .number()
+      .min(1)
+      .max(createPostBodyExpiresInDaysMax)
+      .nullish()
+      .describe("How many days until this post expires (default 30)"),
+  })
+  .describe("New need posts enter pending review before publication.");
 
 /**
  * @summary List posts created by the authenticated user
  */
+export const listMyPostsResponseOnePublicContactInfoMax = 2048;
+
 export const ListMyPostsResponseItem = zod
   .object({
     id: zod.number(),
@@ -179,12 +199,19 @@ export const ListMyPostsResponseItem = zod
     contactMethod: zod
       .string()
       .nullish()
-      .describe("Null in public responses for individual requests."),
+      .describe("Null in public responses for all need posts."),
     contactInfo: zod
       .string()
       .nullish()
-      .describe("Null in public responses for individual requests."),
+      .describe("Null in public responses for all need posts."),
+    publicContactMethod: zod.enum(["phone", "email", "website"]).nullish(),
+    publicContactInfo: zod
+      .string()
+      .max(listMyPostsResponseOnePublicContactInfoMax)
+      .nullish(),
     status: zod.enum([
+      "draft",
+      "frozen",
       "pending",
       "active",
       "hidden",
@@ -219,6 +246,8 @@ export const GetPostParams = zod.object({
   id: zod.coerce.number(),
 });
 
+export const getPostResponsePublicContactInfoMax = 2048;
+
 export const GetPostResponse = zod
   .object({
     id: zod.number(),
@@ -251,12 +280,19 @@ export const GetPostResponse = zod
     contactMethod: zod
       .string()
       .nullish()
-      .describe("Null in public responses for individual requests."),
+      .describe("Null in public responses for all need posts."),
     contactInfo: zod
       .string()
       .nullish()
-      .describe("Null in public responses for individual requests."),
+      .describe("Null in public responses for all need posts."),
+    publicContactMethod: zod.enum(["phone", "email", "website"]).nullish(),
+    publicContactInfo: zod
+      .string()
+      .max(getPostResponsePublicContactInfoMax)
+      .nullish(),
     status: zod.enum([
+      "draft",
+      "frozen",
       "pending",
       "active",
       "hidden",
@@ -299,6 +335,8 @@ export const UpdatePostBody = zod.object({
   status: zod.enum(["active", "hidden", "resolved"]).optional(),
 });
 
+export const updatePostResponseOnePublicContactInfoMax = 2048;
+
 export const UpdatePostResponse = zod
   .object({
     id: zod.number(),
@@ -331,12 +369,19 @@ export const UpdatePostResponse = zod
     contactMethod: zod
       .string()
       .nullish()
-      .describe("Null in public responses for individual requests."),
+      .describe("Null in public responses for all need posts."),
     contactInfo: zod
       .string()
       .nullish()
-      .describe("Null in public responses for individual requests."),
+      .describe("Null in public responses for all need posts."),
+    publicContactMethod: zod.enum(["phone", "email", "website"]).nullish(),
+    publicContactInfo: zod
+      .string()
+      .max(updatePostResponseOnePublicContactInfoMax)
+      .nullish(),
     status: zod.enum([
+      "draft",
+      "frozen",
       "pending",
       "active",
       "hidden",
@@ -406,6 +451,39 @@ export const ListNgosResponseItem = zod.object({
   createdAt: zod.date(),
 });
 export const ListNgosResponse = zod.array(ListNgosResponseItem);
+
+/**
+ * @summary Get the signed-in user's active organization contact for prefilling a request
+ */
+export const GetMyNgoPublicContactResponse = zod
+  .object({
+    phone: zod.string().nullable(),
+    website: zod.string().nullable(),
+  })
+  .nullable();
+
+/**
+ * @summary Decide a submitted need as an MFA-verified administrator
+ */
+export const ReviewPostParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const reviewPostBodyReasonMax = 500;
+
+export const ReviewPostBody = zod.object({
+  decision: zod.enum(["accept", "freeze", "reject"]),
+  expectedUpdatedAt: zod.date().optional().describe("Required for acceptance"),
+  reason: zod
+    .string()
+    .max(reviewPostBodyReasonMax)
+    .optional()
+    .describe("Required for rejection"),
+});
+
+export const ReviewPostResponse = zod.object({
+  success: zod.boolean(),
+});
 
 /**
  * @summary List organizations approved for referrals near a district

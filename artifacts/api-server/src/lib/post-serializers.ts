@@ -18,7 +18,8 @@ export function toPublicPost(post: Post, viewerUserId?: number | null) {
           post.district,
         )
       : { lat: null, lng: null };
-  const privateContact = isVulnerableNeedPost(post.postType, post.providerType);
+  const privateContact = post.postType === "need";
+  const publicNgoContact = privateContact && post.providerType === "ngo";
 
   return {
     id: post.id,
@@ -36,6 +37,8 @@ export function toPublicPost(post: Post, viewerUserId?: number | null) {
     verifiedBadgeType: post.verifiedBadgeType ?? null,
     contactMethod: privateContact ? null : post.contactMethod ?? null,
     contactInfo: privateContact ? null : post.contactInfo ?? null,
+    publicContactMethod: publicNgoContact ? post.publicContactMethod : null,
+    publicContactInfo: publicNgoContact ? post.publicContactInfo : null,
     status: post.status,
     reportCount: post.reportCount,
     createdAt: post.createdAt,
@@ -48,6 +51,7 @@ export function toPublicPost(post: Post, viewerUserId?: number | null) {
 export function toPrivatePost(post: Post, viewerUserId?: number | null) {
   return {
     ...toPublicPost(post, viewerUserId),
+    status: post.status === "frozen" ? "pending" : post.status,
     contactMethod: post.contactMethod ?? null,
     contactInfo: post.contactInfo ?? null,
     userId: post.userId,

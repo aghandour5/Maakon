@@ -6,6 +6,8 @@ import { ListNearbyNgosQueryParams, ListNgosQueryParams } from "@workspace/api-z
 import { getLocationCenter, isValidGovernorate, isValidLocation } from "@workspace/locations";
 import { rankReferralPartners } from "../lib/partner-referrals";
 
+import { requireAuth } from "../middlewares/auth";
+
 function fuzzCoordinate(coord: number): number {
   const jitter = (Math.random() - 0.5) * 0.1;
   return Math.round((coord + jitter) * 10000) / 10000;
@@ -28,6 +30,13 @@ function toPublicNgo(ngo: typeof ngosTable.$inferSelect) {
     createdAt: ngo.createdAt,
   };
 }
+
+router.get("/ngos/me/public-contact", requireAuth, async (req, res) => {
+  const [contact] = await db.select({ phone: ngosTable.phone, website: ngosTable.website })
+    .from(ngosTable).where(and(eq(ngosTable.userId, req.user!.id), eq(ngosTable.status, "active")))
+    .orderBy(ngosTable.id).limit(1);
+  res.json(contact ?? null);
+});
 
 router.get("/ngos", async (req, res) => {
   const query = ListNgosQueryParams.safeParse(req.query);

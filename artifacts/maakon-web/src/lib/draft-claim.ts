@@ -1,12 +1,11 @@
 /**
- * Carries the result of publishing a signed-out draft (email-link sign-in) from AuthContext to MyPosts,
- * so the requester sees whether their post went live instead of a silent redirect.
+ * Carries the draft claim result from email-link sign-in to the My posts banner.
  */
 const DRAFT_CLAIM_KEY = "draftClaimOutcome";
 
-export type DraftClaimOutcome = "need_published" | "offer_published" | "failed";
+export type DraftClaimOutcome = "need_submitted" | "offer_published" | "failed";
 
-const OUTCOMES: readonly string[] = ["need_published", "offer_published", "failed"];
+const OUTCOMES: readonly string[] = ["need_submitted", "offer_published", "failed"];
 
 function isDraftClaimOutcome(value: unknown): value is DraftClaimOutcome {
   return typeof value === "string" && OUTCOMES.includes(value);
@@ -14,7 +13,7 @@ function isDraftClaimOutcome(value: unknown): value is DraftClaimOutcome {
 
 export function getDraftClaimOutcome(claimedPost: { postType: string } | undefined): DraftClaimOutcome {
   if (!claimedPost) return "failed";
-  return claimedPost.postType === "offer" ? "offer_published" : "need_published";
+  return claimedPost.postType === "offer" ? "offer_published" : "need_submitted";
 }
 
 export function saveDraftClaimOutcome(outcome: DraftClaimOutcome): void {

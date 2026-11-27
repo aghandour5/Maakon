@@ -20,6 +20,7 @@ import type {
   CreatePostInput,
   CreateReportInput,
   ErrorResponse,
+  GetMyNgoPublicContact200,
   HealthStatus,
   ListNearbyNgosParams,
   ListNgosParams,
@@ -31,6 +32,8 @@ import type {
   PostPrivate,
   PostPublic,
   ReportPublic,
+  ReviewPost200,
+  ReviewPostInput,
   SubmitFeedback200,
   SubmitFeedbackInput,
   UpdatePostInput,
@@ -800,6 +803,168 @@ export function useListNgos<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Get the signed-in user's active organization contact for prefilling a request
+ */
+export const getGetMyNgoPublicContactUrl = () => {
+  return `/api/ngos/me/public-contact`;
+};
+
+export const getMyNgoPublicContact = async (
+  options?: RequestInit,
+): Promise<GetMyNgoPublicContact200> => {
+  return customFetch<GetMyNgoPublicContact200>(getGetMyNgoPublicContactUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetMyNgoPublicContactQueryKey = () => {
+  return [`/api/ngos/me/public-contact`] as const;
+};
+
+export const getGetMyNgoPublicContactQueryOptions = <
+  TData = Awaited<ReturnType<typeof getMyNgoPublicContact>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getMyNgoPublicContact>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetMyNgoPublicContactQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getMyNgoPublicContact>>
+  > = ({ signal }) => getMyNgoPublicContact({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getMyNgoPublicContact>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetMyNgoPublicContactQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getMyNgoPublicContact>>
+>;
+export type GetMyNgoPublicContactQueryError = ErrorType<void>;
+
+/**
+ * @summary Get the signed-in user's active organization contact for prefilling a request
+ */
+
+export function useGetMyNgoPublicContact<
+  TData = Awaited<ReturnType<typeof getMyNgoPublicContact>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getMyNgoPublicContact>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetMyNgoPublicContactQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Decide a submitted need as an MFA-verified administrator
+ */
+export const getReviewPostUrl = (id: number) => {
+  return `/api/admin/posts/${id}/review`;
+};
+
+export const reviewPost = async (
+  id: number,
+  reviewPostInput: ReviewPostInput,
+  options?: RequestInit,
+): Promise<ReviewPost200> => {
+  return customFetch<ReviewPost200>(getReviewPostUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(reviewPostInput),
+  });
+};
+
+export const getReviewPostMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reviewPost>>,
+    TError,
+    { id: number; data: BodyType<ReviewPostInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof reviewPost>>,
+  TError,
+  { id: number; data: BodyType<ReviewPostInput> },
+  TContext
+> => {
+  const mutationKey = ["reviewPost"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof reviewPost>>,
+    { id: number; data: BodyType<ReviewPostInput> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return reviewPost(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ReviewPostMutationResult = NonNullable<
+  Awaited<ReturnType<typeof reviewPost>>
+>;
+export type ReviewPostMutationBody = BodyType<ReviewPostInput>;
+export type ReviewPostMutationError = ErrorType<void>;
+
+/**
+ * @summary Decide a submitted need as an MFA-verified administrator
+ */
+export const useReviewPost = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reviewPost>>,
+    TError,
+    { id: number; data: BodyType<ReviewPostInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof reviewPost>>,
+  TError,
+  { id: number; data: BodyType<ReviewPostInput> },
+  TContext
+> => {
+  return useMutation(getReviewPostMutationOptions(options));
+};
 
 /**
  * @summary List organizations approved for referrals near a district

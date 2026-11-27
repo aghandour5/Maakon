@@ -23,9 +23,11 @@ import type {
 import { useToast } from "@/hooks/use-toast";
 const STATUS_STYLES: Record<string, string> = {
   active: "bg-emerald-50 text-emerald-600 border-emerald-200",
+  frozen: "bg-sky-50 text-sky-800 border-sky-200",
   hidden: "bg-orange-50 text-orange-600 border-orange-200",
   resolved: "bg-blue-50 text-blue-600 border-blue-200",
   expired: "bg-slate-100 text-slate-500 border-slate-200",
+  "pending review": "bg-amber-50 text-amber-600 border-amber-200",
   pending: "bg-amber-50 text-amber-600 border-amber-200",
   removed: "bg-red-50 text-red-600 border-red-200",
   reviewed: "bg-indigo-50 text-indigo-600 border-indigo-200",
@@ -148,6 +150,61 @@ export function PostActions({
         </AlertDialogContent>
       </AlertDialog>
     </>
+  );
+}
+
+export function ReviewActions({ post, onUpdate }: { post: AdminPost; onUpdate: () => Promise<void> }) {
+  const apiFetch = useAdminApi();
+  const { toast } = useToast();
+  const [busy, setBusy] = useState(false);
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const [reason, setReason] = useState("");
+  async function decide(decision: "accept" | "freeze" | "reject") {
+    setBusy(true);
+    try {
+      await apiFetch(`/admin/posts/${post.id}/review`, {
+        method: "POST",
+        body: JSON.stringify({
+          decision, expectedUpdatedAt: decision === "accept" ? post.updatedAt : undefined,
+          reason: decision === "reject" ? reason.trim() : undefined,
+        }),
+      });
+      toast({ title: { accept: "Request accepted", freeze: "Request frozen", reject: "Request rejected" }[decision] });
+      setRejectOpen(false);
+    } catch (error) {
+      toast({ variant: "destructive", title: "Review could not be saved",
+        description: error instanceof Error ? error.message : "Please try again." });
+    } finally {
+      await onUpdate();
+      setBusy(false);
+    }
+  }
+  const buttonClass = "rounded-lg border px-3 py-2 text-sm font-semibold disabled:opacity-50";
+  return (
+    <div className="flex flex-wrap gap-2">
+      <button className={buttonClass + " bg-emerald-700 text-white"} disabled={busy} onClick={() => void decide("accept")}>Accept</button>
+      {post.status === "pending" && <button className={buttonClass} disabled={busy} onClick={() => void decide("freeze")}>Freeze</button>}
+      <button className={buttonClass + " text-red-700"} disabled={busy} onClick={() => { setReason(""); setRejectOpen(true); }}>Reject</button>
+      <AlertDialog open={rejectOpen} onOpenChange={open => { if (!busy) setRejectOpen(open); }}>
+        <AlertDialogContent dir="ltr" lang="en">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reject this request?</AlertDialogTitle>
+            <AlertDialogDescription>This deletes the request and its reports. The reason is recorded in the audit log.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <label className="grid gap-2 text-sm">Reason for rejection
+            <textarea className="rounded border p-2" value={reason} required maxLength={500}
+              onChange={event => setReason(event.target.value)} />
+          </label>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
+            <AlertDialogAction disabled={busy || !reason.trim()} onClick={event => {
+              event.preventDefault();
+              void decide("reject");
+            }}>Reject request</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
   );
 }
 

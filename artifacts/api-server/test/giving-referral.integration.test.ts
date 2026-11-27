@@ -82,10 +82,13 @@ test("Release A referrals and request privacy", { skip: !testUrl }, async (t) =>
   await once(server, "listening");
   const endpoint = `http://127.0.0.1:${(server.address() as AddressInfo).port}/api`;
 
+  const clients = new Map<string, string>();
   async function send(path: string, method = "GET", body?: object, sessionHeaders?: Record<string, string>) {
+    const client = sessionHeaders?.Cookie ?? (body && "idToken" in body ? String(body.idToken) : "guest");
+    if (!clients.has(client)) clients.set(client, `192.0.2.${clients.size + 1}`);
     const response = await fetch(endpoint + path, {
       method,
-      headers: { ...(body ? { "Content-Type": "application/json" } : {}), ...sessionHeaders },
+      headers: { "X-Forwarded-For": clients.get(client)!, ...(body ? { "Content-Type": "application/json" } : {}), ...sessionHeaders },
       body: body ? JSON.stringify(body) : undefined,
     });
     return {
@@ -179,8 +182,10 @@ test("Release A referrals and request privacy", { skip: !testUrl }, async (t) =>
     const own = await send("/posts/me", "GET", undefined, individualHeaders);
     assert.equal(own.body.find((item: Post) => item.id === created.body.id).contactInfo, requestData.contactInfo);
     assert.equal((await send(`/posts/${request.id}`, "PATCH", { status: "resolved" }, ngoHeaders)).status, 404);
+    assert.equal(created.body.status, "pending");
+    assert.equal((await send(`/posts/${created.body.id}`)).status, 404);
     for (const status of ["hidden", "resolved", "active"]) {
-      assert.equal((await send(`/posts/${created.body.id}`, "PATCH", { status }, individualHeaders)).body.status, status);
+      assert.equal((await send(`/posts/${created.body.id}`, "PATCH", { status }, individualHeaders)).status, 409);
     }
     assert.equal((await send(`/posts/${created.body.id}`, "DELETE", undefined, individualHeaders)).status, 204);
 
@@ -213,10 +218,11 @@ test("Release A referrals and request privacy", { skip: !testUrl }, async (t) =>
       assert.equal((await send(`/posts/${post.id}`)).status, 404);
     }
     const volunteer = await send("/posts", "POST", {
-      ...requestData, providerType: "ngo", category: "volunteers", contactInfo: "public@example.test",
+      ...requestData, providerType: "ngo", category: "volunteers", publicContactMethod: "email", publicContactInfo: "public@example.test",
     }, ngoHeaders);
     assert.equal(volunteer.status, 201);
-    assert.equal((await send(`/posts/${volunteer.body.id}`)).body.contactInfo, "public@example.test");
+    assert.equal(volunteer.body.status, "pending");
+    assert.equal((await send(`/posts/${volunteer.body.id}`)).status, 404);
   });
 
   await t.test("only eligible partners appear in read-only referrals and changes are audited", async () => {
@@ -301,27 +307,36 @@ test("Release A referrals and request privacy", { skip: !testUrl }, async (t) =>
       await db.execute(sql`ALTER TABLE contact_access_log DROP CONSTRAINT test_refuse_log`);
     }
     const adminPosts = await send("/admin/posts", "GET", undefined, adminHeaders);
-    assert.equal(adminPosts.body.find((post: Post) => post.id === request.id).contactInfo, requestData.contactInfo);
+    assert.equal(adminPosts.body.find((post: Post) => post.id === request.id).contactInfo, undefined);
   });
 
-  await t.test("request drafts still activate while legacy offer drafts return the referral area", async () => {
+  await t.test("request drafts enter review while legacy offer drafts return the referral area", async () => {
     const draft = await send("/posts/draft", "POST", requestData);
     assert.equal(draft.status, 201);
     const [pending, removed] = await db.insert(postsTable).values([
-      { ...offerData, status: "pending", draftToken: "test-pending-offer" },
+      { ...offerData, status: "draft", draftToken: "test-pending-offer" },
       { ...offerData, status: "removed", draftToken: "test-removed-offer" },
     ]).returning();
     const login = (draftToken: string) => send("/auth/supabase-login", "POST", {
       idToken: JSON.stringify({ uid: individual.supabaseUid, email: individual.email }),
       draftToken,
     });
-    const claimed = await login(draft.body.draftToken);
+    const unclaimed = (await db.select().from(postsTable).where(eq(postsTable.id, draft.body.postId)))[0];
+    assert.equal(unclaimed.status, "draft");
+    const queue = await send("/admin/posts", "GET", undefined, adminHeaders);
+    assert.equal(queue.body.some((p: Post) => p.id === unclaimed.id), false);
+    assert.equal((await send("/admin/stats", "GET", undefined, adminHeaders)).body.posts.total, queue.body.length);
+    assert.equal((await send(`/admin/posts/${unclaimed.id}/review`, "POST", { decision: "freeze" }, adminHeaders)).status, 404);
+    const claims = await Promise.all([login(draft.body.draftToken), login(draft.body.draftToken)]);
+    assert.deepEqual(claims.map(r => r.status), [200, 200]);
+    assert.equal(claims.filter(r => r.body.claimedPost).length, 1);
+    const claimed = claims.find(r => r.body.claimedPost)!;
     assert.equal(claimed.status, 200);
     assert.equal(claimed.body.referral, undefined);
-    assert.deepEqual(claimed.body.claimedPost, { id: draft.body.postId, postType: "need" });
-    assert.equal((await login(draft.body.draftToken)).body.claimedPost, undefined);
+    assert.deepEqual(claimed.body.claimedPost, { id: draft.body.postId, postType: "need", status: "pending" });
     const [claimedRequest] = await db.select().from(postsTable).where(eq(postsTable.id, draft.body.postId));
-    assert.equal(claimedRequest.status, "active");
+    assert.equal(claimedRequest.status, "pending");
+    assert.equal(claimedRequest.draftToken, null);
     assert.equal(claimedRequest.userId, individual.id);
     assert.equal(claimedRequest.contactInfo, requestData.contactInfo);
 
@@ -338,10 +353,117 @@ test("Release A referrals and request privacy", { skip: !testUrl }, async (t) =>
     }
   });
 
+  await t.test("manual decisions, contact privacy, stale wording and owner transitions", async () => {
+    const [secondAdmin] = await db.insert(usersTable).values({ role: "admin", mfaEnabled: true }).returning();
+    const secondHeaders = await signIn(secondAdmin, true);
+    const ngoList = await send("/ngos");
+    const orgRows = await db.select().from(ngosTable);
+    assert.equal((await send("/ngos/me/public-contact")).status, 401);
+    assert.deepEqual((await send("/ngos/me/public-contact", "GET", undefined, ngoHeaders)).body, { phone: verifiedNgo.phone, website: null });
+    assert.equal((await send("/ngos/me/public-contact", "GET", undefined, hiddenHeaders)).body, null);
+    const input = { ...requestData, providerType: "ngo", exactAddressPrivate: "Private address",
+      publicContactMethod: "website", publicContactInfo: "https://volunteers.example.test", expiresInDays: 7 };
+    for (const publicContactInfo of ["javascript:alert(1)", "bad address"]) {
+      assert.equal((await send("/posts", "POST", { ...input, publicContactInfo }, individualHeaders)).status, 400);
+      assert.equal((await send("/posts/draft", "POST", { ...input, publicContactInfo })).status, 400);
+    }
+    const created = await send("/posts", "POST", input, individualHeaders);
+    assert.equal(created.status, 201);
+    assert.equal(created.body.status, "pending");
+    const id = created.body.id;
+    const postPath = `/posts/${id}`;
+    const review = `/admin/posts/${id}/review`;
+    const generic = `/admin/posts/${id}/status`;
+    const queueRow = async () => (await send("/admin/posts", "GET", undefined, adminHeaders)).body.find((p: Post) => p.id === id);
+    const ownerEdit = (fields: object) => send(postPath, "PATCH", fields, individualHeaders);
+    const listed = async (activeOnly = true) => (await send(`/posts?activeOnly=${activeOnly}`)).body.filter((p: Post) => p.id === id);
+    for (const activeOnly of [true, false]) assert.equal((await listed(activeOnly)).length, 0);
+    assert.equal((await send(postPath)).status, 404);
+    assert.equal((await send("/reports", "POST", { postId: id, reason: "spam" }, ngoHeaders)).status, 404);
+    assert.equal((await send(postPath + "/contact-access", "POST", undefined, ngoHeaders)).status, 404);
+    const first = await queueRow();
+    assert.equal(first.publicContactInfo, input.publicContactInfo);
+    for (const key of ["contactInfo", "contactMethod", "privateLat", "exactAddressPrivate"]) assert.equal(key in first, false);
+    const freeze = { decision: "freeze" };
+    assert.equal((await send(review, "POST", freeze)).status, 401);
+    assert.equal((await send(review, "POST", freeze, individualHeaders)).status, 403);
+    assert.equal((await send(review, "POST", freeze, adminWithoutMfa)).body.error, "MFA_REQUIRED");
+    assert.equal((await send(review, "POST", freeze, { Cookie: adminHeaders.Cookie })).status, 403);
+    for (const invalid of [{ decision: "other" }, { decision: "accept" }, { decision: "reject", reason: " " },
+      { decision: "reject", reason: "x".repeat(501) }]) {
+      assert.equal((await send(review, "POST", invalid, adminHeaders)).status, 400);
+    }
+    assert.equal((await send(generic, "PATCH", { status: "active" }, adminHeaders)).status, 409);
+    assert.equal((await ownerEdit({ title: "Edited before approval" })).body.status, "pending");
+    assert.equal((await send(review, "POST", { decision: "accept", expectedUpdatedAt: first.updatedAt }, adminHeaders)).body.code, "STALE_REVIEW");
+    assert.equal((await send(review, "POST", freeze, adminHeaders)).status, 200);
+    assert.equal((await ownerEdit({ description: "Updated while frozen." })).body.status, "pending");
+    assert.equal((await ownerEdit({ status: "active" })).status, 409);
+    assert.equal((await send(generic, "PATCH", { status: "active" }, adminHeaders)).status, 409);
+    const old = new Date(Date.now() - 20 * 86400000);
+    await db.update(postsTable).set({ lastConfirmedAt: old, expiresAt: new Date(old.getTime() + 7 * 86400000) }).where(eq(postsTable.id, id));
+    assert.equal((await send("/admin/cleanup", "POST", undefined, adminHeaders)).status, 200);
+    const frozen = await queueRow();
+    assert.equal(frozen.status, "frozen");
+    assert.equal(frozen.durationDays, 7);
+    const accept = { decision: "accept", expectedUpdatedAt: frozen.updatedAt };
+    assert.equal((await send(review, "POST", accept, secondHeaders)).status, 200);
+    assert.equal((await listed()).length, 1);
+    const publicPost = await send(postPath);
+    assert.equal(publicPost.status, 200);
+    assert.equal(publicPost.body.title, "Edited before approval");
+    assert.equal(publicPost.body.description, "Updated while frozen.");
+    assert.equal(publicPost.body.contactInfo, null);
+    assert.equal(publicPost.body.exactAddressPrivate, undefined);
+    assert.equal(publicPost.body.privateLat, undefined);
+    assert.equal(publicPost.body.publicContactInfo, input.publicContactInfo);
+    assert.ok(Math.abs(Date.parse(publicPost.body.expiresAt) - Date.now() - 7 * 86400000) < 60000);
+    assert.deepEqual(await db.select().from(ngosTable), orgRows);
+    assert.equal((await send("/ngos")).body.length, ngoList.body.length);
+    assert.equal((await ownerEdit({ title: publicPost.body.title })).body.status, "active");
+    for (const status of ["draft", "pending", "frozen"]) {
+      assert.equal((await send(generic, "PATCH", { status }, adminHeaders)).status, 400);
+    }
+    const changed = await ownerEdit({ description: "Changed while active." });
+    assert.equal(changed.body.status, "pending");
+    assert.equal((await send(postPath)).status, 404);
+    const current = { decision: "accept", expectedUpdatedAt: changed.body.updatedAt };
+    const outcomes = await Promise.all([adminHeaders, secondHeaders].map(headers => send(review, "POST", current, headers)));
+    assert.deepEqual(outcomes.map(r => r.status).sort(), [200, 409]);
+    assert.equal((await listed()).length, 1);
+    assert.equal((await send("/reports", "POST", { postId: id, reason: "other" }, ngoHeaders)).status, 201);
+    assert.equal((await ownerEdit({ status: "hidden" })).body.status, "hidden");
+    assert.equal((await ownerEdit({ title: "Edit while hidden", status: "active" })).body.status, "pending");
+    for (const closed of [resolvedRequest, expiredRequest, removedRequest]) {
+      assert.equal((await send(`/posts/${closed.id}`, "PATCH", { description: "Cannot edit closed text" }, individualHeaders)).status, 409);
+    }
+    const reject = { decision: "reject", reason: "  Duplicate request  " };
+    assert.equal((await send(review, "POST", reject, secondHeaders)).status, 200);
+    assert.equal((await send(review, "POST", reject, adminHeaders)).status, 404);
+    assert.equal((await pool.query("SELECT id FROM reports WHERE post_id=$1", [id])).rowCount, 0);
+    assert.equal((await pool.query("SELECT id FROM posts WHERE id=$1", [id])).rowCount, 0);
+    const audit = await pool.query("SELECT action, note FROM admin_actions WHERE target_type='post' AND target_id=$1 ORDER BY id", [id]);
+    assert.deepEqual(audit.rows.map(row => [row.action, row.note]), [
+      ["review:freeze", null], ["review:accept", null], ["review:accept", null], ["review:reject", "Duplicate request"],
+    ]);
+  });
+
   const run = promisify(execFile);
   const maintenance = async (name: string, ...args: string[]) => (await run(process.execPath, [
     "--import=./scripts/node_modules/tsx/dist/loader.mjs", `./scripts/src/${name}.ts`, ...args,
   ], { cwd: workspace, timeout: 15000 })).stdout;
+
+  await t.test("migration moves only legacy ownerless pending rows and can run twice", async () => {
+    const [legacy, submitted] = await db.insert(postsTable).values([
+      { ...requestData, status: "pending", draftToken: "legacy-draft" },
+      { ...requestData, status: "pending", userId: individual.id },
+    ]).returning();
+    for (let i = 0; i < 2; i++) {
+      await maintenance("migrate");
+      assert.equal((await db.select().from(postsTable).where(eq(postsTable.id, legacy.id)))[0].status, "draft");
+      assert.equal((await db.select().from(postsTable).where(eq(postsTable.id, submitted.id)))[0].status, "pending");
+    }
+  });
 
   await t.test("reviewed approval and retirement scripts are audited and repeatable", async () => {
     await assert.rejects(() => maintenance("approve-referral-partners", String(verifiedNgo.id), String(noContact.id)));
@@ -354,7 +476,7 @@ test("Release A referrals and request privacy", { skip: !testUrl }, async (t) =>
       { ...offerData, userId: individual.id, status: "active" },
       { ...offerData, userId: individual.id, status: "active", expiresAt: new Date(0) },
       { ...offerData, userId: individual.id, status: "hidden" },
-      { ...offerData, status: "pending", draftToken: "test-retired-draft" },
+      { ...offerData, status: "draft", draftToken: "test-retired-draft" },
     ]).returning();
     const statuses = async () => new Map((await db.select().from(postsTable)).map((post) => [post.id, post.status]));
     const before = await statuses();
@@ -372,9 +494,9 @@ test("Release A referrals and request privacy", { skip: !testUrl }, async (t) =>
     const restored = await statuses();
     assert.equal(restored.get(live.id), "active");
     assert.equal(restored.get(expired.id), "hidden");
-    assert.equal(restored.get(draft.id), "pending");
+    assert.equal(restored.get(draft.id), "draft");
     assert.equal(restored.get(previouslyHidden.id), "hidden");
-    const [ngoOffer] = await db.select().from(postsTable).where(eq(postsTable.userId, ngoUser.id));
+    const ngoOffer = (await db.select().from(postsTable).where(eq(postsTable.userId, ngoUser.id))).find(p => p.postType === "offer")!;
     assert.equal(restored.get(ngoOffer.id), "active");
     const audit = (await db.select().from(adminActionsTable)).filter(({ note }) => note?.startsWith("release-a:retire-individual-offers"));
     assert.deepEqual(audit.filter(({ targetId }) => targetId === live.id).map(({ action }) => action), ["status:hidden", "status:active"]);

@@ -8,8 +8,10 @@ import {
   CompleteProfileBody,
   CompleteNgoProfileBody,
   CreateDraftPostBody,
+  validPublicContact,
 } from "@workspace/api-zod";
 
+import { durationDays } from "../lib/post-review";
 import { verifySupabaseToken } from "../lib/supabase-admin";
 
 import {
@@ -167,22 +169,26 @@ router.post("/auth/supabase-login", loginLimiter, async (req: Request, res: Resp
 
   // 2. Claim draft post if draftToken was provided
   let referral: { governorate: string; district: string | null } | undefined;
-  let claimedPost: { id: number; postType: string } | undefined;
+  let claimedPost: { id: number; postType: string; status: string } | undefined;
   if (draftToken) {
-    const [claimed] = await db.update(postsTable).set({
-      userId: user.id,
-      draftToken: null,
-      status: "active",
-      lastConfirmedAt: new Date(),
-      updatedAt: new Date(),
-    }).where(
-      and(
-        eq(postsTable.draftToken, draftToken),
-        eq(postsTable.status, "pending"),
-        isNull(postsTable.userId),
-        canPublishOffer(user) ? undefined : eq(postsTable.postType, "need"),
-      )
-    ).returning({ id: postsTable.id, postType: postsTable.postType });
+    const claimable = and(
+      eq(postsTable.draftToken, draftToken),
+      eq(postsTable.status, "draft"),
+      isNull(postsTable.userId),
+      canPublishOffer(user) ? undefined : eq(postsTable.postType, "need"),
+    );
+    const claimed = await db.transaction(async tx => {
+      const [draft] = await tx.select().from(postsTable).where(claimable).limit(1).for("update");
+      if (!draft) return undefined;
+      const now = new Date();
+      const [post] = await tx.update(postsTable).set({
+        userId: user.id, draftToken: null, status: draft.postType === "need" ? "pending" : "active",
+        lastConfirmedAt: now, updatedAt: now,
+        expiresAt: new Date(now.getTime() + durationDays(draft) * 86400000),
+      }).where(and(eq(postsTable.id, draft.id), claimable))
+        .returning({ id: postsTable.id, postType: postsTable.postType, status: postsTable.status });
+      return post;
+    });
     if (claimed) {
       claimedPost = claimed;
       logger.info({ userId: user.id }, "Draft post claimed after email-link sign-in");
@@ -358,6 +364,11 @@ router.post("/posts/draft", draftPostLimiter, async (req: Request, res: Response
   const storedPrivateLat = storePrivateLocation ? draftData.providedLat ?? null : null;
   const storedPrivateLng = storePrivateLocation ? draftData.providedLng ?? null : null;
 
+  const isNgoNeed = draftData.providerType === "ngo";
+  if (isNgoNeed && !validPublicContact(draftData.publicContactMethod, draftData.publicContactInfo)) {
+    return void res.status(400).json({ error: "Invalid public contact" });
+  }
+
   // Compute expiry
   const expiresInDays = parsed.data.expiresInDays && parsed.data.expiresInDays > 0
     ? Math.min(parsed.data.expiresInDays, 90)
@@ -381,7 +392,10 @@ router.post("/posts/draft", draftPostLimiter, async (req: Request, res: Response
     providerType: parsed.data.providerType ?? null,
     contactMethod: parsed.data.contactMethod ?? null,
     contactInfo: parsed.data.contactInfo ?? null,
-    status: "pending",
+    publicContactMethod: isNgoNeed ? draftData.publicContactMethod : null,
+    publicContactInfo: isNgoNeed ? draftData.publicContactInfo?.trim() : null,
+    lastConfirmedAt: new Date(),
+    status: "draft",
     draftToken,
     userId: null,
     expiresAt,

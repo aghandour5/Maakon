@@ -10,6 +10,8 @@ export type PostPublicStatus =
   (typeof PostPublicStatus)[keyof typeof PostPublicStatus];
 
 export const PostPublicStatus = {
+  draft: "draft",
+  frozen: "frozen",
   pending: "pending",
   active: "active",
   hidden: "hidden",

@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { PostPublicPostType } from "./postPublicPostType";
+import type { PostPublicPublicContactMethod } from "./postPublicPublicContactMethod";
 import type { PostPublicStatus } from "./postPublicStatus";
 import type { PostPublicUrgency } from "./postPublicUrgency";
 
@@ -31,10 +32,13 @@ export interface PostPublic {
   publicLng?: number | null;
   providerType?: string | null;
   verifiedBadgeType?: string | null;
-  /** Null in public responses for individual requests. */
+  /** Null in public responses for all need posts. */
   contactMethod?: string | null;
-  /** Null in public responses for individual requests. */
+  /** Null in public responses for all need posts. */
   contactInfo?: string | null;
+  publicContactMethod?: PostPublicPublicContactMethod;
+  /** @maxLength 2048 */
+  publicContactInfo?: string | null;
   status: PostPublicStatus;
   reportCount: number;
   createdAt: Date;

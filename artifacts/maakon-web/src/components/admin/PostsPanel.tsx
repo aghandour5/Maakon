@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { DataTable, dateTime } from "./DataTable";
-import { Badge, PostActions } from "./Actions";
+import { Badge, PostActions, ReviewActions } from "./Actions";
 import type { AdminPost } from "./types";
 
 const filters = {
@@ -9,11 +9,14 @@ const filters = {
   Reported: (p: AdminPost) => p.reportCount > 0,
   Active: (p: AdminPost) => p.status === "active",
   Hidden: (p: AdminPost) => p.status === "hidden",
-  Pending: (p: AdminPost) => p.status === "pending",
+  Frozen: (p: AdminPost) => p.status === "frozen",
+  "Pending review": (p: AdminPost) => p.status === "pending",
   Closed: (p: AdminPost) =>
     p.status === "resolved" || p.status === "expired" || p.status === "removed",
 } as const;
 type Filter = keyof typeof filters;
+
+const inReview = (p: AdminPost) => p.status === "pending" || p.status === "frozen";
 
 export function PostsPanel({
   posts,
@@ -51,16 +54,21 @@ export function PostsPanel({
                 <p className="text-xs text-slate-500">
                   {p.postType} · {p.category} · {p.governorate}
                 </p>
+                {inReview(p) && <div className="mt-2 max-w-prose space-y-1 text-sm">
+                  <p dir="auto" className="whitespace-pre-wrap break-words">{p.description}</p>
+                  <p>{[p.district, p.providerType ?? "individual", p.urgency].filter(Boolean).join(" · ")}</p>
+                  {p.publicContactInfo && <p>Public {p.publicContactMethod}: <bdi>{p.publicContactInfo}</bdi></p>}
+                </div>}
               </>
             ),
           ],
-          ["Status", (p) => <Badge status={p.status} />],
+          ["Status", (p) => <Badge status={p.status === "pending" ? "pending review" : p.status} />],
           ["Reports", (p) => p.reportCount],
           ["Created", (p) => dateTime(p.createdAt)],
-          ["Expires", (p) => dateTime(p.expiresAt)],
+          ["Expires", (p) => inReview(p) ? `${p.durationDays} days after acceptance` : dateTime(p.expiresAt)],
           [
             "Next action",
-            (p) => <PostActions post={p} onUpdate={() => void onUpdate()} />,
+            (p) => inReview(p) ? (p.postType === "need" && <ReviewActions key={p.updatedAt} post={p} onUpdate={onUpdate} />) : <PostActions post={p} onUpdate={() => void onUpdate()} />,
           ],
         ]}
       />

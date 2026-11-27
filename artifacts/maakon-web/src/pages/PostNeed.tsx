@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { TopNav } from "@/components/layout/TopNav";
-import { useCreatePost, useGetMetadata, getListPostsQueryKey } from "@workspace/api-client-react";
+import { useCreatePost, useGetMetadata, useGetMyNgoPublicContact, getListPostsQueryKey } from "@workspace/api-client-react";
 import type { CreatePostInput } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
@@ -41,7 +41,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { createDraftPost } from "@/lib/auth-api";
 import { supabase } from "@/lib/supabase";
-import { normalizeProfilePhone, profilePhonePattern } from "@workspace/api-zod";
+import { validPublicContact, normalizeProfilePhone, profilePhonePattern } from "@workspace/api-zod";
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -132,6 +132,14 @@ export default function PostNeed() {
     postType: "need",
     contactMethod: "phone",
   });
+  const { data: orgContact } = useGetMyNgoPublicContact({ query: {
+    enabled: Boolean(user && inputs.providerType === "ngo"),
+    queryKey: ["ngo-public-contact", user?.id],
+  } });
+  const [publicContact, setPublicContact] = useState<{ method: "phone" | "email" | "website"; info: string }>();
+  const volunteerContact = publicContact ?? (orgContact?.phone
+    ? { method: "phone" as const, info: orgContact.phone }
+    : { method: "website" as const, info: orgContact?.website ?? "" });
   const profile = inputs.providerType === "individual" && user?.accountType === "individual" ? user : null;
   const formData = {
     ...inputs,
@@ -190,6 +198,9 @@ export default function PostNeed() {
       else if (!validGovernorate) e.governorate = t("invalid_selection", "Invalid selection");
       if (!validDistrict) e.district = t("invalid_selection", "Invalid selection");
       if (!expiresInDays) e.expiresInDays = t("required");
+      if (isNgo && volunteerContact.info.trim() && !validPublicContact(volunteerContact.method, volunteerContact.info)) {
+        e.publicContact = t("invalid_public_contact");
+      }
       if (isNgo && !ngoData.contactPerson) e.contactPerson = t("required");
       
       const isPhoneContact = ["phone", "whatsapp", "signal"].includes(formData.contactMethod || "");
@@ -233,6 +244,9 @@ export default function PostNeed() {
         category: "volunteers",
         title: ngoData.ngoName,
         description: `Volunteers Needed: ${ngoData.volunteersNeeded}\n\nDescription: ${ngoData.shortDescription}\n\nNotes: ${ngoData.notes}`,
+        ...(volunteerContact.info.trim() ? {
+          publicContactMethod: volunteerContact.method, publicContactInfo: volunteerContact.info.trim(),
+        } : {}),
         contactInfo: `${ngoData.contactPerson} - ${parsedContactInfo}`,
         expiresInDays: expiresInDays!
       } as CreatePostInput;
@@ -282,6 +296,8 @@ export default function PostNeed() {
           providerType: finalData.providerType ?? undefined,
           contactMethod: finalData.contactMethod ?? undefined,
           contactInfo: finalData.contactInfo ?? undefined,
+          publicContactMethod: finalData.publicContactMethod ?? undefined,
+          publicContactInfo: finalData.publicContactInfo ?? undefined,
           expiresInDays: finalData.expiresInDays ?? undefined,
         });
         setDraftToken(draft.draftToken);
@@ -340,14 +356,14 @@ export default function PostNeed() {
             style={{ background: "linear-gradient(135deg, #dcfce7, #bbf7d0)" }}>
             <CheckCircle2 className="w-10 h-10 text-emerald-600" />
           </div>
-          <h2 className="text-2xl font-black text-gray-900 mb-2">{t("success_title")}</h2>
-          <p className="text-gray-500 text-sm mb-7">{t("need_success_desc")}</p>
+          <h2 className="text-2xl font-black text-gray-900 mb-2">{t("need_submitted_title")}</h2>
+          <p className="text-gray-500 text-sm mb-7">{t(formData.providerType === "ngo" ? "ngo_review_desc" : "need_success_desc")}</p>
           <button
-            onClick={() => setLocation("/map")}
+            onClick={() => setLocation("/my-posts")}
             className="w-full h-12 rounded-2xl font-bold text-white text-base transition-transform active:scale-95"
             style={{ background: "linear-gradient(135deg, #ed1c24, #ff4d4d)" }}
           >
-            {t("view_map")}
+            {t("myposts_title")}
           </button>
         </motion.div>
       </div>
@@ -694,7 +710,7 @@ export default function PostNeed() {
                              {isNgo ? t("exact_org_address") : t("exact_address")}
                            </p>
                            <p className="text-xs text-red-600/80 mb-2.5">
-                             {isNgo ? t("ngo_exact_map_desc") : t("exact_address_private")}
+                             {t("exact_address_private")}
                            </p>
                            <input
                              type="text"
@@ -734,11 +750,27 @@ export default function PostNeed() {
                       <FieldError msg={errors.expiresInDays} />
                     </div>
 
-                    {!isNgo && (
-                      <p className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-                        {t("need_contact_privacy")}
-                      </p>
+                    {isNgo && (
+                      <fieldset className="space-y-3 rounded-2xl border border-slate-200 p-4">
+                        <legend className="px-1 font-semibold">{t("volunteer_contact")}</legend>
+                        <p className="text-sm text-slate-600">{t("volunteer_contact_hint")}</p>
+                        <select className="w-full rounded-xl border p-3" aria-label={t("contact_method")}
+                          value={volunteerContact.method} onChange={e => setPublicContact({
+                            method: e.target.value as typeof volunteerContact.method, info: "",
+                          })}>
+                          {(["phone", "email", "website"] as const).map(method =>
+                            <option key={method} value={method}>{t(method)}</option>)}
+                        </select>
+                        <input className="w-full rounded-xl border p-3" dir="ltr" aria-label={t("volunteer_contact")}
+                          type={{ phone: "tel", email: "email", website: "url" }[volunteerContact.method]}
+                          value={volunteerContact.info}
+                          onChange={e => setPublicContact({ ...volunteerContact, info: e.target.value })} />
+                        <FieldError msg={errors.publicContact} />
+                      </fieldset>
                     )}
+                    <p className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                        {t(isNgo ? "ngo_contact_privacy" : "need_contact_privacy")}
+                    </p>
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       {isNgo && (
                         <div className="sm:col-span-2">
@@ -861,7 +893,7 @@ export default function PostNeed() {
                     </div>
                     <h2 className="text-xl font-black text-gray-900">{t("check_email_title")}</h2>
                     <p className="text-sm text-gray-500 max-w-xs">
-                      {t("check_email_draft_desc", { email: draftEmail })}
+                      {t("need_check_email_desc", { email: draftEmail })}
                     </p>
                     <p className="text-xs text-gray-400">{t("check_email_hint")}</p>
                   </div>

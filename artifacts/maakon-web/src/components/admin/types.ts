@@ -4,6 +4,7 @@ export type PostStatus =
   | "resolved"
   | "expired"
   | "pending"
+  | "frozen"
   | "removed";
 export type ReportStatus = "pending" | "reviewed" | "dismissed" | "actioned";
 
@@ -14,6 +15,13 @@ export interface AdminPost {
   category: string;
   governorate: string;
   status: PostStatus;
+  updatedAt: string;
+  district: string | null;
+  providerType: string | null;
+  publicContactMethod: string | null;
+  publicContactInfo: string | null;
+  urgency: string | null;
+  durationDays: number;
   description: string;
   reportCount: number;
   expiresAt: string | null;
@@ -66,6 +74,7 @@ export interface Stats {
     resolved: number;
     expired: number;
     pending: number;
+    frozen: number;
     removed: number;
   };
   reports: {

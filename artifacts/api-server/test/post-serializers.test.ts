@@ -17,6 +17,8 @@ const request: Post = {
   urgency: null,
   contactMethod: "email",
   contactInfo: "requester@example.test",
+  publicContactMethod: null,
+  publicContactInfo: null,
   exactAddressPrivate: "Private location fixture",
   publicLat: 33.89,
   publicLng: 35.5,
@@ -45,12 +47,13 @@ test("the public serializer redacts individual contact and private location even
   assert.equal(privatePost.exactAddressPrivate, request.exactAddressPrivate);
 });
 
-test("NGO volunteer requests and offers keep their public contact", () => {
-  for (const publicPost of [
-    toPublicPost({ ...request, providerType: "ngo" }),
-    toPublicPost({ ...request, postType: "offer" }),
-  ]) {
-    assert.equal(publicPost.contactInfo, request.contactInfo);
-    assert.equal(publicPost.contactMethod, request.contactMethod);
-  }
+test("NGO needs expose only designated public contact, including to their owner on the map", () => {
+  const ngoNeed = { ...request, providerType: "ngo", publicContactMethod: "email", publicContactInfo: "public@example.test" };
+  const result = toPublicPost(ngoNeed, request.userId);
+  assert.equal(result.contactInfo, null);
+  assert.equal(result.contactMethod, null);
+  assert.equal(result.publicContactInfo, ngoNeed.publicContactInfo);
+  assert.equal(toPublicPost({ ...request, providerType: "ngo" }).publicContactInfo, null);
+  assert.equal(toPrivatePost({ ...ngoNeed, status: "frozen" }).status, "pending");
+  assert.equal(toPublicPost({ ...request, postType: "offer" }).contactInfo, request.contactInfo);
 });

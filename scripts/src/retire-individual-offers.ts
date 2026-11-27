@@ -21,11 +21,11 @@ async function retireOffers() {
     const offers = await db.select({ id: postsTable.id, status: postsTable.status }).from(postsTable)
       .where(or(
         and(individualOffers, eq(postsTable.status, "active")),
-        and(unclaimedOffers, eq(postsTable.status, "pending")),
+        and(unclaimedOffers, eq(postsTable.status, "draft")),
       ))
       .orderBy(asc(postsTable.id));
     printIds("Would hide individual offers", offers.filter((offer) => offer.status === "active"));
-    printIds("Would remove unclaimed offer drafts", offers.filter((offer) => offer.status === "pending"));
+    printIds("Would remove unclaimed offer drafts", offers.filter((offer) => offer.status === "draft"));
     return;
   }
 
@@ -44,7 +44,7 @@ async function retireOffers() {
       .limit(1);
     const retiredByRelease = eq(sql<string>`(${lastStatusNote})`, RETIRE_NOTE);
     const offerStatus = rollback ? "active" : "hidden";
-    const draftStatus = rollback ? "pending" : "removed";
+    const draftStatus = rollback ? "draft" : "removed";
 
     const offers = await tx.update(postsTable).set({ status: offerStatus, updatedAt: now })
       .where(and(
@@ -59,7 +59,7 @@ async function retireOffers() {
         unclaimedOffers,
         rollback
           ? and(eq(postsTable.status, "removed"), retiredByRelease, stillValid)
-          : eq(postsTable.status, "pending"),
+          : eq(postsTable.status, "draft"),
       ))
       .returning({ id: postsTable.id });
 
@@ -73,7 +73,7 @@ async function retireOffers() {
   });
 
   printIds(rollback ? "Restored active offers" : "Hid individual offers", offers);
-  printIds(rollback ? "Restored pending offer drafts" : "Removed unclaimed offer drafts", drafts);
+  printIds(rollback ? "Restored unclaimed offer drafts" : "Removed unclaimed offer drafts", drafts);
 }
 
 function printIds(label: string, rows: { id: number }[]) {

@@ -4,8 +4,9 @@ import { optionalAuth, requireAuth } from "../middlewares/auth";
 import { rateLimit } from "../middlewares/rateLimit";
 import { db } from "@workspace/db";
 import { contactAccessLogTable, postsTable, ngosTable, type Post } from "@workspace/db/schema";
-import { and, eq, gt, inArray, isNotNull, isNull, or, asc, desc } from "drizzle-orm";
+import { sql, notInArray, ne, and, eq, gt, inArray, isNotNull, isNull, or, asc, desc } from "drizzle-orm";
 import {
+  validPublicContact,
   AccessPostContactParams,
   ListPostsQueryParams,
   CreatePostBody,
@@ -20,6 +21,8 @@ import { getPublicCoordinates } from "../lib/post-location";
 import { canPublishOffer, OFFER_REFERRAL_REQUIRED } from "../lib/offer-policy";
 import { isVulnerableNeedPost, toPrivatePost, toPublicPost } from "../lib/post-serializers";
 import { logger } from "../lib/logger";
+
+import { nextPostVersion, reviewStates } from "../lib/post-review";
 
 const DEFAULT_EXPIRY_DAYS = 30;
 const MAX_EXPIRY_DAYS = 90;
@@ -149,6 +152,11 @@ router.post("/posts", requireAuth, createPostRateLimiter, async (req, res) => {
     return void res.status(403).json(OFFER_REFERRAL_REQUIRED);
   }
 
+  const isNgoNeed = postType === "need" && providerType === "ngo";
+  if (isNgoNeed && !validPublicContact(body.data.publicContactMethod, body.data.publicContactInfo)) {
+    return void res.status(400).json({ error: "Invalid public contact" });
+  }
+
   const storePrivateLocation = !isVulnerableNeedPost(postType, providerType);
   const storedPrivateLat = storePrivateLocation ? providedLat ?? null : null;
   const storedPrivateLng = storePrivateLocation ? providedLng ?? null : null;
@@ -180,7 +188,7 @@ router.post("/posts", requireAuth, createPostRateLimiter, async (req, res) => {
         .where(eq(ngosTable.userId, req.user!.id))
         .limit(1);
 
-      if (!ngo) {
+      if (!ngo && postType === "offer") {
         // Auto-create unverified NGO so it appears in the admin console.
         [ngo] = await tx
           .insert(ngosTable)
@@ -198,8 +206,8 @@ router.post("/posts", requireAuth, createPostRateLimiter, async (req, res) => {
           .returning();
       }
 
-      ngoId = ngo.id;
-      if (ngo.verifiedAt) {
+      ngoId = ngo?.id ?? null;
+      if (ngo?.verifiedAt) {
         verifiedBadgeType = "ngo";
       }
     }
@@ -223,7 +231,9 @@ router.post("/posts", requireAuth, createPostRateLimiter, async (req, res) => {
         verifiedBadgeType,
         contactMethod: contactMethod ?? null,
         contactInfo: contactInfo ?? null,
-        status: "active",
+        publicContactMethod: isNgoNeed ? body.data.publicContactMethod : null,
+        publicContactInfo: isNgoNeed ? body.data.publicContactInfo?.trim() : null,
+        status: postType === "need" ? "pending" : "active",
         userId: req.user!.id,
         expiresAt,
         lastConfirmedAt: new Date(),
@@ -273,6 +283,18 @@ router.patch("/posts/:id", requireAuth, async (req, res) => {
   const ownedPost = and(eq(postsTable.id, params.data.id), eq(postsTable.userId, req.user!.id));
   const needsOfferCheck = status === "active" && !canPublishOffer(req.user);
 
+  const editsText = title !== undefined || description !== undefined;
+  const changed = or(
+    title !== undefined ? ne(postsTable.title, title) : undefined,
+    description !== undefined ? ne(postsTable.description, description) : undefined,
+  );
+  const allowed = and(
+    ownedPost,
+    needsOfferCheck ? eq(postsTable.postType, "need") : undefined,
+    status ? notInArray(postsTable.status, [...reviewStates]) : undefined,
+    editsText ? or(eq(postsTable.postType, "offer"), notInArray(postsTable.status, ["resolved", "expired", "removed", "draft"])) : undefined,
+  );
+
   // Single atomic UPDATE: ownership check is part of the WHERE clause,
   // eliminating the SELECT → UPDATE race condition (TOCTOU).
   const [updatedPost] = await db
@@ -280,10 +302,13 @@ router.patch("/posts/:id", requireAuth, async (req, res) => {
     .set({
       ...(title !== undefined ? { title } : {}),
       ...(description !== undefined ? { description } : {}),
-      ...(status !== undefined ? { status } : {}),
-      updatedAt: new Date(),
+      status: changed ? sql`case
+        when ${postsTable.postType} = 'need' and ${postsTable.status} in ('active', 'hidden')
+          and (${changed}) then 'pending'::post_status
+        else ${status ? sql`${status}::post_status` : postsTable.status} end` : status,
+      updatedAt: nextPostVersion,
     })
-    .where(and(ownedPost, needsOfferCheck ? eq(postsTable.postType, "need") : undefined))
+    .where(allowed)
     .returning();
 
   if (!updatedPost) {
@@ -292,6 +317,8 @@ router.patch("/posts/:id", requireAuth, async (req, res) => {
         .where(and(ownedPost, eq(postsTable.postType, "offer")));
       if (offer) return void res.status(403).json(OFFER_REFERRAL_REQUIRED);
     }
+    const [existing] = await db.select({ id: postsTable.id }).from(postsTable).where(ownedPost);
+    if (existing) return void res.status(409).json({ error: "This change is unavailable for the current status" });
     return void res.status(404).json({ error: "Post not found or forbidden" });
   }
 

@@ -4,7 +4,7 @@ import { z } from "zod/v4";
 import { usersTable } from "./users";
 
 export const postTypeEnum = pgEnum("post_type", ["need", "offer"]);
-export const postStatusEnum = pgEnum("post_status", ["pending", "active", "hidden", "resolved", "expired", "removed"]);
+export const postStatusEnum = pgEnum("post_status", ["draft", "frozen", "pending", "active", "hidden", "resolved", "expired", "removed"]);
 export const urgencyEnum = pgEnum("urgency", ["critical", "high", "medium", "low"]);
 
 export const postsTable = pgTable("posts", {
@@ -32,6 +32,8 @@ export const postsTable = pgTable("posts", {
   verifiedBadgeType: text("verified_badge_type"),
   contactMethod: text("contact_method"),
   contactInfo: text("contact_info"),
+  publicContactMethod: text("public_contact_method"),
+  publicContactInfo: text("public_contact_info"),
 
   status: postStatusEnum("status").default("pending").notNull(),
   reportCount: integer("report_count").default(0).notNull(),

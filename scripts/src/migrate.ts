@@ -21,6 +21,16 @@ async function migrate() {
     await client.query(`ALTER TYPE post_status ADD VALUE IF NOT EXISTS 'hidden'`);
     await client.query(`ALTER TYPE post_status ADD VALUE IF NOT EXISTS 'resolved'`);
 
+    await client.query("ALTER TYPE post_status ADD VALUE IF NOT EXISTS 'draft'");
+    await client.query("ALTER TYPE post_status ADD VALUE IF NOT EXISTS 'frozen'");
+    await client.query(`
+      BEGIN;
+      ALTER TABLE posts ADD COLUMN IF NOT EXISTS public_contact_method text,
+                        ADD COLUMN IF NOT EXISTS public_contact_info text;
+      UPDATE posts SET status = 'draft' WHERE status = 'pending' AND user_id IS NULL;
+      COMMIT;
+    `);
+
     // Add NGO operational status column
     await client.query(`
       ALTER TABLE ngos ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'active'
